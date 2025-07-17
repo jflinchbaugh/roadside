@@ -107,7 +107,13 @@
             (map (fn [stand]
                    (d/div {:key (str (:name stand) "-" (:location stand))
                            :class "stand-item"}
-                     (d/h4 (:name stand))
+                     (d/div {:class "stand-header"}
+                       (d/h4 (:name stand))
+                       (d/button {:class "delete-stand-btn"
+                                  :onClick #(set-stands (fn [current-stands] 
+                                                          (vec (remove #{stand} current-stands))))
+                                  :title "Delete this stand"}
+                                 "Delete"))
                      (d/p (:location stand))
                      (when (not (empty? (:expiration stand)))
                        (d/p {:class "expiration-date"} 
