@@ -6,9 +6,13 @@
 
 
 (defnc App []
-  (let [[stands set-stands] (hooks/use-state [])
+  (let [default-expiration (let [date (js/Date.)
+                                 week-later (+ (.getTime date) (* 7 24 60 60 1000))]
+                             (.toISOString (js/Date. week-later))
+                             (.substring (.toISOString (js/Date. week-later)) 0 10))
+        [stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
-        [form-data set-form-data] (hooks/use-state {:name "" :location "" :products [] :expiration ""})
+        [form-data set-form-data] (hooks/use-state {:name "" :location "" :products [] :expiration default-expiration})
         [current-product set-current-product] (hooks/use-state "")
         name-input-ref (hooks/use-ref nil)]
     
@@ -23,7 +27,7 @@
         (let [handle-keydown (fn [e]
                                (when (= (.-key e) "Escape")
                                  (set-show-form false)
-                                 (set-form-data {:name "" :location "" :products [] :expiration ""})))]
+                                 (set-form-data {:name "" :location "" :products [] :expiration default-expiration})))]
           (.addEventListener js/document "keydown" handle-keydown)
           #(.removeEventListener js/document "keydown" handle-keydown))
         js/undefined))
@@ -50,7 +54,7 @@
               (d/form {:onSubmit (fn [e]
                                    (.preventDefault e)
                                    (set-stands #(conj % form-data))
-                                   (set-form-data {:name "" :location "" :products [] :expiration ""})
+                                   (set-form-data {:name "" :location "" :products [] :expiration default-expiration})
                                    (set-show-form false))}
                 (d/div {:class "form-group"}
                   (d/label "Stand Name:")
@@ -94,7 +98,7 @@
                   (d/button {:type "submit"} "Add Stand")
                   (d/button {:type "button"
                              :onClick #(do (set-show-form false)
-                                           (set-form-data {:name "" :location "" :products [] :expiration ""}))}
+                                           (set-form-data {:name "" :location "" :products [] :expiration default-expiration}))}
                             "Cancel"))))))
         
         (d/div {:class "stands-list"}
