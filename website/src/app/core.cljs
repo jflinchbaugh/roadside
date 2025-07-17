@@ -8,7 +8,7 @@
 (defnc App []
   (let [[stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
-        [form-data set-form-data] (hooks/use-state {:name "" :location "" :products []})
+        [form-data set-form-data] (hooks/use-state {:name "" :location "" :products [] :expiration ""})
         [current-product set-current-product] (hooks/use-state "")
         name-input-ref (hooks/use-ref nil)]
     
@@ -23,7 +23,7 @@
         (let [handle-keydown (fn [e]
                                (when (= (.-key e) "Escape")
                                  (set-show-form false)
-                                 (set-form-data {:name "" :location "" :products []})))]
+                                 (set-form-data {:name "" :location "" :products [] :expiration ""})))]
           (.addEventListener js/document "keydown" handle-keydown)
           #(.removeEventListener js/document "keydown" handle-keydown))
         js/undefined))
@@ -50,7 +50,7 @@
               (d/form {:onSubmit (fn [e]
                                    (.preventDefault e)
                                    (set-stands #(conj % form-data))
-                                   (set-form-data {:name "" :location "" :products []})
+                                   (set-form-data {:name "" :location "" :products [] :expiration ""})
                                    (set-show-form false))}
                 (d/div {:class "form-group"}
                   (d/label "Stand Name:")
@@ -85,11 +85,16 @@
                                            (.preventDefault e)
                                            (set-form-data (fn [prev] (assoc prev :products (conj (:products prev) current-product))))
                                            (set-current-product "")))}))
+                (d/div {:class "form-group"}
+                  (d/label "Expiration Date:")
+                  (d/input {:type "date"
+                            :value (:expiration form-data)
+                            :onChange #(set-form-data (fn [prev] (assoc prev :expiration (.. % -target -value))))}))
                 (d/div {:class "form-buttons"}
                   (d/button {:type "submit"} "Add Stand")
                   (d/button {:type "button"
                              :onClick #(do (set-show-form false)
-                                           (set-form-data {:name "" :location "" :products []}))}
+                                           (set-form-data {:name "" :location "" :products [] :expiration ""}))}
                             "Cancel"))))))
         
         (d/div {:class "stands-list"}
@@ -100,6 +105,10 @@
                            :class "stand-item"}
                      (d/h4 (:name stand))
                      (d/p (:location stand))
+                     (when (not (empty? (:expiration stand)))
+                       (d/p {:class "expiration-date"} 
+                            (d/strong "Expires: ")
+                            (:expiration stand)))
                      (when (not (empty? (:products stand)))
                        (d/div {:class "stand-products"}
                          (d/strong "Products: ")
