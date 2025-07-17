@@ -8,7 +8,8 @@
 (defnc App []
   (let [[stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
-        [form-data set-form-data] (hooks/use-state {:name "" :location ""})
+        [form-data set-form-data] (hooks/use-state {:name "" :location "" :products []})
+        [current-product set-current-product] (hooks/use-state "")
         name-input-ref (hooks/use-ref nil)]
     
     (hooks/use-effect
@@ -22,7 +23,7 @@
         (let [handle-keydown (fn [e]
                                (when (= (.-key e) "Escape")
                                  (set-show-form false)
-                                 (set-form-data {:name "" :location ""})))]
+                                 (set-form-data {:name "" :location "" :products []})))]
           (.addEventListener js/document "keydown" handle-keydown)
           #(.removeEventListener js/document "keydown" handle-keydown))
         js/undefined))
@@ -49,7 +50,7 @@
               (d/form {:onSubmit (fn [e]
                                    (.preventDefault e)
                                    (set-stands #(conj % form-data))
-                                   (set-form-data {:name "" :location ""})
+                                   (set-form-data {:name "" :location "" :products []})
                                    (set-show-form false))}
                 (d/div {:class "form-group"}
                   (d/label "Stand Name:")
@@ -64,11 +65,31 @@
                             :value (:location form-data)
                             :onChange #(set-form-data (fn [prev] (assoc prev :location (.. % -target -value))))
                             :required true}))
+                (d/div {:class "form-group"}
+                  (d/label "Products:")
+                  (d/div {:class "products-tags"}
+                    (map (fn [product]
+                           (d/span {:key product :class "product-tag"}
+                             product
+                             (d/button {:type "button"
+                                        :class "remove-tag"
+                                        :onClick #(set-form-data (fn [prev] (assoc prev :products (vec (remove #{product} (:products prev))))))}
+                                       "×")))
+                         (:products form-data)))
+                  (d/input {:type "text"
+                            :value current-product
+                            :placeholder "Add a product and press Enter"
+                            :onChange #(set-current-product (.. % -target -value))
+                            :onKeyDown (fn [e]
+                                         (when (and (= (.-key e) "Enter") (not= current-product ""))
+                                           (.preventDefault e)
+                                           (set-form-data (fn [prev] (assoc prev :products (conj (:products prev) current-product))))
+                                           (set-current-product "")))}))
                 (d/div {:class "form-buttons"}
                   (d/button {:type "submit"} "Add Stand")
                   (d/button {:type "button"
                              :onClick #(do (set-show-form false)
-                                           (set-form-data {:name "" :location ""}))}
+                                           (set-form-data {:name "" :location "" :products []}))}
                             "Cancel"))))))
         
         (d/div {:class "stands-list"}
@@ -78,7 +99,14 @@
                    (d/div {:key (str (:name stand) "-" (:location stand))
                            :class "stand-item"}
                      (d/h4 (:name stand))
-                     (d/p (:location stand))))
+                     (d/p (:location stand))
+                     (when (not (empty? (:products stand)))
+                       (d/div {:class "stand-products"}
+                         (d/strong "Products: ")
+                         (d/div {:class "products-tags"}
+                           (map (fn [product]
+                                  (d/span {:key product :class "product-tag"} product))
+                                (:products stand)))))))
                  stands)))))))
 
 (defn init []

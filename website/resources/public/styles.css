@@ -135,3 +135,54 @@ body {
   margin: 0;
   color: #666;
 }
+
+.products-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  min-height: 24px;
+}
+
+.product-tag {
+  display: inline-flex;
+  align-items: center;
+  background-color: #e7f3ff;
+  color: #0066cc;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 14px;
+  border: 1px solid #b3d9ff;
+}
+
+.remove-tag {
+  background: none;
+  border: none;
+  color: #0066cc;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  margin-left: 4px;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.remove-tag:hover {
+  background-color: #ff4444;
+  color: white;
+}
+
+.stand-products {
+  margin-top: 0.5rem;
+}
+
+.stand-products strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #333;
+}
