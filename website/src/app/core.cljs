@@ -12,6 +12,7 @@
                              (.substring (.toISOString (js/Date. week-later)) 0 10))
         [stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
+        [editing-stand set-editing-stand] (hooks/use-state nil)
         [form-data set-form-data] (hooks/use-state {:name "" :location "" :products [] :expiration default-expiration})
         [current-product set-current-product] (hooks/use-state "")
         name-input-ref (hooks/use-ref nil)]
@@ -47,14 +48,21 @@
         (when show-form
           (d/div {:class "form-overlay"
                   :onClick #(do (set-show-form false)
-                                (set-form-data {:name "" :location ""}))}
+                                (set-editing-stand nil)
+                                (set-form-data {:name "" :location "" :products [] :expiration default-expiration}))}
             (d/div {:class "form-container"
                     :onClick #(.stopPropagation %)}
-              (d/h3 "Add New Stand")
+              (d/h3 (if editing-stand "Edit Stand" "Add New Stand"))
               (d/form {:onSubmit (fn [e]
                                    (.preventDefault e)
-                                   (set-stands #(conj % form-data))
+                                   (if editing-stand
+                                     ;; Update existing stand
+                                     (set-stands (fn [current-stands]
+                                                   (vec (map #(if (= % editing-stand) form-data %) current-stands))))
+                                     ;; Add new stand  
+                                     (set-stands #(conj % form-data)))
                                    (set-form-data {:name "" :location "" :products [] :expiration default-expiration})
+                                   (set-editing-stand nil)
                                    (set-show-form false))}
                 (d/div {:class "form-group"}
                   (d/label "Stand Name:")
@@ -95,9 +103,10 @@
                             :value (:expiration form-data)
                             :onChange #(set-form-data (fn [prev] (assoc prev :expiration (.. % -target -value))))}))
                 (d/div {:class "form-buttons"}
-                  (d/button {:type "submit"} "Add Stand")
+                  (d/button {:type "submit"} (if editing-stand "Save Changes" "Add Stand"))
                   (d/button {:type "button"
                              :onClick #(do (set-show-form false)
+                                           (set-editing-stand nil)
                                            (set-form-data {:name "" :location "" :products [] :expiration default-expiration}))}
                             "Cancel"))))))
         
@@ -109,11 +118,18 @@
                            :class "stand-item"}
                      (d/div {:class "stand-header"}
                        (d/h4 (:name stand))
-                       (d/button {:class "delete-stand-btn"
-                                  :onClick #(set-stands (fn [current-stands] 
-                                                          (vec (remove #{stand} current-stands))))
-                                  :title "Delete this stand"}
-                                 "Delete"))
+                       (d/div {:class "stand-actions"}
+                         (d/button {:class "edit-stand-btn"
+                                    :onClick #(do (set-editing-stand stand)
+                                                  (set-form-data stand)
+                                                  (set-show-form true))
+                                    :title "Edit this stand"}
+                                   "Edit")
+                         (d/button {:class "delete-stand-btn"
+                                    :onClick #(set-stands (fn [current-stands] 
+                                                            (vec (remove #{stand} current-stands))))
+                                    :title "Delete this stand"}
+                                   "Delete")))
                      (d/p (:location stand))
                      (when (not (empty? (:expiration stand)))
                        (d/p {:class "expiration-date"} 
