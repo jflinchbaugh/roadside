@@ -1,6 +1,7 @@
 (ns server.core
   (:require [org.httpkit.server :as http-kit]
-            [reitit.ring :as ring]))
+            [reitit.ring :as ring]
+            [taoensso.telemere :as telemere]))
 
 (def app
   (ring/ring-handler
@@ -13,4 +14,4 @@
 (defn -main [& args]
   (let [port (Integer/parseInt (or (System/getenv "PORT") "8080"))]
     (http-kit/run-server app {:port port})
-    (println "Server running on port" port)))
+    (telemere/info :server/starting {:port port})))
