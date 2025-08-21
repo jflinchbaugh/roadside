@@ -5,7 +5,7 @@
             [helix.dom :as d]))
 
 
-(defnc App []
+(defnc app []
   (let [default-expiration (let [date (js/Date.)
                                  week-later (+ (.getTime date) (* 7 24 60 60 1000))]
                              (.toISOString (js/Date. week-later))
@@ -66,11 +66,22 @@
                                    (set-show-form false))}
                 (d/div {:class "form-group"}
                   (d/label "Location:")
-                  (d/input {:type "text"
-                            :ref location-input-ref
-                            :value (:location form-data)
-                            :onChange #(set-form-data (fn [prev] (assoc prev :location (.. % -target -value))))
-                            :required true}))
+                  (d/div {:style {:display "flex" :align-items "center"}}
+                    (d/input {:type "text"
+                              :ref location-input-ref
+                              :value (:location form-data)
+                              :onChange #(set-form-data (fn [prev] (assoc prev :location (.. % -target -value))))
+                              :required true
+                              :style {:flex-grow 1 :margin-right "10px"}})
+                    (d/button {:type "button"
+                               :onClick (fn []
+                                          (js/navigator.geolocation.getCurrentPosition
+                                           (fn [position]
+                                             (let [coords (.-coords position)
+                                                   lat (.-latitude coords)
+                                                   lng (.-longitude coords)]
+                                               (set-form-data (fn [prev] (assoc prev :location (str lat ", " lng))))))))}
+                              "Use My Location")))
                 (d/div {:class "form-group"}
                   (d/label "Stand Name:")
                   (d/input {:type "text"
@@ -145,4 +156,4 @@
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]
-    (.render root ($ App))))
+    (.render root ($ app))))
