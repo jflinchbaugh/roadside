@@ -126,13 +126,13 @@
                                     :title "Edit this stand"}
                                    "Edit")
                          (d/button {:class "delete-stand-btn"
-                                    :onClick #(set-stands (fn [current-stands] 
+                                    :onClick #(set-stands (fn [current-stands]
                                                             (vec (remove #{stand} current-stands))))
                                     :title "Delete this stand"}
                                    "Delete")))
                      (d/p (:location stand))
                      (when (not (empty? (:expiration stand)))
-                       (d/p {:class "expiration-date"} 
+                       (d/p {:class "expiration-date"}
                             (d/strong "Expires: ")
                             (:expiration stand)))
                      (when (not (empty? (:products stand)))
