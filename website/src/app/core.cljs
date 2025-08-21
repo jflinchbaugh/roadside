@@ -15,13 +15,13 @@
         [editing-stand set-editing-stand] (hooks/use-state nil)
         [form-data set-form-data] (hooks/use-state {:name "" :location "" :products [] :expiration default-expiration})
         [current-product set-current-product] (hooks/use-state "")
-        name-input-ref (hooks/use-ref nil)]
-    
+        location-input-ref (hooks/use-ref nil)]
+
     (hooks/use-effect
       [show-form]
       (when show-form
-        (.focus @name-input-ref)))
-    
+        (.focus @location-input-ref)))
+
     (hooks/use-effect
       [show-form]
       (if show-form
@@ -32,19 +32,19 @@
           (.addEventListener js/document "keydown" handle-keydown)
           #(.removeEventListener js/document "keydown" handle-keydown))
         js/undefined))
-    
+
     (d/div {:class "app-container"}
       (d/header {:class "header"}
-        (d/img {:src "/images/apples.png" 
-                :alt "Apple Logo" 
+        (d/img {:src "/images/apples.png"
+                :alt "Apple Logo"
                 :class "logo"})
         (d/h1 {:class "main-header"} "Roadside Stands"))
-      
+
       (d/div {:class "content"}
         (d/button {:class "add-stand-btn"
                    :onClick #(set-show-form true)}
                   "Add Stand")
-        
+
         (when show-form
           (d/div {:class "form-overlay"
                   :onClick #(do (set-show-form false)
@@ -59,24 +59,23 @@
                                      ;; Update existing stand
                                      (set-stands (fn [current-stands]
                                                    (vec (map #(if (= % editing-stand) form-data %) current-stands))))
-                                     ;; Add new stand  
+                                     ;; Add new stand
                                      (set-stands #(conj % form-data)))
                                    (set-form-data {:name "" :location "" :products [] :expiration default-expiration})
                                    (set-editing-stand nil)
                                    (set-show-form false))}
                 (d/div {:class "form-group"}
-                  (d/label "Stand Name:")
-                  (d/input {:type "text"
-                            :ref name-input-ref
-                            :value (:name form-data)
-                            :onChange #(set-form-data (fn [prev] (assoc prev :name (.. % -target -value))))
-                            :required true}))
-                (d/div {:class "form-group"}
                   (d/label "Location:")
                   (d/input {:type "text"
+                            :ref location-input-ref
                             :value (:location form-data)
                             :onChange #(set-form-data (fn [prev] (assoc prev :location (.. % -target -value))))
                             :required true}))
+                (d/div {:class "form-group"}
+                  (d/label "Stand Name:")
+                  (d/input {:type "text"
+                            :value (:name form-data)
+                            :onChange #(set-form-data (fn [prev] (assoc prev :name (.. % -target -value))))}))
                 (d/div {:class "form-group"}
                   (d/label "Products:")
                   (d/div {:class "products-tags"}
@@ -109,7 +108,7 @@
                                            (set-editing-stand nil)
                                            (set-form-data {:name "" :location "" :products [] :expiration default-expiration}))}
                             "Cancel"))))))
-        
+
         (d/div {:class "stands-list"}
           (if (empty? stands)
             (d/p "No stands added yet.")
