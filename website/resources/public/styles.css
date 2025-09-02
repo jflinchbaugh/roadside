@@ -269,3 +269,16 @@ body {
     background-color: #81C784;
   }
 }
+
+.location-btn {
+  font-size: 32px;
+  line-height: 1;
+  color: darkred;
+  background-color: white;
+  border: 1px solid darkred;
+  padding: 4px 8px 8px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

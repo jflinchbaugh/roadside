@@ -78,6 +78,7 @@
                               :required true
                               :style {:flex-grow 1 :margin-right "10px"}})
                     (d/button {:type "button"
+                               :class "location-btn"
                                :onClick (fn []
                                           (set-location-error nil)
                                           (set-is-locating true)
@@ -90,9 +91,9 @@
                                                (set-is-locating false)))
                                            (fn [error]
                                              (js/console.error "Error getting location:" error)
-                                             (set-location-error "Could not get your location. Please enter it manually.")
+                                             (set-location-error "Could not get your location. Please try again or enter it manually.")
                                              (set-is-locating false))))}
-                              "Use My Location")))
+                              "\u2316")))
                   (when location-error
                     (d/p {:style {:color "red"}} location-error))
                 (d/div {:class "form-group"}
