@@ -15,6 +15,8 @@
         [editing-stand set-editing-stand] (hooks/use-state nil)
         [form-data set-form-data] (hooks/use-state {:name "" :coordinate "" :products [] :expiration default-expiration})
         [current-product set-current-product] (hooks/use-state "")
+        [is-locating, set-is-locating] (hooks/use-state false)
+        [location-error, set-location-error] (hooks/use-state nil)
         coordinate-input-ref (hooks/use-ref nil)]
 
     (hooks/use-effect
@@ -52,6 +54,8 @@
                                 (set-form-data {:name "" :coordinate "" :products [] :expiration default-expiration}))}
             (d/div {:class "form-container"
                     :onClick #(.stopPropagation %)}
+              (when is-locating
+                (d/div {:id "progress-bar"}))
               (d/h3 (if editing-stand "Edit Stand" "Add New Stand"))
               (d/form {:onSubmit (fn [e]
                                    (.preventDefault e)
@@ -75,13 +79,22 @@
                               :style {:flex-grow 1 :margin-right "10px"}})
                     (d/button {:type "button"
                                :onClick (fn []
+                                          (set-location-error nil)
+                                          (set-is-locating true)
                                           (js/navigator.geolocation.getCurrentPosition
                                            (fn [position]
                                              (let [coords (.-coords position)
                                                    lat (.-latitude coords)
                                                    lng (.-longitude coords)]
-                                               (set-form-data (fn [prev] (assoc prev :coordinate (str lat ", " lng))))))))}
+                                               (set-form-data (fn [prev] (assoc prev :coordinate (str lat ", " lng))))
+                                               (set-is-locating false)))
+                                           (fn [error]
+                                             (js/console.error "Error getting location:" error)
+                                             (set-location-error "Could not get your location. Please enter it manually.")
+                                             (set-is-locating false))))}
                               "Use My Location")))
+                  (when location-error
+                    (d/p {:style {:color "red"}} location-error))
                 (d/div {:class "form-group"}
                   (d/label "Stand Name:")
                   (d/input {:type "text"

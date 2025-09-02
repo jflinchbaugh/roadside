@@ -69,6 +69,8 @@ body {
   border-radius: 8px;
   min-width: 400px;
   max-width: 500px;
+  position: relative;
+  overflow: hidden;
 }
 
 .form-group {
@@ -241,4 +243,29 @@ body {
 
 .edit-stand-btn:hover {
   background-color: #0056b3;
+}
+
+#progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background-color: #4CAF50;
+  animation: loading 1s linear infinite;
+}
+
+@keyframes loading {
+  0% {
+    width: 10%;
+    background-color: #81C784;
+  }
+  50% {
+    width: 50%;
+    background-color: #4CAF50;
+  }
+  100% {
+    width: 100%;
+    background-color: #81C784;
+  }
 }
