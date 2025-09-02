@@ -2,7 +2,8 @@
   (:require ["react-dom/client" :as rdom]
             [helix.core :refer [defnc $]]
             [helix.hooks :as hooks]
-            [helix.dom :as d]))
+            [helix.dom :as d]
+            [taoensso.telemere :as tel]))
 
 
 (defnc app []
@@ -75,7 +76,6 @@
                               :ref coordinate-input-ref
                               :value (:coordinate form-data)
                               :onChange #(set-form-data (fn [prev] (assoc prev :coordinate (.. % -target -value))))
-                              :required true
                               :style {:flex-grow 1 :margin-right "10px"}})
                     (d/button {:type "button"
                                :class "location-btn"
@@ -90,7 +90,7 @@
                                                (set-form-data (fn [prev] (assoc prev :coordinate (str lat ", " lng))))
                                                (set-is-locating false)))
                                            (fn [error]
-                                             (js/console.error "Error getting location:" error)
+                                             (tel/error! {:msg "Error getting location" :error error})
                                              (set-location-error "Could not get your location. Please try again or enter it manually.")
                                              (set-is-locating false))))}
                               "\u2316")))
