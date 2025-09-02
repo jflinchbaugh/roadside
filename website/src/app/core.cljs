@@ -13,14 +13,14 @@
         [stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
         [editing-stand set-editing-stand] (hooks/use-state nil)
-        [form-data set-form-data] (hooks/use-state {:name "" :location "" :products [] :expiration default-expiration})
+        [form-data set-form-data] (hooks/use-state {:name "" :coordinate "" :products [] :expiration default-expiration})
         [current-product set-current-product] (hooks/use-state "")
-        location-input-ref (hooks/use-ref nil)]
+        coordinate-input-ref (hooks/use-ref nil)]
 
     (hooks/use-effect
       [show-form]
       (when show-form
-        (.focus @location-input-ref)))
+        (.focus @coordinate-input-ref)))
 
     (hooks/use-effect
       [show-form]
@@ -28,7 +28,7 @@
         (let [handle-keydown (fn [e]
                                (when (= (.-key e) "Escape")
                                  (set-show-form false)
-                                 (set-form-data {:name "" :location "" :products [] :expiration default-expiration})))]
+                                 (set-form-data {:name "" :coordinate "" :products [] :expiration default-expiration})))]
           (.addEventListener js/document "keydown" handle-keydown)
           #(.removeEventListener js/document "keydown" handle-keydown))
         js/undefined))
@@ -49,7 +49,7 @@
           (d/div {:class "form-overlay"
                   :onClick #(do (set-show-form false)
                                 (set-editing-stand nil)
-                                (set-form-data {:name "" :location "" :products [] :expiration default-expiration}))}
+                                (set-form-data {:name "" :coordinate "" :products [] :expiration default-expiration}))}
             (d/div {:class "form-container"
                     :onClick #(.stopPropagation %)}
               (d/h3 (if editing-stand "Edit Stand" "Add New Stand"))
@@ -61,16 +61,16 @@
                                                    (vec (map #(if (= % editing-stand) form-data %) current-stands))))
                                      ;; Add new stand
                                      (set-stands #(conj % form-data)))
-                                   (set-form-data {:name "" :location "" :products [] :expiration default-expiration})
+                                   (set-form-data {:name "" :coordinate "" :products [] :expiration default-expiration})
                                    (set-editing-stand nil)
                                    (set-show-form false))}
                 (d/div {:class "form-group"}
-                  (d/label "Location:")
+                  (d/label "Coordinate:")
                   (d/div {:style {:display "flex" :align-items "center"}}
                     (d/input {:type "text"
-                              :ref location-input-ref
-                              :value (:location form-data)
-                              :onChange #(set-form-data (fn [prev] (assoc prev :location (.. % -target -value))))
+                              :ref coordinate-input-ref
+                              :value (:coordinate form-data)
+                              :onChange #(set-form-data (fn [prev] (assoc prev :coordinate (.. % -target -value))))
                               :required true
                               :style {:flex-grow 1 :margin-right "10px"}})
                     (d/button {:type "button"
@@ -80,7 +80,7 @@
                                              (let [coords (.-coords position)
                                                    lat (.-latitude coords)
                                                    lng (.-longitude coords)]
-                                               (set-form-data (fn [prev] (assoc prev :location (str lat ", " lng))))))))}
+                                               (set-form-data (fn [prev] (assoc prev :coordinate (str lat ", " lng))))))))}
                               "Use My Location")))
                 (d/div {:class "form-group"}
                   (d/label "Stand Name:")
@@ -117,14 +117,14 @@
                   (d/button {:type "button"
                              :onClick #(do (set-show-form false)
                                            (set-editing-stand nil)
-                                           (set-form-data {:name "" :location "" :products [] :expiration default-expiration}))}
+                                           (set-form-data {:name "" :coordinate "" :products [] :expiration default-expiration}))}
                             "Cancel"))))))
 
         (d/div {:class "stands-list"}
           (if (empty? stands)
             (d/p "No stands added yet.")
             (map (fn [stand]
-                   (d/div {:key (str (:name stand) "-" (:location stand))
+                   (d/div {:key (str (:name stand) "-" (:coordinate stand))
                            :class "stand-item"}
                      (d/div {:class "stand-header"}
                        (d/h4 (:name stand))
@@ -140,7 +140,7 @@
                                                             (vec (remove #{stand} current-stands))))
                                     :title "Delete this stand"}
                                    "Delete")))
-                     (d/p (:location stand))
+                     (d/p (:coordinate stand))
                      (when (not (empty? (:expiration stand)))
                        (d/p {:class "expiration-date"}
                             (d/strong "Expires: ")
