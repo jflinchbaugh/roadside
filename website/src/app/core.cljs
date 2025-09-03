@@ -57,7 +57,7 @@
 
     (d/div {:class "app-container"}
       (d/header {:class "header"}
-        (d/img {:src "/images/apples.png"
+        (d/img {:src "images/apples.png"
                 :alt "Apple Logo"
                 :class "logo"})
         (d/h1 {:class "main-header"} "Roadside Stands"))
@@ -126,7 +126,10 @@
                                                (set-is-locating false)))
                                            (fn [error]
                                              (tel/error! {:msg "Error getting location"
-                                                          :error error})
+                                                          :error error
+                                                          :code (.-code error)
+                                                          :message (.-message error)
+                                                          :geolocation-error error})
                                              (set-location-error
                                                "Could not get your location. Please try again or enter it manually.")
                                              (set-is-locating false))))}
