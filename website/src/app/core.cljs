@@ -14,7 +14,7 @@
         [stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
         [editing-stand set-editing-stand] (hooks/use-state nil)
-        [form-data set-form-data] (hooks/use-state {:name "" :coordinate "" :address "" :town "" :state "" :products [] :expiration default-expiration})
+        [form-data set-form-data] (hooks/use-state {:name "" :coordinate "" :address "" :town "" :state "" :products [] :expiration default-expiration :notes ""})
         [current-product set-current-product] (hooks/use-state "")
         [is-locating, set-is-locating] (hooks/use-state false)
         [location-error, set-location-error] (hooks/use-state nil)
@@ -52,7 +52,7 @@
           (d/div {:class "form-overlay"
                   :onClick #(do (set-show-form false)
                                 (set-editing-stand nil)
-                                (set-form-data {:name "" :coordinate "" :address "" :town "" :state "" :products [] :expiration default-expiration}))}
+                                (set-form-data {:name "" :coordinate "" :address "" :town "" :state "" :products [] :expiration default-expiration :notes ""}))}
             (d/div {:class "form-container"
                     :onClick #(.stopPropagation %)}
               (when is-locating
@@ -137,6 +137,11 @@
                                            (set-form-data (fn [prev] (assoc prev :products (conj (:products prev) current-product))))
                                            (set-current-product "")))}))
                 (d/div {:class "form-group"}
+                  (d/label "Notes:")
+                  (d/textarea {:value (:notes form-data)
+                               :onChange #(set-form-data (fn [prev] (assoc prev :notes (.. % -target -value))))
+                               :rows 4}))
+                (d/div {:class "form-group"}
                   (d/label "Expiration Date:")
                   (d/input {:type "date"
                             :value (:expiration form-data)
@@ -146,7 +151,7 @@
                   (d/button {:type "button"
                              :onClick #(do (set-show-form false)
                                            (set-editing-stand nil)
-                                           (set-form-data {:name "" :coordinate "" :address "" :town "" :state "" :products [] :expiration default-expiration}))}
+                                           (set-form-data {:name "" :coordinate "" :address "" :town "" :state "" :products [] :expiration default-expiration :notes ""}))}
                             "Cancel"))))))
 
         (d/div {:class "stands-list"}
@@ -160,7 +165,7 @@
                        (d/div {:class "stand-actions"}
                          (d/button {:class "edit-stand-btn"
                                     :onClick #(do (set-editing-stand stand)
-                                                  (set-form-data (assoc stand :town (:town stand) :state (:state stand) :address (:address stand)) )
+                                                  (set-form-data (assoc stand :town (:town stand) :state (:state stand) :address (:address stand) :notes (:notes stand)) )
                                                   (set-show-form true))
                                     :title "Edit this stand"}
                                    "Edit")
@@ -184,7 +189,12 @@
                          (d/div {:class "products-tags"}
                            (map (fn [product]
                                   (d/span {:key product :class "product-tag"} product))
-                                (:products stand)))))))
+                                (:products stand)))))
+                     (when (not (empty? (:notes stand)))
+                       (d/p {:class "stand-notes"}
+                            (d/strong "Notes: ")
+                            (:notes stand)))
+                     ))
                  stands)))))))
 
 (defn init []
