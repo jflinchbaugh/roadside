@@ -3,7 +3,8 @@
             [helix.core :refer [defnc $]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
-            [taoensso.telemere :as tel]))
+            [taoensso.telemere :as tel]
+            [cljs.reader]))
 
 (defn in-a-week []
   (let [date (js/Date.)
@@ -28,6 +29,12 @@
         [is-locating, set-is-locating] (hooks/use-state false)
         [location-error, set-location-error] (hooks/use-state nil)
         coordinate-input-ref (hooks/use-ref nil)]
+
+    (hooks/use-effect
+      [] ;; Run once on mount
+      (let [saved-stands (js/localStorage.getItem "roadside-stands")]
+        (when saved-stands
+          (set-stands (cljs.reader/read-string saved-stands)))))
 
     (hooks/use-effect
       [show-form]
@@ -215,6 +222,10 @@
                                                            :expiration default-expiration
                                                            :notes ""}))}
                             "Cancel"))))))
+
+    (hooks/use-effect
+      [stands] ;; Run whenever 'stands' changes
+      (js/localStorage.setItem "roadside-stands" (pr-str stands)))
 
         (d/div {:class "stands-list"}
           (if (empty? stands)
