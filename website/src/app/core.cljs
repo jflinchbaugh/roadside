@@ -112,10 +112,14 @@
                                              (let [coords (.-coords position)
                                                    lat (.-latitude coords)
                                                    lng (.-longitude coords)]
-                                               (set-form-data (fn [prev] (assoc prev :coordinate (str lat ", " lng))))
+                                               (set-form-data
+                                                 (fn [prev]
+                                                   (assoc prev
+                                                     :coordinate (str lat ", " lng))))
                                                (set-is-locating false)))
                                            (fn [error]
-                                             (tel/error! {:msg "Error getting location" :error error})
+                                             (tel/error! {:msg "Error getting location"
+                                                          :error error})
                                              (set-location-error
                                                "Could not get your location. Please try again or enter it manually.")
                                              (set-is-locating false))))}
