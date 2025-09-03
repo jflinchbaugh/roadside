@@ -292,3 +292,12 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+.coordinate-input-group {
+  display: flex;
+  align-items: center;
+}
+
+.error-message {
+  color: red;
+}

@@ -100,7 +100,7 @@
                                    (set-show-form false))}
                 (d/div {:class "form-group"}
                   (d/label "Coordinate:")
-                  (d/div {:style {:display "flex" :align-items "center"}}
+                  (d/div {:class "coordinate-input-group"}
                     (d/input {:type "text"
                               :ref coordinate-input-ref
                               :value (:coordinate form-data)
@@ -132,7 +132,7 @@
                                              (set-is-locating false))))}
                               "\u2316")))
                   (when location-error
-                    (d/p {:style {:color "red"}} location-error))
+                    (d/p {:class "error-message"} location-error))
                 (d/div {:class "form-group"}
                   (d/label "Stand Name:")
                   (d/input {:type "text"
