@@ -5,16 +5,25 @@
             [helix.dom :as d]
             [taoensso.telemere :as tel]))
 
+(defn in-a-week []
+  (let [date (js/Date.)
+        week-later (+ (.getTime date) (* 7 24 60 60 1000))]
+    (.toISOString (js/Date. week-later))
+    (.substring (.toISOString (js/Date. week-later)) 0 10)))
 
 (defnc app []
-  (let [default-expiration (let [date (js/Date.)
-                                 week-later (+ (.getTime date) (* 7 24 60 60 1000))]
-                             (.toISOString (js/Date. week-later))
-                             (.substring (.toISOString (js/Date. week-later)) 0 10))
+  (let [default-expiration (in-a-week)
         [stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
         [editing-stand set-editing-stand] (hooks/use-state nil)
-        [form-data set-form-data] (hooks/use-state {:name "" :coordinate "" :address "" :town "" :state "" :products [] :expiration default-expiration :notes ""})
+        [form-data set-form-data] (hooks/use-state {:name ""
+                                                    :coordinate ""
+                                                    :address ""
+                                                    :town ""
+                                                    :state ""
+                                                    :products []
+                                                    :expiration default-expiration
+                                                    :notes ""})
         [current-product set-current-product] (hooks/use-state "")
         [is-locating, set-is-locating] (hooks/use-state false)
         [location-error, set-location-error] (hooks/use-state nil)
@@ -31,7 +40,10 @@
         (let [handle-keydown (fn [e]
                                (when (= (.-key e) "Escape")
                                  (set-show-form false)
-                                 (set-form-data {:name "" :coordinate "" :products [] :expiration default-expiration})))]
+                                 (set-form-data {:name ""
+                                                 :coordinate ""
+                                                 :products []
+                                                 :expiration default-expiration})))]
           (.addEventListener js/document "keydown" handle-keydown)
           #(.removeEventListener js/document "keydown" handle-keydown))
         js/undefined))
@@ -52,7 +64,14 @@
           (d/div {:class "form-overlay"
                   :onClick #(do (set-show-form false)
                                 (set-editing-stand nil)
-                                (set-form-data {:name "" :coordinate "" :address "" :town "" :state "" :products [] :expiration default-expiration :notes ""}))}
+                                (set-form-data {:name ""
+                                                :coordinate ""
+                                                :address ""
+                                                :town ""
+                                                :state ""
+                                                :products []
+                                                :expiration default-expiration
+                                                :notes ""}))}
             (d/div {:class "form-container"
                     :onClick #(.stopPropagation %)}
               (when is-locating
@@ -66,7 +85,10 @@
                                                    (vec (map #(if (= % editing-stand) form-data %) current-stands))))
                                      ;; Add new stand
                                      (set-stands #(conj % form-data)))
-                                   (set-form-data {:name "" :coordinate "" :products [] :expiration default-expiration})
+                                   (set-form-data {:name ""
+                                                   :coordinate ""
+                                                   :products []
+                                                   :expiration default-expiration})
                                    (set-editing-stand nil)
                                    (set-show-form false))}
                 (d/div {:class "form-group"}
@@ -75,7 +97,10 @@
                     (d/input {:type "text"
                               :ref coordinate-input-ref
                               :value (:coordinate form-data)
-                              :onChange #(set-form-data (fn [prev] (assoc prev :coordinate (.. % -target -value))))
+                              :onChange #(set-form-data
+                                           (fn [prev]
+                                             (assoc prev
+                                               :coordinate (.. % -target -value))))
                               :style {:flex-grow 1 :margin-right "10px"}})
                     (d/button {:type "button"
                                :class "location-btn"
@@ -91,7 +116,8 @@
                                                (set-is-locating false)))
                                            (fn [error]
                                              (tel/error! {:msg "Error getting location" :error error})
-                                             (set-location-error "Could not get your location. Please try again or enter it manually.")
+                                             (set-location-error
+                                               "Could not get your location. Please try again or enter it manually.")
                                              (set-is-locating false))))}
                               "\u2316")))
                   (when location-error
@@ -100,22 +126,34 @@
                   (d/label "Stand Name:")
                   (d/input {:type "text"
                             :value (:name form-data)
-                            :onChange #(set-form-data (fn [prev] (assoc prev :name (.. % -target -value))))}))
+                            :onChange #(set-form-data
+                                         (fn [prev]
+                                           (assoc prev
+                                             :name (.. % -target -value))))}))
                 (d/div {:class "form-group"}
                   (d/label "Address:")
                   (d/input {:type "text"
                             :value (:address form-data)
-                            :onChange #(set-form-data (fn [prev] (assoc prev :address (.. % -target -value))))}))
+                            :onChange #(set-form-data
+                                         (fn [prev]
+                                           (assoc prev
+                                             :address (.. % -target -value))))}))
                 (d/div {:class "form-group"}
                   (d/label "Town:")
                   (d/input {:type "text"
                             :value (:town form-data)
-                            :onChange #(set-form-data (fn [prev] (assoc prev :town (.. % -target -value))))}))
+                            :onChange #(set-form-data
+                                         (fn [prev]
+                                           (assoc prev
+                                             :town (.. % -target -value))))}))
                 (d/div {:class "form-group"}
                   (d/label "State:")
                   (d/input {:type "text"
                             :value (:state form-data)
-                            :onChange #(set-form-data (fn [prev] (assoc prev :state (.. % -target -value))))}))
+                            :onChange #(set-form-data
+                                         (fn [prev]
+                                           (assoc prev
+                                             :state (.. % -target -value))))}))
                 (d/div {:class "form-group"}
                   (d/label "Products:")
                   (d/div {:class "products-tags"}
@@ -124,7 +162,10 @@
                              product
                              (d/button {:type "button"
                                         :class "remove-tag"
-                                        :onClick #(set-form-data (fn [prev] (assoc prev :products (vec (remove #{product} (:products prev))))))}
+                                        :onClick #(set-form-data
+                                                    (fn [prev]
+                                                      (assoc prev
+                                                        :products (vec (remove #{product} (:products prev))))))}
                                        "×")))
                          (:products form-data)))
                   (d/input {:type "text"
@@ -134,24 +175,41 @@
                             :onKeyDown (fn [e]
                                          (when (and (= (.-key e) "Enter") (not= current-product ""))
                                            (.preventDefault e)
-                                           (set-form-data (fn [prev] (assoc prev :products (conj (:products prev) current-product))))
+                                           (set-form-data
+                                             (fn [prev]
+                                               (assoc prev
+                                                 :products (conj (:products prev) current-product))))
                                            (set-current-product "")))}))
                 (d/div {:class "form-group"}
                   (d/label "Notes:")
                   (d/textarea {:value (:notes form-data)
-                               :onChange #(set-form-data (fn [prev] (assoc prev :notes (.. % -target -value))))
+                               :onChange #(set-form-data
+                                            (fn [prev]
+                                              (assoc prev
+                                                :notes (.. % -target -value))))
                                :rows 4}))
                 (d/div {:class "form-group"}
                   (d/label "Expiration Date:")
                   (d/input {:type "date"
                             :value (:expiration form-data)
-                            :onChange #(set-form-data (fn [prev] (assoc prev :expiration (.. % -target -value))))}))
+                            :onChange #(set-form-data
+                                         (fn [prev]
+                                           (assoc prev
+                                             :expiration (.. % -target -value))))}))
                 (d/div {:class "form-buttons"}
-                  (d/button {:type "submit"} (if editing-stand "Save Changes" "Add Stand"))
+                  (d/button {:type "submit"}
+                    (if editing-stand "Save Changes" "Add Stand"))
                   (d/button {:type "button"
                              :onClick #(do (set-show-form false)
                                            (set-editing-stand nil)
-                                           (set-form-data {:name "" :coordinate "" :address "" :town "" :state "" :products [] :expiration default-expiration :notes ""}))}
+                                           (set-form-data {:name ""
+                                                           :coordinate ""
+                                                           :address ""
+                                                           :town ""
+                                                           :state ""
+                                                           :products []
+                                                           :expiration default-expiration
+                                                           :notes ""}))}
                             "Cancel"))))))
 
         (d/div {:class "stands-list"}
@@ -165,7 +223,12 @@
                        (d/div {:class "stand-actions"}
                          (d/button {:class "edit-stand-btn"
                                     :onClick #(do (set-editing-stand stand)
-                                                  (set-form-data (assoc stand :town (:town stand) :state (:state stand) :address (:address stand) :notes (:notes stand)) )
+                                                  (set-form-data
+                                                    (assoc stand
+                                                      :town (:town stand)
+                                                      :state (:state stand)
+                                                      :address (:address stand)
+                                                      :notes (:notes stand)) )
                                                   (set-show-form true))
                                     :title "Edit this stand"}
                                    "Edit")
@@ -188,7 +251,9 @@
                          (d/strong "Products: ")
                          (d/div {:class "products-tags"}
                            (map (fn [product]
-                                  (d/span {:key product :class "product-tag"} product))
+                                  (d/span {:key product
+                                           :class "product-tag"}
+                                    product))
                                 (:products stand)))))
                      (when (not (empty? (:notes stand)))
                        (d/p {:class "stand-notes"}
