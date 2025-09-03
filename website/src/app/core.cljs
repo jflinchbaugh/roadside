@@ -14,7 +14,7 @@
         [stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
         [editing-stand set-editing-stand] (hooks/use-state nil)
-        [form-data set-form-data] (hooks/use-state {:name "" :coordinate "" :road-name "" :town "" :state "" :products [] :expiration default-expiration})
+        [form-data set-form-data] (hooks/use-state {:name "" :coordinate "" :address "" :town "" :state "" :products [] :expiration default-expiration})
         [current-product set-current-product] (hooks/use-state "")
         [is-locating, set-is-locating] (hooks/use-state false)
         [location-error, set-location-error] (hooks/use-state nil)
@@ -52,7 +52,7 @@
           (d/div {:class "form-overlay"
                   :onClick #(do (set-show-form false)
                                 (set-editing-stand nil)
-                                (set-form-data {:name "" :coordinate "" :road-name "" :town "" :state "" :products [] :expiration default-expiration}))}
+                                (set-form-data {:name "" :coordinate "" :address "" :town "" :state "" :products [] :expiration default-expiration}))}
             (d/div {:class "form-container"
                     :onClick #(.stopPropagation %)}
               (when is-locating
@@ -102,10 +102,10 @@
                             :value (:name form-data)
                             :onChange #(set-form-data (fn [prev] (assoc prev :name (.. % -target -value))))}))
                 (d/div {:class "form-group"}
-                  (d/label "Road Name:")
+                  (d/label "Address:")
                   (d/input {:type "text"
-                            :value (:road-name form-data)
-                            :onChange #(set-form-data (fn [prev] (assoc prev :road-name (.. % -target -value))))}))
+                            :value (:address form-data)
+                            :onChange #(set-form-data (fn [prev] (assoc prev :address (.. % -target -value))))}))
                 (d/div {:class "form-group"}
                   (d/label "Town:")
                   (d/input {:type "text"
@@ -146,7 +146,7 @@
                   (d/button {:type "button"
                              :onClick #(do (set-show-form false)
                                            (set-editing-stand nil)
-                                           (set-form-data {:name "" :coordinate "" :road-name "" :town "" :state "" :products [] :expiration default-expiration}))}
+                                           (set-form-data {:name "" :coordinate "" :address "" :town "" :state "" :products [] :expiration default-expiration}))}
                             "Cancel"))))))
 
         (d/div {:class "stands-list"}
@@ -160,7 +160,7 @@
                        (d/div {:class "stand-actions"}
                          (d/button {:class "edit-stand-btn"
                                     :onClick #(do (set-editing-stand stand)
-                                                  (set-form-data (assoc stand :town (:town stand) :state (:state stand) :road-name (:road-name stand)) )
+                                                  (set-form-data (assoc stand :town (:town stand) :state (:state stand) :address (:address stand)) )
                                                   (set-show-form true))
                                     :title "Edit this stand"}
                                    "Edit")
@@ -170,8 +170,8 @@
                                     :title "Delete this stand"}
                                    "Delete")))
                      (d/p (:coordinate stand))
-                     (when (not (empty? (:road-name stand)))
-                       (d/p (:road-name stand)))
+                     (when (not (empty? (:address stand)))
+                       (d/p (:address stand)))
                      (when (not (empty? (:town stand)))
                        (d/p (str (:town stand) ", " (:state stand))))
                      (when (not (empty? (:expiration stand)))
