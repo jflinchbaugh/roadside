@@ -14,7 +14,8 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+  margin-top: 0.5rem;
 }
 
 .logo {
@@ -32,7 +33,7 @@ body {
 }
 
 .content {
-  padding: 2rem 0;
+  padding: 0 0;
 }
 
 #map-container {
@@ -50,7 +51,7 @@ body {
   font-size: 16px;
   cursor: pointer;
   border-radius: 4px;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .add-stand-btn:hover {
@@ -134,7 +135,6 @@ body {
 }
 
 .stands-list {
-  margin-top: 2rem;
 }
 
 .stand-item {
