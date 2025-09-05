@@ -35,6 +35,12 @@ body {
   padding: 2rem 0;
 }
 
+#map-container {
+  height: 300px;
+  width: 100%;
+  margin-bottom: 1rem; /* Add some space below the map */
+}
+
 .add-stand-btn {
   background-color: #4CAF50;
   border: none;
