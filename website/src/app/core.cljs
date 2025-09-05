@@ -12,7 +12,7 @@
     (.toISOString (js/Date. week-later))
     (.substring (.toISOString (js/Date. week-later)) 0 10)))
 
-(defnc LeafletMap []
+(defnc leaflet-map []
   (hooks/use-effect []
                     (let [map-obj (.setView (js/L.map "map-container") #js [40.0379 -76.3055] 10)]
                       (.addTo
@@ -78,7 +78,7 @@
                      (d/h1 {:class "main-header"} "Roadside Stands"))
 
            (d/div {:class "content"}
-                  ($ LeafletMap)
+                  ($ leaflet-map)
 
                   (d/button {:class "add-stand-btn"
                              :onClick #(set-show-form true)}
