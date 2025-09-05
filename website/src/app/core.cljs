@@ -7,6 +7,8 @@
             [cljs.reader]
             [clojure.string :as str]))
 
+(def map-home #js [40.0379 -76.3055])
+
 (defn in-a-week []
   (let [date (js/Date.)
         week-later (+ (.getTime date) (* 7 24 60 60 1000))]
@@ -42,12 +44,15 @@
    []
    (let [map-obj (.setView
                   (js/L.map "map-container")
-                  #js [40.0379 -76.3055] 10)]
+                  map-home 10)
+         home-marker (js/L.marker map-home)]
      (.addTo
       (js/L.tileLayer
        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
        #js {"attribution" "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"})
-      map-obj)))
+      map-obj)
+     (.bindTooltip home-marker "home")
+     (.addTo home-marker map-obj)))
   (d/div {:id "map-container"}))
 
 (defnc app []
