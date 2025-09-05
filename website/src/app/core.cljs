@@ -48,6 +48,10 @@
           (set-stands (cljs.reader/read-string saved-stands)))))
 
     (hooks/use-effect
+      [stands] ;; Run whenever 'stands' changes
+      (js/localStorage.setItem "roadside-stands" (pr-str stands)))
+
+    (hooks/use-effect
       [show-form]
       (when show-form
         (.focus @coordinate-input-ref)))
@@ -238,10 +242,6 @@
                                                            :expiration default-expiration
                                                            :notes ""}))}
                             "Cancel"))))))
-
-    (hooks/use-effect
-      [stands] ;; Run whenever 'stands' changes
-      (js/localStorage.setItem "roadside-stands" (pr-str stands)))
 
         (d/div {:class "stands-list"}
           (if (empty? stands)
