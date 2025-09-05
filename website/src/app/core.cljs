@@ -12,7 +12,18 @@
     (.toISOString (js/Date. week-later))
     (.substring (.toISOString (js/Date. week-later)) 0 10)))
 
+(defnc LeafletMap []
+  (hooks/use-effect []
+    (let [map-obj (.setView (js/L.map "map-container") #js [40.0379 -76.3055] 10)]
+      (.addTo
+        (js/L.tileLayer
+          "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          #js {"attribution" "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"})
+        map-obj)))
+  (d/div {:id "map-container"}))
+
 (defnc app []
+
   (let [default-expiration (in-a-week)
         [stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
@@ -63,11 +74,7 @@
         (d/h1 {:class "main-header"} "Roadside Stands"))
 
       (d/div {:class "content"}
-        (d/div {:id "map-container"})
-
-        (hooks/use-effect []
-          (let [map-obj (.setView (js/L.map "map-container") #js [40.0379 -76.3055] 10)]
-            (.addTo (js/L.tileLayer "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" #js {"attribution" "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"}) map-obj)))
+        ($ LeafletMap)
 
         (d/button {:class "add-stand-btn"
                    :onClick #(set-show-form true)}
