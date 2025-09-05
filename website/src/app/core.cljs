@@ -12,20 +12,31 @@
     (.toISOString (js/Date. week-later))
     (.substring (.toISOString (js/Date. week-later)) 0 10)))
 
+(defn add-product-to-form-data
+  [current-product form-data set-form-data]
+  (when (not= current-product "")
+    (set-form-data
+     (fn [prev]
+       (if (some #(= % current-product) (:products prev))
+         prev
+         (assoc
+          prev
+          :products (conj (:products prev) current-product)))))))
+
 (defnc leaflet-map []
-  (hooks/use-effect []
-                    (let [map-obj (.setView
-                                   (js/L.map "map-container")
-                                   #js [40.0379 -76.3055] 10)]
-                      (.addTo
-                       (js/L.tileLayer
-                        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        #js {"attribution" "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"})
-                       map-obj)))
+  (hooks/use-effect
+   []
+   (let [map-obj (.setView
+                  (js/L.map "map-container")
+                  #js [40.0379 -76.3055] 10)]
+     (.addTo
+      (js/L.tileLayer
+       "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+       #js {"attribution" "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"})
+      map-obj)))
   (d/div {:id "map-container"}))
 
 (defnc app []
-
   (let [default-expiration (in-a-week)
         [stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
@@ -75,7 +86,7 @@
        js/undefined))
 
     (d/div
-     {:class "app-container"}
+     {:class "app-container"} ; Removed the premature closing parenthesis
      (d/header
       {:class "header"}
       (d/img
@@ -250,20 +261,25 @@
                                      :products (vec (remove #{product} (:products prev))))))}
                       "×")))
                   (:products form-data)))
-            (d/input
-             {:type "text"
-              :value current-product
-              :placeholder "Add a product and press Enter"
-              :onChange #(set-current-product (.. % -target -value))
-              :onKeyDown (fn [e]
-                           (when (and (= (.-key e) "Enter") (not= current-product ""))
-                             (.preventDefault e)
-                             (set-form-data
-                              (fn [prev]
-                                (assoc
-                                 prev
-                                 :products (conj (:products prev) current-product))))
-                             (set-current-product "")))}))
+            (d/div
+             {:class "product-input-group"}
+             (d/input
+              {:type "text"
+               :value current-product
+               :placeholder "Add a product and press Enter"
+               :onChange #(set-current-product (.. % -target -value))
+               :onKeyDown (fn [e]
+                            (when (= (.-key e) "Enter")
+                              (.preventDefault e)
+                              (add-product-to-form-data current-product form-data set-form-data)
+                              (set-current-product "")))})
+             (d/button
+              {:type "button"
+               :class "add-product-btn"
+               :onClick (fn []
+                            (add-product-to-form-data current-product form-data set-form-data)
+                            (set-current-product ""))}
+              "Add")))
            (d/div
             {:class "form-group"}
             (d/label "Notes:")
