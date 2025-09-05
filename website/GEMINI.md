@@ -1,0 +1,3 @@
+- keep style in stylesheet
+- ensure braces and parentheses are matched in new code
+- prefer to create new components instead of inline code
