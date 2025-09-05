@@ -4,7 +4,8 @@
             [helix.hooks :as hooks]
             [helix.dom :as d]
             [taoensso.telemere :as tel]
-            [cljs.reader]))
+            [cljs.reader]
+            [clojure.string :as str]))
 
 (defn in-a-week []
   (let [date (js/Date.)
@@ -22,6 +23,19 @@
          (assoc
           prev
           :products (conj (:products prev) current-product)))))))
+(defn stand-key [stand]
+  (->>
+    stand
+    ((juxt
+       :name
+       :coordinates
+       :address
+       :town
+       :state
+       :products))
+    flatten
+    (str/join "-"))
+  )
 
 (defnc leaflet-map []
   (hooks/use-effect
@@ -328,7 +342,7 @@
          (d/p "No stands added yet.")
          (map (fn [stand]
                 (d/div
-                 {:key (str (:name stand) "-" (:coordinate stand))
+                 {:key (stand-key stand)
                   :class "stand-item"}
                  (d/div
                   {:class "stand-header"}
