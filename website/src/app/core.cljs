@@ -125,7 +125,7 @@
                                                                               (fn [prev]
                                                                                 (assoc prev
                                                                                        :coordinate (.. % -target -value))))
-                                                                  :style {:flex-grow 1 :margin-right "10px"}})
+                                                                  :class "coordinate-input"})
                                                         (d/button {:type "button"
                                                                    :class "location-btn"
                                                                    :onClick (fn []
