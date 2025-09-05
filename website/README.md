@@ -6,16 +6,7 @@ A single page application built with ClojureScript and Helix (React wrapper).
 
 - ClojureScript app with Helix (React wrapper)
 - Counter component with increment/decrement
-- Todo app with add/toggle/delete functionality  
 - Development server with hot reload
-
-## Technologies
-
-- ClojureScript 1.11.132
-- Clojure 1.12.1
-- Helix 0.2.1
-- React 18
-- Shadow-cljs for build tooling
 
 ## Getting Started
 
@@ -28,7 +19,7 @@ npm install
 ### Run Development Server
 
 ```bash
-npx shadow-cljs watch app
+npx shadow-cljs watch frontend
 ```
 
 If the server was already running, stop it with Ctrl+C and restart it.
