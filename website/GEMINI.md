@@ -2,3 +2,4 @@
 - ensure braces and parentheses are matched in new code
 - prefer to create new components instead of inline code
 - name new symbols in kebab-case-style, and not UpperCamel
+- when trying to fix a syntax error, focus on fixing it in code you already changed.
