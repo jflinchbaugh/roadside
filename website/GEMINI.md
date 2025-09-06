@@ -1,3 +1,4 @@
 - keep style in stylesheet
 - ensure braces and parentheses are matched in new code
 - prefer to create new components instead of inline code
+- name new symbols in kebab-case-style, and not UpperCamel
