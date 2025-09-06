@@ -10,6 +10,7 @@
 
 (def map-home [40.0379 -76.3055])
 
+; utils
 (defn in-a-week []
   (let [date (js/Date.)
         week-later (+ (.getTime date) (* 7 24 60 60 1000))]
@@ -60,6 +61,8 @@
     (.addTo tl m)
     m))
 
+; components
+
 (defnc leaflet-map [{:keys [stands]}]
   (let [[stand-map set-stand-map] (hooks/use-state nil)
         [layer-group set-layer-group] (hooks/use-state nil)]
@@ -78,9 +81,9 @@
            new-layer-group (when (not (empty? locations))
                              (js/L.layerGroup (clj->js locations)))
            _ (tel/log! :info {:locations-to-map locations})]
+       (when layer-group
+         (.removeLayer ^js stand-map layer-group))
        (when new-layer-group
-         (when layer-group
-           (.removeLayer ^js stand-map layer-group))
          (tel/log! :info {:layer-group new-layer-group})
          (.addTo ^js new-layer-group stand-map)
          (set-layer-group new-layer-group)))))
@@ -92,61 +95,62 @@
    {:class "stands-list"}
    (if (empty? stands)
      (d/p "No stands added yet.")
-     (map (fn [stand]
+     (map
+      (fn [stand]
+        (d/div
+         {:key (stand-key stand)
+          :class "stand-item"}
+         (d/div
+          {:class "stand-header"}
+          (d/h4 (:name stand))
+          (d/div
+           {:class "stand-actions"}
+           (d/button
+            {:class "edit-stand-btn"
+             :onClick #(do (set-editing-stand stand)
+                           (set-form-data
+                            (assoc stand
+                                   :town (:town stand)
+                                   :state (:state stand)
+                                   :address (:address stand)
+                                   :notes (:notes stand)))
+                           (set-show-form true))
+             :title "Edit this stand"}
+            "Edit")
+           (d/button
+            {:class "delete-stand-btn"
+             :onClick #(set-stands (fn [current-stands]
+                                     (vec (remove #{stand} current-stands))))
+             :title "Delete this stand"}
+            "Delete")))
+         (d/p (:coordinate stand))
+         (when (not (empty? (:address stand)))
+           (d/p (:address stand)))
+         (when (not (empty? (:town stand)))
+           (d/p (str (:town stand) ", " (:state stand))))
+         (when (not (empty? (:expiration stand)))
+           (d/p
+            {:class "expiration-date"}
+            (d/strong "Expires: ")
+            (:expiration stand)))
+         (when (not (empty? (:products stand)))
+           (d/div
+            {:class "stand-products"}
+            (d/strong "Products: ")
             (d/div
-             {:key (stand-key stand)
-              :class "stand-item"}
-             (d/div
-              {:class "stand-header"}
-              (d/h4 (:name stand))
-              (d/div
-               {:class "stand-actions"}
-               (d/button
-                {:class "edit-stand-btn"
-                 :onClick #(do (set-editing-stand stand)
-                               (set-form-data
-                                (assoc stand
-                                       :town (:town stand)
-                                       :state (:state stand)
-                                       :address (:address stand)
-                                       :notes (:notes stand)))
-                               (set-show-form true))
-                 :title "Edit this stand"}
-                "Edit")
-               (d/button
-                {:class "delete-stand-btn"
-                 :onClick #(set-stands (fn [current-stands]
-                                         (vec (remove #{stand} current-stands))))
-                 :title "Delete this stand"}
-                "Delete")))
-             (d/p (:coordinate stand))
-             (when (not (empty? (:address stand)))
-               (d/p (:address stand)))
-             (when (not (empty? (:town stand)))
-               (d/p (str (:town stand) ", " (:state stand))))
-             (when (not (empty? (:expiration stand)))
-               (d/p
-                {:class "expiration-date"}
-                (d/strong "Expires: ")
-                (:expiration stand)))
-             (when (not (empty? (:products stand)))
-               (d/div
-                {:class "stand-products"}
-                (d/strong "Products: ")
-                (d/div
-                 {:class "products-tags"}
-                 (map (fn [product]
-                        (d/span
-                         {:key product
-                          :class "product-tag"}
-                         product))
-                      (:products stand)))))
-             (when (not (empty? (:notes stand)))
-               (d/p
-                {:class "stand-notes"}
-                (d/strong "Notes: ")
-                (:notes stand)))))
-          stands))))
+             {:class "products-tags"}
+             (map (fn [product]
+                    (d/span
+                     {:key product
+                      :class "product-tag"}
+                     product))
+                  (:products stand)))))
+         (when (not (empty? (:notes stand)))
+           (d/p
+            {:class "stand-notes"}
+            (d/strong "Notes: ")
+            (:notes stand)))))
+      stands))))
 
 (defnc app []
   (let [default-expiration (in-a-week)
