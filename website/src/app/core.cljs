@@ -127,8 +127,8 @@
             {:class "delete-stand-btn"
              :onClick #(set-stands (fn [current-stands]
                                      (->> current-stands
-                                       (remove #{stand})
-                                       vec)))
+                                          (remove #{stand})
+                                          vec)))
              :title "Delete this stand"}
             "Delete")))
          (d/p (:coordinate stand))
@@ -233,7 +233,7 @@
                                         current-stands)
                                         (do
                                           (js/alert
-                                            "This stand already exists!")
+                                           "This stand already exists!")
                                           current-stands)
                                         (conj current-stands form-data)))))
                       (set-show-form false))}
@@ -404,6 +404,17 @@
             :onClick #(set-show-form false)}
            "Cancel"))))))))
 
+(defnc header []
+  (d/header
+   {:class "header"}
+   (d/img
+    {:src "images/apples.png"
+     :alt "Apple Logo"
+     :class "logo"})
+   (d/h1
+    {:class "main-header"}
+    "Roadside Stands")))
+
 (defnc app []
   (let [[stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
@@ -422,15 +433,8 @@
 
     (d/div
      {:class "app-container"}
-     (d/header
-      {:class "header"}
-      (d/img
-       {:src "images/apples.png"
-        :alt "Apple Logo"
-        :class "logo"})
-      (d/h1
-       {:class "main-header"}
-       "Roadside Stands"))
+
+     ($ header)
 
      (d/div
       {:class "content"}
