@@ -8,6 +8,22 @@
             [clojure.string :as str]
             [clojure.edn :as edn]))
 
+(defnc product-list [{:keys [stands]}]
+  (let [all-products (flatten (map :products stands))
+        unique-products (sort (distinct all-products))]
+    (d/div
+     {:class "product-list"}
+     (if (empty? unique-products)
+       (d/p "No products available yet.")
+       (d/div
+        {:class "products-tags"}
+        (map (fn [product]
+               (d/span
+                {:key product
+                 :class "product-tag"}
+                product))
+             unique-products))))))
+
 (def map-home [40.0379 -76.3055])
 
 ; utils
@@ -465,6 +481,8 @@
        {:class "add-stand-btn"
         :onClick #(set-show-form true)}
        "Add Stand")
+
+      ($ product-list {:stands stands})
 
       ($ stand-form
          {:form-data form-data
