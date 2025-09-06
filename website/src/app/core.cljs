@@ -295,20 +295,12 @@
                         (set-stands
                          (partial add-stand form-data)))
                       (set-show-form false))}
-  #_[{:keys
-    [coordinate-input-ref
-     is-locating
-     set-is-locating
-     form-data
-     set-form-data]}]
          ($ location-input
             {:coordinate-input-ref coordinate-input-ref
              :is-locating is-locating
              :set-is-locating set-is-locating
              :form-data form-data
              :set-form-data set-form-data})
-
-         ;; location form 
          (d/div
           {:class "form-group"}
           (d/label "Stand Name:")
