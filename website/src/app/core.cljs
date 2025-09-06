@@ -76,16 +76,77 @@
                       (remove #{[nil]})
                       (map make-marker))
            new-layer-group (when (not (empty? locations))
-                        (js/L.layerGroup (clj->js locations)))
+                             (js/L.layerGroup (clj->js locations)))
            _ (tel/log! :info {:locations-to-map locations})]
        (when new-layer-group
          (when layer-group
            (.removeLayer ^js stand-map layer-group))
          (tel/log! :info {:layer-group new-layer-group})
          (.addTo ^js new-layer-group stand-map)
-         (set-layer-group new-layer-group)
-         ))))
+         (set-layer-group new-layer-group)))))
   (d/div {:id "map-container"}))
+
+(defnc stands-list
+  [{:keys [stands set-stands set-editing-stand set-form-data set-show-form]}]
+  (d/div
+   {:class "stands-list"}
+   (if (empty? stands)
+     (d/p "No stands added yet.")
+     (map (fn [stand]
+            (d/div
+             {:key (stand-key stand)
+              :class "stand-item"}
+             (d/div
+              {:class "stand-header"}
+              (d/h4 (:name stand))
+              (d/div
+               {:class "stand-actions"}
+               (d/button
+                {:class "edit-stand-btn"
+                 :onClick #(do (set-editing-stand stand)
+                               (set-form-data
+                                (assoc stand
+                                       :town (:town stand)
+                                       :state (:state stand)
+                                       :address (:address stand)
+                                       :notes (:notes stand)))
+                               (set-show-form true))
+                 :title "Edit this stand"}
+                "Edit")
+               (d/button
+                {:class "delete-stand-btn"
+                 :onClick #(set-stands (fn [current-stands]
+                                         (vec (remove #{stand} current-stands))))
+                 :title "Delete this stand"}
+                "Delete")))
+             (d/p (:coordinate stand))
+             (when (not (empty? (:address stand)))
+               (d/p (:address stand)))
+             (when (not (empty? (:town stand)))
+               (d/p (str (:town stand) ", " (:state stand))))
+             (when (not (empty? (:expiration stand)))
+               (d/p
+                {:class "expiration-date"}
+                (d/strong "Expires: ")
+                (:expiration stand)))
+             (when (not (empty? (:products stand)))
+               (d/div
+                {:class "stand-products"}
+                (d/strong "Products: ")
+                (d/div
+                 {:class "products-tags"}
+                 (map (fn [product]
+                        (d/span
+                         {:key product
+                          :class "product-tag"}
+                         product))
+                      (:products stand)))))
+             (when (not (empty? (:notes stand)))
+               (d/p
+                {:class "stand-notes"}
+                (d/strong "Notes: ")
+                (:notes stand)))))
+          stands))))
 
 (defnc app []
   (let [default-expiration (in-a-week)
@@ -137,7 +198,7 @@
        js/undefined))
 
     (d/div
-     {:class "app-container"} ; Removed the premature closing parenthesis
+     {:class "app-container"}
      (d/header
       {:class "header"}
       (d/img
@@ -372,66 +433,12 @@
                               :expiration default-expiration
                               :notes ""}))}
              "Cancel"))))))
-
-      (d/div
-       {:class "stands-list"}
-       (if (empty? stands)
-         (d/p "No stands added yet.")
-         (map (fn [stand]
-                (d/div
-                 {:key (stand-key stand)
-                  :class "stand-item"}
-                 (d/div
-                  {:class "stand-header"}
-                  (d/h4 (:name stand))
-                  (d/div
-                   {:class "stand-actions"}
-                   (d/button
-                    {:class "edit-stand-btn"
-                     :onClick #(do (set-editing-stand stand)
-                                   (set-form-data
-                                    (assoc stand
-                                           :town (:town stand)
-                                           :state (:state stand)
-                                           :address (:address stand)
-                                           :notes (:notes stand)))
-                                   (set-show-form true))
-                     :title "Edit this stand"}
-                    "Edit")
-                   (d/button
-                    {:class "delete-stand-btn"
-                     :onClick #(set-stands (fn [current-stands]
-                                             (vec (remove #{stand} current-stands))))
-                     :title "Delete this stand"}
-                    "Delete")))
-                 (d/p (:coordinate stand))
-                 (when (not (empty? (:address stand)))
-                   (d/p (:address stand)))
-                 (when (not (empty? (:town stand)))
-                   (d/p (str (:town stand) ", " (:state stand))))
-                 (when (not (empty? (:expiration stand)))
-                   (d/p
-                    {:class "expiration-date"}
-                    (d/strong "Expires: ")
-                    (:expiration stand)))
-                 (when (not (empty? (:products stand)))
-                   (d/div
-                    {:class "stand-products"}
-                    (d/strong "Products: ")
-                    (d/div
-                     {:class "products-tags"}
-                     (map (fn [product]
-                            (d/span
-                             {:key product
-                              :class "product-tag"}
-                             product))
-                          (:products stand)))))
-                 (when (not (empty? (:notes stand)))
-                   (d/p
-                    {:class "stand-notes"}
-                    (d/strong "Notes: ")
-                    (:notes stand)))))
-              stands)))))))
+      ($ stands-list
+         {:stands stands
+          :set-stands set-stands
+          :set-editing-stand set-editing-stand
+          :set-form-data set-form-data
+          :set-show-form set-show-form})))))
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]
