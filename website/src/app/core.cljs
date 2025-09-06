@@ -5,9 +5,10 @@
             [helix.dom :as d]
             [taoensso.telemere :as tel]
             [cljs.reader]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.edn :as edn]))
 
-(def map-home #js [40.0379 -76.3055])
+(def map-home [40.0379 -76.3055])
 
 (defn in-a-week []
   (let [date (js/Date.)
@@ -25,34 +26,65 @@
          (assoc
           prev
           :products (conj (:products prev) current-product)))))))
-(defn stand-key [stand]
-  (->>
-    stand
-    ((juxt
-       :name
-       :coordinates
-       :address
-       :town
-       :state
-       :products))
-    flatten
-    (str/join "-"))
-  )
 
-(defnc leaflet-map []
-  (hooks/use-effect
-   []
-   (let [map-obj (.setView
-                  (js/L.map "map-container")
-                  map-home 10)
-         home-marker (js/L.marker map-home)]
-     (.addTo
-      (js/L.tileLayer
-       "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-       #js {"attribution" "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"})
-      map-obj)
-     (.bindTooltip home-marker "home")
-     (.addTo home-marker map-obj)))
+(defn stand-key
+  [stand]
+  (->>
+   stand
+   ((juxt
+     :name
+     :coordinates
+     :address
+     :town
+     :state
+     :products))
+   flatten
+   (str/join "-")))
+
+(defn parse-coordinates
+  [coords]
+  (->> (str/split coords #", *")
+       (map str/trim)
+       (map parse-double)))
+
+(defn make-marker
+  [coord]
+  (let [marker (js/L.marker (clj->js coord))]
+    marker))
+
+(defn- init-map []
+  (let [m (js/L.map "map-container")
+        tl (js/L.tileLayer
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")]
+    (.setView m (clj->js map-home) 10)
+    (.addTo tl m)
+    m))
+
+(defnc leaflet-map [{:keys [stands]}]
+  (let [[stand-map set-stand-map] (hooks/use-state nil)
+        [layer-group set-layer-group] (hooks/use-state nil)]
+    (hooks/use-effect
+     :once
+     (set-stand-map (init-map)))
+    (hooks/use-effect
+     [stands]
+     (tel/log! :info {:effect-stands stands})
+     (let [locations (->>
+                      stands
+                      (map :coordinate)
+                      (map parse-coordinates)
+                      (remove #{[nil]})
+                      (map make-marker))
+           new-layer-group (when (not (empty? locations))
+                        (js/L.layerGroup (clj->js locations)))
+           _ (tel/log! :info {:locations-to-map locations})]
+       (when new-layer-group
+         (when layer-group
+           (.removeLayer ^js stand-map layer-group))
+         (tel/log! :info {:layer-group new-layer-group})
+         (.addTo ^js new-layer-group stand-map)
+         (set-layer-group new-layer-group)
+         ))))
   (d/div {:id "map-container"}))
 
 (defnc app []
@@ -75,14 +107,14 @@
         coordinate-input-ref (hooks/use-ref nil)]
 
     (hooks/use-effect
-     [] ;; Run once on mount
+     :once
      (let [saved-stands (js/localStorage.getItem "roadside-stands")]
        (when saved-stands
-         (set-stands (cljs.reader/read-string saved-stands)))))
+         (set-stands (edn/read-string saved-stands)))))
 
     (hooks/use-effect
-     [stands] ;; Run whenever 'stands' changes
-     (js/localStorage.setItem "roadside-stands" (pr-str stands)))
+     [stands]
+     (js/localStorage.setItem "roadside-stands" stands))
 
     (hooks/use-effect
      [show-form]
@@ -118,7 +150,7 @@
 
      (d/div
       {:class "content"}
-      ($ leaflet-map)
+      ($ leaflet-map {:stands stands})
 
       (d/button
        {:class "add-stand-btn"
@@ -296,8 +328,8 @@
               {:type "button"
                :class "add-product-btn"
                :onClick (fn []
-                            (add-product-to-form-data current-product form-data set-form-data)
-                            (set-current-product ""))}
+                          (add-product-to-form-data current-product form-data set-form-data)
+                          (set-current-product ""))}
               "Add")))
            (d/div
             {:class "form-group"}
