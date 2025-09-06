@@ -69,6 +69,7 @@
     (hooks/use-effect
      :once
      (set-stand-map (init-map)))
+
     (hooks/use-effect
      [stands]
      (tel/log! :info {:effect-stands stands})
@@ -156,20 +157,15 @@
   [{:keys [form-data
            set-form-data
            editing-stand
+           set-editing-stand
            show-form
            set-show-form
-           set-editing-stand
-           coordinate-input-ref
            stands
            set-stands]}]
   (let [[current-product set-current-product] (hooks/use-state "")
         [location-error set-location-error] (hooks/use-state nil)
-        [is-locating set-is-locating] (hooks/use-state false)]
-    (hooks/use-effect
-     [show-form]
-     (when show-form
-       (.focus @coordinate-input-ref)))
-
+        [is-locating set-is-locating] (hooks/use-state false)
+        coordinate-input-ref (hooks/use-ref nil)]
     (hooks/use-effect
      [show-form]
      (when-not show-form
@@ -187,10 +183,13 @@
     (hooks/use-effect
      [show-form]
      (when show-form
-       (let [handle-keydown (fn [e]
-                              (when (= (.-key e) "Escape")
-                                (set-show-form false)))]
-         (.addEventListener js/document "keydown" handle-keydown))))
+       (.addEventListener
+        js/document
+        "keydown"
+        (fn [e]
+          (when (= (.-key e) "Escape")
+            (set-show-form false))))
+       (.focus @coordinate-input-ref)))
 
     (when show-form
       (d/div
@@ -259,7 +258,7 @@
                              (set-is-locating false)))
                          (fn [error]
                            (tel/log! :error
-                             {:failed-location (.-message error)})
+                                     {:failed-location (.-message error)})
                            (set-location-error
                             "Please try again or enter location manually.")
                            (set-is-locating false))))}
@@ -330,9 +329,9 @@
                                   (assoc
                                    prev
                                    :products (->> prev
-                                               :products
-                                               (remove #{product})
-                                               vec))))}
+                                                  :products
+                                                  (remove #{product})
+                                                  vec))))}
                     "×")))
                 (:products form-data)))
           (d/div
@@ -346,18 +345,18 @@
                           (when (= (.-key e) "Enter")
                             (.preventDefault e)
                             (add-product-to-form-data
-                              current-product
-                              form-data
-                              set-form-data)
+                             current-product
+                             form-data
+                             set-form-data)
                             (set-current-product "")))})
            (d/button
             {:type "button"
              :class "add-product-btn"
              :onClick (fn []
                         (add-product-to-form-data
-                          current-product
-                          form-data
-                          set-form-data)
+                         current-product
+                         form-data
+                         set-form-data)
                         (set-current-product ""))}
             "Add")))
          (d/div
@@ -396,8 +395,7 @@
   (let [[stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
         [editing-stand set-editing-stand] (hooks/use-state nil)
-        [form-data set-form-data] (hooks/use-state {})
-        coordinate-input-ref (hooks/use-ref nil)]
+        [form-data set-form-data] (hooks/use-state {})]
 
     (hooks/use-effect
      :once
@@ -437,7 +435,6 @@
           :set-show-form set-show-form
           :editing-stand editing-stand
           :set-editing-stand set-editing-stand
-          :coordinate-input-ref coordinate-input-ref
           :stands stands
           :set-stands set-stands})
 
