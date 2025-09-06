@@ -218,7 +218,12 @@
                                            %)
                                         current-stands))))
                            ;; Add new stand
-                        (set-stands #(conj % form-data)))
+                        (set-stands (fn [current-stands]
+                                      (let [new-stand-key (stand-key form-data)]
+                                        (if (some #(= new-stand-key (stand-key %)) current-stands)
+                                          (do (js/alert "This stand already exists!")
+                                              current-stands) ; Return current-stands unchanged
+                                          (conj current-stands form-data))))))
                       (set-show-form false))}
          (d/div
           {:class "form-group"}
