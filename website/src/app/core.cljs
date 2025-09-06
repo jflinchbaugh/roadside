@@ -61,6 +61,29 @@
     (.addTo tl m)
     m))
 
+(defn update-stand
+  [form-data editing-stand current-stands]
+  (vec
+   (map
+    #(if
+      (= % editing-stand)
+       form-data
+       %)
+    current-stands)))
+
+(defn add-stand
+  [form-data current-stands]
+  (if
+   (some
+    #(=
+      (stand-key form-data)
+      (stand-key %))
+    current-stands)
+    (do
+      (js/alert
+       "This stand already exists!")
+      current-stands)
+    (conj current-stands form-data)))
 ; components
 
 (defnc leaflet-map [{:keys [stands]}]
@@ -160,6 +183,58 @@
             (:notes stand)))))
       stands))))
 
+(defnc location-input
+  [{:keys
+    [coordinate-input-ref
+     is-locating
+     set-is-locating
+     form-data
+     set-form-data]}]
+  (let [[location-error set-location-error] (hooks/use-state nil)]
+    (d/div
+     {:class "form-group"}
+     (d/label "Coordinate:")
+     (d/div
+      {:class "coordinate-input-group"}
+      (d/input
+       {:type "text"
+        :ref coordinate-input-ref
+        :value (:coordinate form-data)
+        :onChange #(set-form-data
+                    (fn [prev]
+                      (assoc
+                       prev
+                       :coordinate (.. % -target -value))))
+        :class "coordinate-input"})
+      (d/button
+       {:type "button"
+        :class "location-btn"
+        :onClick (fn []
+                   (set-location-error nil)
+                   (set-is-locating true)
+                   (js/navigator.geolocation.getCurrentPosition
+                    (fn [position]
+                      (let [coords (.-coords position)
+                            lat (.-latitude coords)
+                            lng (.-longitude coords)]
+                        (set-form-data
+                         (fn [prev]
+                           (assoc
+                            prev
+                            :coordinate (str lat ", " lng))))
+                        (set-is-locating false)))
+                    (fn [error]
+                      (tel/log! :error
+                                {:failed-location (.-message error)})
+                      (set-location-error
+                       "Please try again or enter location manually.")
+                      (set-is-locating false))))}
+       "\u2316"))
+     (when location-error
+       (d/p
+        {:class "error-message"}
+        location-error)))))
+
 (defnc stand-form
   [{:keys [form-data
            set-form-data
@@ -170,7 +245,6 @@
            stands
            set-stands]}]
   (let [[current-product set-current-product] (hooks/use-state "")
-        [location-error set-location-error] (hooks/use-state nil)
         [is-locating set-is-locating] (hooks/use-state false)
         coordinate-input-ref (hooks/use-ref nil)]
     (hooks/use-effect
@@ -215,71 +289,26 @@
                       (.preventDefault e)
                       (if editing-stand
                         ;; Update existing stand
-                        (set-stands (fn [current-stands]
-                                      (vec
-                                       (map
-                                        #(if
-                                          (= % editing-stand)
-                                           form-data
-                                           %)
-                                        current-stands))))
+                        (set-stands
+                         (partial update-stand form-data editing-stand))
                         ;; Add new stand
-                        (set-stands (fn [current-stands]
-                                      (if
-                                       (some
-                                        #(=
-                                          (stand-key form-data)
-                                          (stand-key %))
-                                        current-stands)
-                                        (do
-                                          (js/alert
-                                           "This stand already exists!")
-                                          current-stands)
-                                        (conj current-stands form-data)))))
+                        (set-stands
+                         (partial add-stand form-data)))
                       (set-show-form false))}
-         (d/div
-          {:class "form-group"}
-          (d/label "Coordinate:")
-          (d/div
-           {:class "coordinate-input-group"}
-           (d/input
-            {:type "text"
-             :ref coordinate-input-ref
-             :value (:coordinate form-data)
-             :onChange #(set-form-data
-                         (fn [prev]
-                           (assoc
-                            prev
-                            :coordinate (.. % -target -value))))
-             :class "coordinate-input"})
-           (d/button
-            {:type "button"
-             :class "location-btn"
-             :onClick (fn []
-                        (set-location-error nil)
-                        (set-is-locating true)
-                        (js/navigator.geolocation.getCurrentPosition
-                         (fn [position]
-                           (let [coords (.-coords position)
-                                 lat (.-latitude coords)
-                                 lng (.-longitude coords)]
-                             (set-form-data
-                              (fn [prev]
-                                (assoc
-                                 prev
-                                 :coordinate (str lat ", " lng))))
-                             (set-is-locating false)))
-                         (fn [error]
-                           (tel/log! :error
-                                     {:failed-location (.-message error)})
-                           (set-location-error
-                            "Please try again or enter location manually.")
-                           (set-is-locating false))))}
-            "\u2316")))
-         (when location-error
-           (d/p
-            {:class "error-message"}
-            location-error))
+  #_[{:keys
+    [coordinate-input-ref
+     is-locating
+     set-is-locating
+     form-data
+     set-form-data]}]
+         ($ location-input
+            {:coordinate-input-ref coordinate-input-ref
+             :is-locating is-locating
+             :set-is-locating set-is-locating
+             :form-data form-data
+             :set-form-data set-form-data})
+
+         ;; location form 
          (d/div
           {:class "form-group"}
           (d/label "Stand Name:")
