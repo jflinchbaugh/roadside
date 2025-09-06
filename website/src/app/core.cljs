@@ -91,7 +91,12 @@
   (d/div {:id "map-container"}))
 
 (defnc stands-list
-  [{:keys [stands set-stands set-editing-stand set-form-data set-show-form]}]
+  [{:keys
+    [stands
+     set-stands
+     set-editing-stand
+     set-form-data
+     set-show-form]}]
   (d/div
    {:class "stands-list"}
    (if (empty? stands)
@@ -121,7 +126,9 @@
            (d/button
             {:class "delete-stand-btn"
              :onClick #(set-stands (fn [current-stands]
-                                     (vec (remove #{stand} current-stands))))
+                                     (->> current-stands
+                                       (remove #{stand})
+                                       vec)))
              :title "Delete this stand"}
             "Delete")))
          (d/p (:coordinate stand))
@@ -207,7 +214,7 @@
          {:onSubmit (fn [e]
                       (.preventDefault e)
                       (if editing-stand
-                           ;; Update existing stand
+                        ;; Update existing stand
                         (set-stands (fn [current-stands]
                                       (vec
                                        (map
@@ -216,13 +223,19 @@
                                            form-data
                                            %)
                                         current-stands))))
-                           ;; Add new stand
+                        ;; Add new stand
                         (set-stands (fn [current-stands]
-                                      (let [new-stand-key (stand-key form-data)]
-                                        (if (some #(= new-stand-key (stand-key %)) current-stands)
-                                          (do (js/alert "This stand already exists!")
-                                              current-stands) ; Return current-stands unchanged
-                                          (conj current-stands form-data))))))
+                                      (if
+                                       (some
+                                        #(=
+                                          (stand-key form-data)
+                                          (stand-key %))
+                                        current-stands)
+                                        (do
+                                          (js/alert
+                                            "This stand already exists!")
+                                          current-stands)
+                                        (conj current-stands form-data)))))
                       (set-show-form false))}
          (d/div
           {:class "form-group"}
