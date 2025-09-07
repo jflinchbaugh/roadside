@@ -152,7 +152,8 @@
      set-editing-stand
      set-form-data
      set-show-form
-     selected-stand]}]
+     selected-stand
+     set-selected-stand]}]
   (d/div
    {:class "stands-list"}
    (if (empty? stands)
@@ -161,7 +162,8 @@
       (fn [stand]
         (d/div
          {:key (stand-key stand)
-          :class (str "stand-item" (when (= (stand-key stand) (stand-key selected-stand)) " selected-stand"))}
+          :class (str "stand-item" (when (= (stand-key stand) (stand-key selected-stand)) " selected-stand"))
+          :onClick #(do (set-selected-stand stand))}
          (d/div
           {:class "stand-header"}
           (d/h4 (:name stand))
@@ -530,7 +532,8 @@
           :set-editing-stand set-editing-stand
           :set-form-data set-form-data
           :set-show-form set-show-form
-          :selected-stand selected-stand})))))
+          :selected-stand selected-stand
+          :set-selected-stand set-selected-stand})))))
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]
