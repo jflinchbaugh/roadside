@@ -8,7 +8,7 @@
             [clojure.string :as str]
             [clojure.edn :as edn]))
 
-(defnc product-list [{:keys [stands]}]
+(defnc product-list [{:keys [stands set-product-filter product-filter]}]
   (let [all-products (flatten (map :products stands))
         unique-products (sort (distinct all-products))]
     (d/div
@@ -20,7 +20,8 @@
         (map (fn [product]
                (d/span
                 {:key product
-                 :class "product-tag"}
+                 :class (str "product-tag" (when (= product product-filter) " product-tag-active"))
+                 :onClick #(set-product-filter product)}
                 product))
              unique-products))))))
 
@@ -456,7 +457,8 @@
   (let [[stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
         [editing-stand set-editing-stand] (hooks/use-state nil)
-        [form-data set-form-data] (hooks/use-state {})]
+        [form-data set-form-data] (hooks/use-state {})
+        [product-filter set-product-filter] (hooks/use-state nil)]
 
     (hooks/use-effect
      :once
@@ -475,14 +477,22 @@
 
      (d/div
       {:class "content"}
-      ($ leaflet-map {:stands stands})
+      ($ leaflet-map {:stands (if product-filter
+                                (filter #(some (fn [p] (= p product-filter)) (:products %)) stands)
+                                stands)})
 
       (d/button
        {:class "add-stand-btn"
         :onClick #(set-show-form true)}
        "Add Stand")
 
-      ($ product-list {:stands stands})
+      ($ product-list {:stands stands :set-product-filter set-product-filter :product-filter product-filter})
+
+      (when product-filter
+        (d/button
+         {:class "clear-filter-btn"
+          :onClick #(set-product-filter nil)}
+         "Clear Filter"))
 
       ($ stand-form
          {:form-data form-data
@@ -495,7 +505,9 @@
           :set-stands set-stands})
 
       ($ stands-list
-         {:stands stands
+         {:stands (if product-filter
+                    (filter #(some (fn [p] (= p product-filter)) (:products %)) stands)
+                    stands)
           :set-stands set-stands
           :set-editing-stand set-editing-stand
           :set-form-data set-form-data
