@@ -67,7 +67,7 @@
 
 
 (defn make-marker
-  [{:keys [coord stand]}]
+  [{:keys [coord stand]} set-selected-stand]
   (tel/log! :info {:stand-data stand})
   (let [marker (js/L.marker (clj->js coord))
         popup-content (str "<b>" (:name stand) "</b><br>"
@@ -79,7 +79,9 @@
                                "<br>"))
                            )]
     (.bindPopup marker popup-content)
-    (.on marker "click" #(.openPopup marker))
+    (.on marker "click" #(do
+                           (.openPopup marker)
+                           (set-selected-stand stand)))
     marker))
 
 (defn- init-map []
@@ -115,7 +117,7 @@
     (conj current-stands form-data)))
 ; components
 
-(defnc leaflet-map [{:keys [stands]}]
+(defnc leaflet-map [{:keys [stands set-selected-stand]}]
   (let [[stand-map set-stand-map] (hooks/use-state nil)
         [layer-group set-layer-group] (hooks/use-state nil)]
     (hooks/use-effect
@@ -131,7 +133,7 @@
                              {:coord (parse-coordinates (:coordinate s))
                               :stand s}))
                       (remove (fn [s] (#{[nil]} (:coord s))))
-                      (map make-marker))
+                      (map (fn [{:keys [coord stand]}] (make-marker {:coord coord :stand stand} set-selected-stand))))
            new-layer-group (when (not (empty? locations))
                              (js/L.layerGroup (clj->js locations)))
            _ (tel/log! :info {:locations-to-map locations})]
@@ -149,7 +151,8 @@
      set-stands
      set-editing-stand
      set-form-data
-     set-show-form]}]
+     set-show-form
+     selected-stand]}]
   (d/div
    {:class "stands-list"}
    (if (empty? stands)
@@ -158,7 +161,7 @@
       (fn [stand]
         (d/div
          {:key (stand-key stand)
-          :class "stand-item"}
+          :class (str "stand-item" (when (= (stand-key stand) (stand-key selected-stand)) " selected-stand"))}
          (d/div
           {:class "stand-header"}
           (d/h4 (:name stand))
@@ -471,7 +474,8 @@
         [show-form set-show-form] (hooks/use-state false)
         [editing-stand set-editing-stand] (hooks/use-state nil)
         [form-data set-form-data] (hooks/use-state {})
-        [product-filter set-product-filter] (hooks/use-state nil)]
+        [product-filter set-product-filter] (hooks/use-state nil)
+        [selected-stand set-selected-stand] (hooks/use-state nil)]
 
     (hooks/use-effect
      :once
@@ -492,7 +496,8 @@
       {:class "content"}
       ($ leaflet-map {:stands (if product-filter
                                 (filter #(some (fn [p] (= p product-filter)) (:products %)) stands)
-                                stands)})
+                                stands)
+                      :set-selected-stand set-selected-stand})
 
       (d/button
        {:class "add-stand-btn"
@@ -524,7 +529,8 @@
           :set-stands set-stands
           :set-editing-stand set-editing-stand
           :set-form-data set-form-data
-          :set-show-form set-show-form})))))
+          :set-show-form set-show-form
+          :selected-stand selected-stand})))))
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]

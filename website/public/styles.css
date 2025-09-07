@@ -342,3 +342,8 @@ body {
 .clear-filter-btn:hover {
   background-color: #cc0000;
 }
+
+.stand-item.selected-stand {
+  background-color: #e0e0e0; /* Or any highlighting style you prefer */
+  border: 2px solid #007bff;
+}
