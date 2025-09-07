@@ -71,11 +71,13 @@
   (tel/log! :info {:stand-data stand})
   (let [marker (js/L.marker (clj->js coord))
         popup-content (str "<b>" (:name stand) "</b><br>"
-                           (when (:address stand) (str (:address stand) "<br>"))
-                           (when (:town stand) (str (:town stand) ", " (:state stand) "<br>"))
-                           (when (not (empty? (:products stand))) (str "Products: " (clojure.string/join ", " (:products stand)) "<br>"))
-                           (when (:notes stand) (str "Notes: " (:notes stand) "<br>"))
-                           (when (:expiration stand) (str "Expires: " (:expiration stand))))]
+                           (when (not (empty? (:products stand)))
+                             (str
+                               (str/join
+                                 ", "
+                                 (:products stand))
+                               "<br>"))
+                           )]
     (.bindPopup marker popup-content)
     (.on marker "click" #(.openPopup marker))
     marker))
