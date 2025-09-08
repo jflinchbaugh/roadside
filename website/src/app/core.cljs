@@ -65,27 +65,25 @@
        (map str/trim)
        (map parse-double)))
 
-
 (defn make-marker
   [{:keys [coord stand set-selected-stand]}]
   (let [marker (js/L.marker (clj->js coord))
         popup-content (str "<b>" (:name stand) "</b><br>"
                            (when (not (empty? (:products stand)))
                              (str
-                               (str/join
-                                 ", "
-                                 (:products stand))
-                               "<br>"))
-                           )]
+                              (str/join
+                               ", "
+                               (:products stand))
+                              "<br>")))]
     (.bindPopup
-      marker
-      popup-content
-      (clj->js {"autoPanPadding" (js/L.point 100 100)}))
+     marker
+     popup-content
+     (clj->js {"autoPanPadding" (js/L.point 100 100)}))
     (.on marker "click" #(set-selected-stand stand))
     [stand marker]))
 
-(defn- init-map []
-  (let [m (js/L.map "map-container")
+(defn- init-map [div-id]
+  (let [m (js/L.map div-id)
         tl (js/L.tileLayer
             "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")]
     (.setView m (clj->js map-home) 10)
@@ -118,12 +116,12 @@
 
 ; components
 
-(defnc leaflet-map [{:keys [stands selected-stand set-selected-stand]}]
+(defnc leaflet-map [{:keys [div-id stands selected-stand set-selected-stand]}]
   (let [[stand-map set-stand-map] (hooks/use-state nil)
         [layer-group set-layer-group] (hooks/use-state nil)]
     (hooks/use-effect
      :once
-     (set-stand-map (init-map)))
+     (set-stand-map (init-map div-id)))
 
     (hooks/use-effect
      [stands selected-stand]
@@ -134,11 +132,11 @@
                               :stand s}))
                       (remove (fn [s] (#{[nil]} (:coord s))))
                       (map
-                        (fn [{:keys [coord stand]}]
-                          (make-marker
-                            {:coord coord
-                             :stand stand
-                             :set-selected-stand set-selected-stand}))))
+                       (fn [{:keys [coord stand]}]
+                         (make-marker
+                          {:coord coord
+                           :stand stand
+                           :set-selected-stand set-selected-stand}))))
            new-layer-group (when (not (empty? locations))
                              (js/L.layerGroup (clj->js (map second locations))))]
        (when layer-group
@@ -147,14 +145,14 @@
          (.addTo ^js new-layer-group stand-map)
          (set-layer-group new-layer-group)
          (some->>
-           locations
-           (filter
-             (fn [[s m]]
-               (= (stand-key selected-stand) (stand-key s))))
-           first
-           second
-           (#(.openPopup ^js %)))))))
-  (d/div {:id "map-container"}))
+          locations
+          (filter
+           (fn [[s m]]
+             (= (stand-key selected-stand) (stand-key s))))
+          first
+          second
+          (#(.openPopup ^js %)))))))
+  (d/div {:id div-id}))
 
 (defnc stands-list
   [{:keys
@@ -507,11 +505,13 @@
 
      (d/div
       {:class "content"}
-      ($ leaflet-map {:stands (if product-filter
-                                (filter #(some (fn [p] (= p product-filter)) (:products %)) stands)
-                                stands)
-                      :set-selected-stand set-selected-stand
-                      :selected-stand selected-stand})
+      ($ leaflet-map
+         {:div-id "map-container"
+          :stands (if product-filter
+                    (filter #(some (fn [p] (= p product-filter)) (:products %)) stands)
+                    stands)
+          :set-selected-stand set-selected-stand
+          :selected-stand selected-stand})
 
       (d/button
        {:class "add-stand-btn"
