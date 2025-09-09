@@ -355,3 +355,37 @@ body {
   background-color: #e0e0e0; /* Or any highlighting style you prefer */
   border: 2px solid #007bff;
 }
+
+.crosshairs {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid #999;
+    border-radius: 50%;
+    z-index: 1000;
+    pointer-events: none; /* Allow map interaction through the crosshairs */
+}
+
+.crosshairs::before,
+.crosshairs::after {
+    content: '';
+    position: absolute;
+    background-color: #999;
+}
+
+.crosshairs::before {
+    width: 2px;
+    height: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.crosshairs::after {
+    width: 100%;
+    height: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+}

@@ -118,7 +118,7 @@
 
 ; components
 
-(defnc leaflet-map [{:keys [div-id center zoom-level stands selected-stand set-selected-stand]}]
+(defnc leaflet-map [{:keys [div-id center zoom-level stands selected-stand set-selected-stand show-crosshairs]}]
   (let [[stand-map set-stand-map] (hooks/use-state nil)
         [layer-group set-layer-group] (hooks/use-state nil)]
     (hooks/use-effect
@@ -155,7 +155,10 @@
           first
           second
           (#(.openPopup ^js %)))))))
-  (d/div {:id div-id}))
+  (d/div {:id div-id
+          :style {:position "relative"}}
+    (when show-crosshairs
+      (d/div {:class "crosshairs"}))))
 
 (defnc stands-list
   [{:keys
@@ -243,7 +246,8 @@
      ($ leaflet-map
         {:div-id "map-form"
          :center (or (parse-coordinates (:coordinate form-data)) map-home)
-         :zoom-level 14})
+         :zoom-level 14
+         :show-crosshairs true})
      (d/label "Coordinate:")
      (d/div
       {:class "coordinate-input-group"}
