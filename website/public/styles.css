@@ -89,8 +89,9 @@ body {
   border-radius: 8px;
   min-width: 400px;
   max-width: 500px;
+  max-height: 90vh; /* Limit height to 90% of viewport height */
   position: relative;
-  overflow: hidden;
+  overflow-y: auto; /* Enable vertical scrolling */
 }
 
 .form-group {
