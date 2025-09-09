@@ -118,12 +118,17 @@
 
 ; components
 
-(defnc leaflet-map [{:keys [div-id center zoom-level stands selected-stand set-selected-stand show-crosshairs]}]
+(defnc leaflet-map [{:keys [div-id center zoom-level stands selected-stand set-selected-stand show-crosshairs set-coordinate-form-data]}]
   (let [[stand-map set-stand-map] (hooks/use-state nil)
         [layer-group set-layer-group] (hooks/use-state nil)]
     (hooks/use-effect
      :once
-     (set-stand-map (init-map div-id center zoom-level)))
+     (let [m (init-map div-id center zoom-level)]
+       (when set-coordinate-form-data
+         (.on m "moveend" (fn []
+                             (let [center (.getCenter m)]
+                               (set-coordinate-form-data (str (.-lat center) ", " (.-lng center)))))))
+       (set-stand-map m)))
 
     (hooks/use-effect
      [stands selected-stand]
@@ -247,7 +252,11 @@
         {:div-id "map-form"
          :center (or (parse-coordinates (:coordinate form-data)) map-home)
          :zoom-level 14
-         :show-crosshairs true})
+         :show-crosshairs true
+         :set-coordinate-form-data (fn [coord-str]
+                                     (set-form-data
+                                      (fn [prev]
+                                        (assoc prev :coordinate coord-str))))})
      (d/label "Coordinate:")
      (d/div
       {:class "coordinate-input-group"}
