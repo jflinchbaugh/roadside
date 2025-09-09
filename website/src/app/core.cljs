@@ -346,7 +346,7 @@
                           (set-show-form false))
                         ;; Add new stand
                         (let [new-stands (add-stand form-data stands)]
-                          (set-stands (fn [_] new-stands))
+                          (set-stands new-stands)
                           (when (not= new-stands stands)
                             (set-show-form false)))))}
          ($ location-input
