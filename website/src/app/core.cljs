@@ -51,7 +51,7 @@
    stand
    ((juxt
      :name
-     :coordinates
+     :coordinate
      :address
      :town
      :state
