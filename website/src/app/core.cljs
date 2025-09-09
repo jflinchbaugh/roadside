@@ -340,12 +340,15 @@
                       (.preventDefault e)
                       (if editing-stand
                         ;; Update existing stand
-                        (set-stands
-                         (partial update-stand form-data editing-stand))
+                        (do
+                          (set-stands
+                           (partial update-stand form-data editing-stand))
+                          (set-show-form false))
                         ;; Add new stand
-                        (set-stands
-                         (partial add-stand form-data)))
-                      (set-show-form false))}
+                        (let [new-stands (add-stand form-data stands)]
+                          (set-stands (fn [_] new-stands))
+                          (when (not= new-stands stands)
+                            (set-show-form false)))))}
          ($ location-input
             {:coordinate-input-ref coordinate-input-ref
              :is-locating is-locating
