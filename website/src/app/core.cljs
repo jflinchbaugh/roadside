@@ -61,9 +61,11 @@
 
 (defn parse-coordinates
   [coords]
-  (->> (str/split coords #", *")
-       (map str/trim)
-       (map parse-double)))
+  (let [res (->>
+             (str/split coords #", *")
+             (map str/trim)
+             (map parse-double))]
+    (when (= 2 (count res)) res)))
 
 (defn make-marker
   [{:keys [coord stand set-selected-stand]}]
@@ -82,11 +84,11 @@
     (.on marker "click" #(set-selected-stand stand))
     [stand marker]))
 
-(defn- init-map [div-id]
+(defn- init-map [div-id center zoom-level]
   (let [m (js/L.map div-id)
         tl (js/L.tileLayer
             "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")]
-    (.setView m (clj->js map-home) 10)
+    (.setView m (clj->js center) zoom-level)
     (.addTo tl m)
     m))
 
@@ -116,12 +118,12 @@
 
 ; components
 
-(defnc leaflet-map [{:keys [div-id stands selected-stand set-selected-stand]}]
+(defnc leaflet-map [{:keys [div-id center zoom-level stands selected-stand set-selected-stand]}]
   (let [[stand-map set-stand-map] (hooks/use-state nil)
         [layer-group set-layer-group] (hooks/use-state nil)]
     (hooks/use-effect
      :once
-     (set-stand-map (init-map div-id)))
+     (set-stand-map (init-map div-id center zoom-level)))
 
     (hooks/use-effect
      [stands selected-stand]
@@ -130,13 +132,14 @@
                       (map (fn [s]
                              {:coord (parse-coordinates (:coordinate s))
                               :stand s}))
-                      (remove (fn [s] (#{[nil]} (:coord s))))
+                      (remove (comp nil? :coord))
                       (map
                        (fn [{:keys [coord stand]}]
                          (make-marker
                           {:coord coord
                            :stand stand
                            :set-selected-stand set-selected-stand}))))
+           _ (tel/log! :info {:locations locations})
            new-layer-group (when (not (empty? locations))
                              (js/L.layerGroup (clj->js (map second locations))))]
        (when layer-group
@@ -237,6 +240,10 @@
   (let [[location-error set-location-error] (hooks/use-state nil)]
     (d/div
      {:class "form-group"}
+     ($ leaflet-map
+        {:div-id "map-form"
+         :center (or (parse-coordinates (:coordinate form-data)) map-home)
+         :zoom-level 14})
      (d/label "Coordinate:")
      (d/div
       {:class "coordinate-input-group"}
@@ -507,9 +514,11 @@
       {:class "content"}
       ($ leaflet-map
          {:div-id "map-container"
+          :center map-home
           :stands (if product-filter
                     (filter #(some (fn [p] (= p product-filter)) (:products %)) stands)
                     stands)
+          :zoom-level 10
           :set-selected-stand set-selected-stand
           :selected-stand selected-stand})
 

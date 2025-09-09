@@ -43,6 +43,13 @@ body {
   margin-bottom: 1rem; /* Add some space below the map */
 }
 
+#map-form {
+  height: 200px;
+  width: 100%;
+  margin: 0 auto;
+  margin-bottom: 1rem; /* Add some space below the map */
+}
+
 .coordinate-input {
   flex-grow: 1;
   margin-right: 10px;
