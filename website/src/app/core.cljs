@@ -118,7 +118,7 @@
 
 ; components
 
-(defnc leaflet-map [{:keys [div-id center zoom-level stands selected-stand set-selected-stand show-crosshairs set-coordinate-form-data]}]
+(defnc leaflet-map [{:keys [div-id center zoom-level stands selected-stand set-selected-stand show-crosshairs set-coordinate-form-data map-ref]}]
   (let [[stand-map set-stand-map] (hooks/use-state nil)
         [layer-group set-layer-group] (hooks/use-state nil)]
     (hooks/use-effect
@@ -128,6 +128,8 @@
          (.on m "moveend" (fn []
                              (let [center (.getCenter m)]
                                (set-coordinate-form-data (str (.-lat center) ", " (.-lng center)))))))
+       (when map-ref
+         (reset! map-ref m))
        (set-stand-map m)))
 
     (hooks/use-effect
@@ -245,7 +247,20 @@
      set-is-locating
      form-data
      set-form-data]}]
-  (let [[location-error set-location-error] (hooks/use-state nil)]
+  (let [[location-error set-location-error] (hooks/use-state nil)
+        [coordinate-display set-coordinate-display] (hooks/use-state (:coordinate form-data))
+        map-ref (hooks/use-ref nil)]
+    (hooks/use-effect
+     [map-ref (:coordinate form-data)]
+     (when-let [m @map-ref]
+       (when-let [coords (parse-coordinates (:coordinate form-data))]
+         (let [current-zoom (.getZoom ^js m)]
+           (.setView ^js m (clj->js coords) current-zoom)))))
+
+    (hooks/use-effect
+     [(:coordinate form-data)]
+     (set-coordinate-display (:coordinate form-data)))
+
     (d/div
      {:class "form-group"}
      ($ leaflet-map
@@ -256,19 +271,21 @@
          :set-coordinate-form-data (fn [coord-str]
                                      (set-form-data
                                       (fn [prev]
-                                        (assoc prev :coordinate coord-str))))})
+                                        (assoc prev :coordinate coord-str))))
+         :map-ref map-ref})
      (d/label "Coordinate:")
      (d/div
       {:class "coordinate-input-group"}
       (d/input
        {:type "text"
         :ref coordinate-input-ref
-        :value (:coordinate form-data)
-        :onChange #(set-form-data
-                    (fn [prev]
-                      (assoc
-                       prev
-                       :coordinate (.. % -target -value))))
+        :value coordinate-display
+        :onChange #(set-coordinate-display (.. % -target -value))
+        :onBlur #(set-form-data
+                   (fn [prev]
+                     (assoc
+                      prev
+                      :coordinate coordinate-display)))
         :class "coordinate-input"})
       (d/button
        {:type "button"
@@ -317,7 +334,7 @@
        (set-editing-stand nil)
        (set-form-data
         {:name ""
-         :coordinate ""
+         :coordinate (str (first map-home) ", " (second map-home))
          :address ""
          :town ""
          :state ""
