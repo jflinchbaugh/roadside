@@ -105,13 +105,16 @@
     (.addTo tl m)
     m))
 
+(defn get-current-timestamp []
+  (.toISOString (js/Date.)))
+
 (defn update-stand
   [form-data editing-stand current-stands]
   (vec
    (map
     #(if
       (= % editing-stand)
-       form-data
+       (assoc form-data :updated (get-current-timestamp))
        %)
     current-stands)))
 
@@ -127,7 +130,7 @@
       (js/alert
        "This stand already exists!")
       current-stands)
-    (conj current-stands form-data)))
+    (conj current-stands (assoc form-data :updated (get-current-timestamp)))))
 
 ; components
 
@@ -252,11 +255,6 @@
            (d/p (:address stand)))
          (when (not (empty? (:town stand)))
            (d/p (str (:town stand) ", " (:state stand))))
-         (when (not (empty? (:expiration stand)))
-           (d/p
-            {:class "expiration-date"}
-            (d/strong "Expires: ")
-            (:expiration stand)))
          (when (not (empty? (:products stand)))
            (d/div
             {:class "stand-products"}
@@ -273,8 +271,19 @@
            (d/p
             {:class "stand-notes"}
             (d/strong "Notes: ")
-            (:notes stand)))))
+            (:notes stand)))
+         (when (not (empty? (:expiration stand)))
+           (d/p
+            {:class "expiration-date"}
+            (d/strong "Expires: ")
+            (:expiration stand)))
+         (when (:updated stand)
+           (d/p
+            {:class "stand-updated"}
+            (d/strong "Last Updated: ")
+            (:updated stand)))))
       stands))))
+
 
 (defnc location-input
   [{:keys
