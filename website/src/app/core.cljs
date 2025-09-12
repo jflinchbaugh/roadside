@@ -120,7 +120,7 @@
 
 ; components
 
-(defnc leaflet-map [{:keys [div-id center zoom-level stands selected-stand set-selected-stand show-crosshairs set-coordinate-form-data map-ref]}]
+(defnc leaflet-map [{:keys [div-id center zoom-level stands selected-stand set-selected-stand show-crosshairs set-coordinate-form-data map-ref is-locating]}]
   (let [[stand-map set-stand-map] (hooks/use-state nil)
         [layer-group set-layer-group] (hooks/use-state nil)]
     (hooks/use-effect
@@ -167,7 +167,12 @@
   (d/div {:id div-id
           :style {:position "relative"}}
     (when show-crosshairs
-      (d/div {:class "crosshairs"}))))
+      (d/div {:class "crosshairs"}))
+    (when is-locating
+      (d/div
+       {:class "loading-overlay"}
+       (d/div {:class "spinner"})
+       (d/p "Locating...")))))
 
 (defnc stands-list
   [{:keys
@@ -276,7 +281,8 @@
                                      (set-form-data
                                       (fn [prev]
                                         (assoc prev :coordinate coord-str))))
-         :map-ref map-ref})
+         :map-ref map-ref
+         :is-locating is-locating})
      (d/label "Coordinate:")
      (d/div
       {:class "coordinate-input-group"}
@@ -369,11 +375,6 @@
        (d/div
         {:class "form-container"
          :onClick #(.stopPropagation %)}
-        (when is-locating
-          (d/div
-           {:class "loading-overlay"}
-           (d/div {:class "spinner"})
-           (d/p "Locating...")))
         (d/h3
          (if editing-stand "Edit Stand" "Add New Stand"))
         (d/form
