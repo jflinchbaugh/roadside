@@ -4,3 +4,4 @@
 - name new symbols in kebab-case-style, and not UpperCamel
 - when trying to fix a syntax error, focus on fixing it in code you already changed.
 - insert escaped unicode into source files, and not extended characters
+- when asked to run the build, `npx shadow-cljs compile frontend`
