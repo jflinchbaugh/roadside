@@ -70,13 +70,15 @@
 (defn make-marker
   [{:keys [coord stand set-selected-stand]}]
   (let [marker (js/L.marker (clj->js coord))
-        popup-content (str "<b>" (:name stand) "</b><br>"
-                           (when (not (empty? (:products stand)))
-                             (str
-                              (str/join
-                               ", "
-                               (:products stand))
-                              "<br>")))]
+        popup-content (str
+                       (when (not (str/blank? (:name stand)))
+                         (str "<b>" (:name stand) "</b><br>"))
+                       (when (not (empty? (:products stand)))
+                         (str
+                          (str/join
+                           ", "
+                           (:products stand))
+                          "<br>")))]
     (.bindPopup
      marker
      popup-content
