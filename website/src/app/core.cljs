@@ -62,6 +62,14 @@
    flatten
    (str/join "-")))
 
+(defn get-all-unique-products [stands]
+  (->> stands
+       (mapcat :products)
+       (filter some?)
+       distinct
+       sort
+       vec))
+
 (defn parse-coordinates
   [coords]
   (let [res (->>
@@ -405,17 +413,28 @@
         (d/form
          {:onSubmit (fn [e]
                       (.preventDefault e)
-                      (if editing-stand
+                      (let [all-unique-products (get-all-unique-products stands)
+                            stand-name (:name form-data)
+                            updated-products (reduce
+                                              (fn [acc product]
+                                                (if (and (str/includes? (str/lower-case stand-name) (str/lower-case product))
+                                                         (not (some #(= % product) acc)))
+                                                  (conj acc product)
+                                                  acc))
+                                              (:products form-data)
+                                              all-unique-products)
+                            processed-form-data (assoc form-data :products updated-products)]
+                        (if editing-stand
                           ;; Update existing stand
-                        (do
-                          (set-stands
-                           (partial update-stand form-data editing-stand))
-                          (set-show-form false))
+                          (do
+                            (set-stands
+                             (partial update-stand processed-form-data editing-stand))
+                            (set-show-form false))
                           ;; Add new stand
-                        (let [new-stands (add-stand form-data stands)]
-                          (set-stands new-stands)
-                          (when (not= new-stands stands)
-                            (set-show-form false)))))}
+                          (let [new-stands (add-stand processed-form-data stands)]
+                            (set-stands new-stands)
+                            (when (not= new-stands stands)
+                              (set-show-form false))))))}
          (d/div
           {:class "form-content-wrapper"}
           ($ location-input
