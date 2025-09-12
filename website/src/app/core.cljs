@@ -20,7 +20,10 @@
         (map (fn [product]
                (d/span
                 {:key product
-                 :class (str "product-tag" (when (= product product-filter) " product-tag-active"))
+                 :class (str
+                         "product-tag"
+                         (when (= product product-filter)
+                           " product-tag-active"))
                  :onClick #(set-product-filter product)}
                 product))
              unique-products))))))
@@ -120,16 +123,30 @@
 
 ; components
 
-(defnc leaflet-map [{:keys [div-id center zoom-level stands selected-stand set-selected-stand show-crosshairs set-coordinate-form-data map-ref is-locating]}]
+(defnc leaflet-map
+  [{:keys [div-id
+           center
+           zoom-level
+           stands
+           selected-stand
+           set-selected-stand
+           show-crosshairs
+           set-coordinate-form-data
+           map-ref
+           is-locating]}]
   (let [[stand-map set-stand-map] (hooks/use-state nil)
         [layer-group set-layer-group] (hooks/use-state nil)]
     (hooks/use-effect
      :once
      (let [m (init-map div-id center zoom-level)]
        (when set-coordinate-form-data
-         (.on m "moveend" (fn []
-                             (let [center (.getCenter m)]
-                               (set-coordinate-form-data (str (.-lat center) ", " (.-lng center)))))))
+         (.on
+          m
+          "moveend"
+          (fn []
+            (let [center (.getCenter m)]
+              (set-coordinate-form-data
+               (str (.-lat center) ", " (.-lng center)))))))
        (when map-ref
          (reset! map-ref m))
        (set-stand-map m)))
@@ -150,7 +167,8 @@
                            :set-selected-stand set-selected-stand}))))
            _ (tel/log! :info {:locations locations})
            new-layer-group (when (not (empty? locations))
-                             (js/L.layerGroup (clj->js (map second locations))))]
+                             (js/L.layerGroup
+                              (clj->js (map second locations))))]
        (when layer-group
          (.removeLayer ^js stand-map layer-group))
        (when new-layer-group
@@ -166,13 +184,13 @@
           (#(.openPopup ^js %)))))))
   (d/div {:id div-id
           :style {:position "relative"}}
-    (when show-crosshairs
-      (d/div {:class "crosshairs"}))
-    (when is-locating
-      (d/div
-       {:class "loading-overlay"}
-       (d/div {:class "spinner"})
-       (d/p "Locating...")))))
+         (when show-crosshairs
+           (d/div {:class "crosshairs"}))
+         (when is-locating
+           (d/div
+            {:class "loading-overlay"}
+            (d/div {:class "spinner"})
+            (d/p "Locating...")))))
 
 (defnc stands-list
   [{:keys
@@ -191,7 +209,10 @@
       (fn [stand]
         (d/div
          {:key (stand-key stand)
-          :class (str "stand-item" (when (= (stand-key stand) (stand-key selected-stand)) " selected-stand"))
+          :class (str
+                  "stand-item"
+                  (when (= (stand-key stand) (stand-key selected-stand))
+                    " selected-stand"))
           :onClick #(do (set-selected-stand stand))}
          (d/div
           {:class "stand-header"}
@@ -256,7 +277,8 @@
      set-form-data
      location-btn-ref]}] ; New prop
   (let [[location-error set-location-error] (hooks/use-state nil)
-        [coordinate-display set-coordinate-display] (hooks/use-state (:coordinate form-data))
+        [coordinate-display set-coordinate-display] (hooks/use-state
+                                                     (:coordinate form-data))
         map-ref (hooks/use-ref nil)]
 
     (hooks/use-effect
@@ -292,10 +314,10 @@
         :value coordinate-display
         :onChange #(set-coordinate-display (.. % -target -value))
         :onBlur #(set-form-data
-                   (fn [prev]
-                     (assoc
-                      prev
-                      :coordinate coordinate-display)))
+                  (fn [prev]
+                    (assoc
+                     prev
+                     :coordinate coordinate-display)))
         :class "coordinate-input"})
       (d/button
        {:type "button"
@@ -339,7 +361,7 @@
   (let [[current-product set-current-product] (hooks/use-state "")
         [is-locating set-is-locating] (hooks/use-state false)
         coordinate-input-ref (hooks/use-ref nil)
-        location-btn-ref (hooks/use-ref nil)] ; New ref for the location button
+        location-btn-ref (hooks/use-ref nil)]
     (hooks/use-effect
      [show-form]
      (when-not show-form
@@ -365,7 +387,10 @@
             (set-show-form false))))
        (.focus @coordinate-input-ref)
        ;; Simulate click on location button ONLY if adding a new stand
-       (when (and (nil? editing-stand) (when-let [btn @location-btn-ref] btn))
+       (when
+        (and
+         (nil? editing-stand)
+         (when-let [btn @location-btn-ref] btn))
          (.click @location-btn-ref))))
 
     (when show-form
@@ -377,152 +402,152 @@
          :onClick #(.stopPropagation %)}
         (d/h3
          (if editing-stand "Edit Stand" "Add New Stand"))
-         (d/form
-           {:onSubmit (fn [e]
-                        (.preventDefault e)
-                        (if editing-stand
+        (d/form
+         {:onSubmit (fn [e]
+                      (.preventDefault e)
+                      (if editing-stand
                           ;; Update existing stand
-                          (do
-                            (set-stands
-                              (partial update-stand form-data editing-stand))
-                            (set-show-form false))
+                        (do
+                          (set-stands
+                           (partial update-stand form-data editing-stand))
+                          (set-show-form false))
                           ;; Add new stand
-                          (let [new-stands (add-stand form-data stands)]
-                            (set-stands new-stands)
-                            (when (not= new-stands stands)
-                              (set-show-form false)))))}
+                        (let [new-stands (add-stand form-data stands)]
+                          (set-stands new-stands)
+                          (when (not= new-stands stands)
+                            (set-show-form false)))))}
+         (d/div
+          {:class "form-content-wrapper"}
+          ($ location-input
+             {:coordinate-input-ref coordinate-input-ref
+              :is-locating is-locating
+              :set-is-locating set-is-locating
+              :form-data form-data
+              :set-form-data set-form-data
+              :location-btn-ref location-btn-ref}) ; Pass the new ref
+          (d/div
+           {:class "form-group"}
+           (d/label "Stand Name:")
+           (d/input
+            {:type "text"
+             :value (:name form-data)
+             :onChange #(set-form-data
+                         (fn [prev]
+                           (assoc
+                            prev
+                            :name (.. % -target -value))))}))
+          (d/div
+           {:class "form-group"}
+           (d/label "Address:")
+           (d/input
+            {:type "text"
+             :value (:address form-data)
+             :onChange #(set-form-data
+                         (fn [prev]
+                           (assoc
+                            prev
+                            :address (.. % -target -value))))}))
+          (d/div
+           {:class "form-group"}
+           (d/label "Town:")
+           (d/input
+            {:type "text"
+             :value (:town form-data)
+             :onChange #(set-form-data
+                         (fn [prev]
+                           (assoc
+                            prev
+                            :town (.. % -target -value))))}))
+          (d/div
+           {:class "form-group"}
+           (d/label "State:")
+           (d/input
+            {:type "text"
+             :value (:state form-data)
+             :onChange #(set-form-data
+                         (fn [prev]
+                           (assoc
+                            prev
+                            :state (.. % -target -value))))}))
+          (d/div
+           {:class "form-group"}
+           (d/label "Products:")
            (d/div
-             {:class "form-content-wrapper"}
-             ($ location-input
-                {:coordinate-input-ref coordinate-input-ref
-                 :is-locating is-locating
-                 :set-is-locating set-is-locating
-                 :form-data form-data
-                 :set-form-data set-form-data
-                 :location-btn-ref location-btn-ref}) ; Pass the new ref
-             (d/div
-               {:class "form-group"}
-               (d/label "Stand Name:")
-               (d/input
-                 {:type "text"
-                  :value (:name form-data)
-                  :onChange #(set-form-data
-                               (fn [prev]
-                                 (assoc
-                                   prev
-                                   :name (.. % -target -value))))}))
-             (d/div
-               {:class "form-group"}
-               (d/label "Address:")
-               (d/input
-                 {:type "text"
-                  :value (:address form-data)
-                  :onChange #(set-form-data
-                               (fn [prev]
-                                 (assoc
-                                   prev
-                                   :address (.. % -target -value))))}))
-             (d/div
-               {:class "form-group"}
-               (d/label "Town:")
-               (d/input
-                 {:type "text"
-                  :value (:town form-data)
-                  :onChange #(set-form-data
-                               (fn [prev]
-                                 (assoc
-                                   prev
-                                   :town (.. % -target -value))))}))
-             (d/div
-               {:class "form-group"}
-               (d/label "State:")
-               (d/input
-                 {:type "text"
-                  :value (:state form-data)
-                  :onChange #(set-form-data
-                               (fn [prev]
-                                 (assoc
-                                   prev
-                                   :state (.. % -target -value))))}))
-             (d/div
-               {:class "form-group"}
-               (d/label "Products:")
-               (d/div
-                 {:class "products-tags"}
-                 (map (fn [product]
-                        (d/span
-                          {:key product
-                           :class "product-tag"}
-                          product
-                          (d/button
-                            {:type "button"
-                             :class "remove-tag"
-                             :onClick #(set-form-data
-                                         (fn [prev]
-                                           (assoc
-                                             prev
-                                             :products (->> prev
-                                                         :products
-                                                         (remove #{product})
-                                                         vec))))}
-                            "×")))
-                   (:products form-data)))
-               (d/div
-                 {:class "product-input-group"}
-                 (d/input
-                   {:type "text"
-                    :value current-product
-                    :placeholder "Add a product and press Enter"
-                    :onChange #(set-current-product (.. % -target -value))
-                    :onKeyDown (fn [e]
-                                 (when (= (.-key e) "Enter")
-                                   (.preventDefault e)
-                                   (add-product-to-form-data
-                                     current-product
-                                     form-data
-                                     set-form-data)
-                                   (set-current-product "")))})
-                 (d/button
-                   {:type "button"
-                    :class "add-product-btn"
-                    :onClick (fn []
-                               (add-product-to-form-data
-                                 current-product
-                                 form-data
-                                 set-form-data)
-                               (set-current-product ""))}
-                   "Add")))
-             (d/div
-               {:class "form-group"}
-               (d/label "Notes:")
-               (d/textarea
-                 {:value (:notes form-data)
-                  :onChange #(set-form-data
-                               (fn [prev]
-                                 (assoc
-                                   prev
-                                   :notes (.. % -target -value))))
-                  :rows 4}))
-             (d/div
-               {:class "form-group"}
-               (d/label "Expiration Date:")
-               (d/input
-                 {:type "date"
-                  :value (:expiration form-data)
-                  :onChange #(set-form-data
-                               (fn [prev]
-                                 (assoc
-                                   prev
-                                   :expiration (.. % -target -value))))})))
+            {:class "products-tags"}
+            (map (fn [product]
+                   (d/span
+                    {:key product
+                     :class "product-tag"}
+                    product
+                    (d/button
+                     {:type "button"
+                      :class "remove-tag"
+                      :onClick #(set-form-data
+                                 (fn [prev]
+                                   (assoc
+                                    prev
+                                    :products (->> prev
+                                                   :products
+                                                   (remove #{product})
+                                                   vec))))}
+                     "×")))
+                 (:products form-data)))
            (d/div
-             {:class "form-buttons"}
-             (d/button
-               {:type "submit"}
-               (if editing-stand "Save Changes" "Add Stand"))
-             (d/button
-               {:type "button"
-                :onClick #(set-show-form false)}
-               "Cancel"))))))))
+            {:class "product-input-group"}
+            (d/input
+             {:type "text"
+              :value current-product
+              :placeholder "Add a product and press Enter"
+              :onChange #(set-current-product (.. % -target -value))
+              :onKeyDown (fn [e]
+                           (when (= (.-key e) "Enter")
+                             (.preventDefault e)
+                             (add-product-to-form-data
+                              current-product
+                              form-data
+                              set-form-data)
+                             (set-current-product "")))})
+            (d/button
+             {:type "button"
+              :class "add-product-btn"
+              :onClick (fn []
+                         (add-product-to-form-data
+                          current-product
+                          form-data
+                          set-form-data)
+                         (set-current-product ""))}
+             "Add")))
+          (d/div
+           {:class "form-group"}
+           (d/label "Notes:")
+           (d/textarea
+            {:value (:notes form-data)
+             :onChange #(set-form-data
+                         (fn [prev]
+                           (assoc
+                            prev
+                            :notes (.. % -target -value))))
+             :rows 4}))
+          (d/div
+           {:class "form-group"}
+           (d/label "Expiration Date:")
+           (d/input
+            {:type "date"
+             :value (:expiration form-data)
+             :onChange #(set-form-data
+                         (fn [prev]
+                           (assoc
+                            prev
+                            :expiration (.. % -target -value))))})))
+         (d/div
+          {:class "form-buttons"}
+          (d/button
+           {:type "submit"}
+           (if editing-stand "Save Changes" "Add Stand"))
+          (d/button
+           {:type "button"
+            :onClick #(set-show-form false)}
+           "Cancel"))))))))
 
 (defnc header []
   (d/header
@@ -566,7 +591,12 @@
          {:div-id "map-container"
           :center map-home
           :stands (if product-filter
-                    (filter #(some (fn [p] (= p product-filter)) (:products %)) stands)
+                    (filter
+                     #(some
+                       (fn [p]
+                         (= p product-filter))
+                       (:products %))
+                     stands)
                     stands)
           :zoom-level 10
           :set-selected-stand set-selected-stand
@@ -577,7 +607,10 @@
         :onClick #(set-show-form true)}
        "Add Stand")
 
-      ($ product-list {:stands stands :set-product-filter set-product-filter :product-filter product-filter})
+      ($ product-list
+         {:stands stands
+          :set-product-filter set-product-filter
+          :product-filter product-filter})
 
       (when product-filter
         (d/button
@@ -597,7 +630,11 @@
 
       ($ stands-list
          {:stands (if product-filter
-                    (filter #(some (fn [p] (= p product-filter)) (:products %)) stands)
+                    (filter
+                     #(some
+                       (fn [p] (= p product-filter))
+                       (:products %))
+                     stands)
                     stands)
           :set-stands set-stands
           :set-editing-stand set-editing-stand
