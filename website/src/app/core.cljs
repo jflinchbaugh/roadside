@@ -371,7 +371,9 @@
          :onClick #(.stopPropagation %)}
         (when is-locating
           (d/div
-           {:id "progress-bar"}))
+           {:class "loading-overlay"}
+           (d/div {:class "spinner"})
+           (d/p "Locating...")))
         (d/h3
          (if editing-stand "Edit Stand" "Add New Stand"))
         (d/form
