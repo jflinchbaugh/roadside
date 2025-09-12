@@ -356,9 +356,9 @@
           (when (= (.-key e) "Escape")
             (set-show-form false))))
        (.focus @coordinate-input-ref)
-       ;; Simulate click on location button
-       (when-let [btn @location-btn-ref]
-         (.click btn)))) ; Simulate click
+       ;; Simulate click on location button ONLY if adding a new stand
+       (when (and (nil? editing-stand) (when-let [btn @location-btn-ref] btn))
+         (.click @location-btn-ref))))
 
     (when show-form
       (d/div
