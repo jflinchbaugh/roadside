@@ -533,7 +533,9 @@
      :class "logo"})
    (d/h1
     {:class "main-header"}
-    "Roadside Stands")))
+    "Roadside Stands"
+    " "
+    (d/span {:style {:font-size "0.5em"}} "beta"))))
 
 (defnc app []
   (let [[stands set-stands] (hooks/use-state [])
