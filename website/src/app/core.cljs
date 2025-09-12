@@ -246,10 +246,12 @@
      is-locating
      set-is-locating
      form-data
-     set-form-data]}]
+     set-form-data
+     location-btn-ref]}] ; New prop
   (let [[location-error set-location-error] (hooks/use-state nil)
         [coordinate-display set-coordinate-display] (hooks/use-state (:coordinate form-data))
         map-ref (hooks/use-ref nil)]
+
     (hooks/use-effect
      [map-ref (:coordinate form-data)]
      (when-let [m @map-ref]
@@ -290,6 +292,7 @@
       (d/button
        {:type "button"
         :class "location-btn"
+        :ref location-btn-ref ; Apply the ref here
         :onClick (fn []
                    (set-location-error nil)
                    (set-is-locating true)
@@ -327,7 +330,8 @@
            set-stands]}]
   (let [[current-product set-current-product] (hooks/use-state "")
         [is-locating set-is-locating] (hooks/use-state false)
-        coordinate-input-ref (hooks/use-ref nil)]
+        coordinate-input-ref (hooks/use-ref nil)
+        location-btn-ref (hooks/use-ref nil)] ; New ref for the location button
     (hooks/use-effect
      [show-form]
      (when-not show-form
@@ -351,7 +355,10 @@
         (fn [e]
           (when (= (.-key e) "Escape")
             (set-show-form false))))
-       (.focus @coordinate-input-ref)))
+       (.focus @coordinate-input-ref)
+       ;; Simulate click on location button
+       (when-let [btn @location-btn-ref]
+         (.click btn)))) ; Simulate click
 
     (when show-form
       (d/div
@@ -384,7 +391,8 @@
              :is-locating is-locating
              :set-is-locating set-is-locating
              :form-data form-data
-             :set-form-data set-form-data})
+             :set-form-data set-form-data
+             :location-btn-ref location-btn-ref}) ; Pass the new ref
          (d/div
           {:class "form-group"}
           (d/label "Stand Name:")
