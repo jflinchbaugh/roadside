@@ -603,7 +603,14 @@
         [editing-stand set-editing-stand] (hooks/use-state nil)
         [form-data set-form-data] (hooks/use-state {})
         [product-filter set-product-filter] (hooks/use-state nil)
-        [selected-stand set-selected-stand] (hooks/use-state nil)]
+        [selected-stand set-selected-stand] (hooks/use-state nil)
+        filtered-stands (if product-filter
+                          (filter
+                           #(some
+                             (fn [p] (= p product-filter))
+                             (:products %))
+                           stands)
+                          stands)]
 
     (hooks/use-effect
      :once
@@ -623,7 +630,7 @@
         ($ leaflet-map
            {:div-id "map-container"
             :center map-home
-            :stands stands
+            :stands filtered-stands
             :zoom-level 10
             :set-selected-stand set-selected-stand
             :selected-stand selected-stand}))
@@ -657,13 +664,7 @@
           :set-stands set-stands})
 
       ($ stands-list
-         {:stands (if product-filter
-                    (filter
-                     #(some
-                       (fn [p] (= p product-filter))
-                       (:products %))
-                     stands)
-                    stands)
+         {:stands filtered-stands
           :set-stands set-stands
           :set-editing-stand set-editing-stand
           :set-form-data set-form-data
