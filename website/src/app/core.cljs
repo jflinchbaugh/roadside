@@ -620,6 +620,7 @@
         [form-data set-form-data] (hooks/use-state {})
         [product-filter set-product-filter] (hooks/use-state nil)
         [selected-stand set-selected-stand] (hooks/use-state nil)
+        [current-location set-current-location] (hooks/use-state map-home)
         filtered-stands (if product-filter
                           (filter
                            #(some
@@ -635,6 +636,17 @@
          (set-stands (edn/read-string saved-stands)))))
 
     (hooks/use-effect
+     :once
+      (js/navigator.geolocation.getCurrentPosition
+        (fn [position]
+          (let [coords (.-coords position)
+                lat (.-latitude coords)
+                lng (.-longitude coords)]
+            (set-current-location [lat lng])))
+        (fn [error]
+          (tel/log! :error {:geolocation-error (.-message error)}))))
+
+    (hooks/use-effect
      [stands]
      (js/localStorage.setItem "roadside-stands" stands))
 
@@ -645,7 +657,7 @@
         ($ header)
         ($ leaflet-map
            {:div-id "map-container"
-            :center map-home
+            :center current-location
             :stands filtered-stands
             :zoom-level 10
             :set-selected-stand set-selected-stand
