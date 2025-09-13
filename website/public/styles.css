@@ -1,13 +1,7 @@
 #fixed-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  background-color: #f8f8f8; /* Light grey background */
+  background-color: #f8f8f8;
   padding: 10px 20px 0 20px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Subtle shadow */
-  z-index: 1000; /* Ensure it stays on top of other content */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   box-sizing: border-box; /* Include padding in the width */
   height: 39vh;
 }
@@ -16,13 +10,15 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  padding-top: 40vh; /* Adjust body padding to prevent content from being hidden below the fixed container */
 }
 
 .app-container {
   font-family: Arial, sans-serif;
   max-width: 800px;
   margin: 0 auto;
+  height: 100vh; /* Take full viewport height */
+  display: flex;
+  flex-direction: column; /* Arrange children vertically */
 }
 
 .app-container-fixed-content {
@@ -53,7 +49,9 @@ body {
 }
 
 .content {
-  padding: 0 0;
+  flex-grow: 1; /* Take remaining space */
+  overflow-y: auto; /* Enable vertical scrolling */
+  padding: 0.5em 0;
 }
 
 #map-container {
