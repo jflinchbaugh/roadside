@@ -590,19 +590,12 @@
     " "
     (d/span {:style {:font-size "0.5em"}} "beta"))))
 
-(defnc fixed-container [{:keys [stands selected-stand set-selected-stand set-show-form]}]
+(defnc fixed-container [{:keys [children]}]
   (d/div
    {:id "fixed-header"}
    (d/div
     {:class "app-container-fixed-content"}
-    ($ header)
-    ($ leaflet-map
-       {:div-id "map-container"
-        :center map-home
-        :stands stands
-        :zoom-level 10
-        :set-selected-stand set-selected-stand
-        :selected-stand selected-stand}))))
+    children)))
 
 (defnc app []
   (let [[stands set-stands] (hooks/use-state [])
@@ -625,11 +618,15 @@
     (d/div
      {:class "app-container"}
 
-     ($ fixed-container
-        {:stands stands
-         :selected-stand selected-stand
-         :set-selected-stand set-selected-stand
-         :set-show-form set-show-form})
+     ($ fixed-container {}
+        ($ header)
+        ($ leaflet-map
+           {:div-id "map-container"
+            :center map-home
+            :stands stands
+            :zoom-level 10
+            :set-selected-stand set-selected-stand
+            :selected-stand selected-stand}))
 
      (d/div
       {:class "content"}
