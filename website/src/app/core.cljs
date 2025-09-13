@@ -300,7 +300,6 @@
                 (:updated stand)))))
           stands))))))
 
-
 (defnc location-input
   [{:keys
     [coordinate-input-ref
@@ -313,7 +312,6 @@
         [coordinate-display set-coordinate-display] (hooks/use-state
                                                      (:coordinate form-data))
         map-ref (hooks/use-ref nil)]
-
     (hooks/use-effect
      [map-ref (:coordinate form-data)]
      (when-let [m @map-ref]
@@ -660,21 +658,16 @@
             :zoom-level 10
             :set-selected-stand set-selected-stand
             :selected-stand selected-stand}))
-
      (d/div
       {:class "content"}
-
       (d/button
        {:class "add-stand-btn"
         :onClick #(set-show-form true)}
        "Add Stand")
-
       ($ product-list
          {:stands stands
           :set-product-filter set-product-filter
           :product-filter product-filter})
-      
-
       ($ stand-form
          {:form-data form-data
           :set-form-data set-form-data
@@ -684,7 +677,6 @@
           :set-editing-stand set-editing-stand
           :stands stands
           :set-stands set-stands})
-
       ($ stands-list
          {:stands filtered-stands
           :set-stands set-stands
