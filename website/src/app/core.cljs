@@ -590,6 +590,20 @@
     " "
     (d/span {:style {:font-size "0.5em"}} "beta"))))
 
+(defnc fixed-container [{:keys [stands selected-stand set-selected-stand set-show-form]}]
+  (d/div
+   {:id "fixed-header"}
+   (d/div
+    {:class "app-container-fixed-content"}
+    ($ header)
+    ($ leaflet-map
+       {:div-id "map-container"
+        :center map-home
+        :stands stands
+        :zoom-level 10
+        :set-selected-stand set-selected-stand
+        :selected-stand selected-stand}))))
+
 (defnc app []
   (let [[stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
@@ -611,24 +625,14 @@
     (d/div
      {:class "app-container"}
 
-     ($ header)
+     ($ fixed-container
+        {:stands stands
+         :selected-stand selected-stand
+         :set-selected-stand set-selected-stand
+         :set-show-form set-show-form})
 
      (d/div
       {:class "content"}
-      ($ leaflet-map
-         {:div-id "map-container"
-          :center map-home
-          :stands (if product-filter
-                    (filter
-                     #(some
-                       (fn [p]
-                         (= p product-filter))
-                       (:products %))
-                     stands)
-                    stands)
-          :zoom-level 10
-          :set-selected-stand set-selected-stand
-          :selected-stand selected-stand})
 
       (d/button
        {:class "add-stand-btn"
@@ -639,7 +643,6 @@
          {:stands stands
           :set-product-filter set-product-filter
           :product-filter product-filter})
-
       (when product-filter
         (d/button
          {:class "clear-filter-btn"
