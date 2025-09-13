@@ -367,7 +367,7 @@ body {
 
 .product-list {
   border: 1px solid #ccc;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.5rem 0rem 0.5rem;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   border-radius: 8px;
