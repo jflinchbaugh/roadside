@@ -3,9 +3,10 @@
   padding: 10px 20px 0 20px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   box-sizing: border-box; /* Include padding in the width */
-  height: 33vh;
+  height: 40vh;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 }
 
 html, body {
@@ -33,6 +34,7 @@ body {
   gap: 1rem;
   margin-bottom: 0.5rem;
   margin-top: 0.25rem;
+  flex-shrink: 0;
 }
 
 .logo {
