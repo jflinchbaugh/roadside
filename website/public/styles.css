@@ -3,7 +3,13 @@
   padding: 10px 20px 0 20px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   box-sizing: border-box; /* Include padding in the width */
-  height: 39vh;
+  height: 33vh;
+  display: flex;
+  flex-direction: column;
+}
+
+html, body {
+  height: 100%;
 }
 
 body {
@@ -19,11 +25,6 @@ body {
   height: 100vh; /* Take full viewport height */
   display: flex;
   flex-direction: column; /* Arrange children vertically */
-}
-
-.app-container-fixed-content {
-  max-width: 800px;
-  margin: 0 auto;
 }
 
 .header {
@@ -55,10 +56,11 @@ body {
 }
 
 #map-container {
-  height: 30vh;
+  height: 100%;
   width: 75%;
   margin: 0 auto;
   margin-bottom: 0.5rem; /* Add some space below the map */
+  flex-grow: 1;
 }
 
 #map-form {

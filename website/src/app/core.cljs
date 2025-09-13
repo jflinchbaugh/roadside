@@ -609,9 +609,7 @@
 (defnc fixed-container [{:keys [children]}]
   (d/div
    {:id "fixed-header"}
-   (d/div
-    {:class "app-container-fixed-content"}
-    children)))
+    children))
 
 (defnc app []
   (let [[stands set-stands] (hooks/use-state [])
