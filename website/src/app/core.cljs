@@ -26,7 +26,12 @@
                            " product-tag-active"))
                  :onClick #(set-product-filter product)}
                 product))
-             unique-products))))))
+             unique-products)))
+     (when product-filter
+       (d/button
+        {:class "clear-filter-btn"
+         :onClick #(set-product-filter nil)}
+        "Clear Filter")))))
 
 (def map-home [40.0379 -76.3055])
 
@@ -647,11 +652,7 @@
          {:stands stands
           :set-product-filter set-product-filter
           :product-filter product-filter})
-      (when product-filter
-        (d/button
-         {:class "clear-filter-btn"
-          :onClick #(set-product-filter nil)}
-         "Clear Filter"))
+      
 
       ($ stand-form
          {:form-data form-data
