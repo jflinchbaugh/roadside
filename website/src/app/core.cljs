@@ -604,7 +604,7 @@
     " "
     (d/span {:style {:font-size "0.5em"}} "beta"))))
 
-(defnc fixed-container [{:keys [children]}]
+(defnc fixed-header [{:keys [children]}]
   (d/div
    {:id "fixed-header"}
     children))
@@ -649,7 +649,7 @@
     (d/div
      {:class "app-container"}
 
-     ($ fixed-container {}
+     ($ fixed-header {}
         ($ header)
         ($ leaflet-map
            {:div-id "map-container"
