@@ -224,10 +224,7 @@ body {
 }
 
 .product-tag:hover {
-  background-color: #0066cc; /* Darker blue background */
-  color: white; /* White text */
   cursor: pointer; /* Indicate clickable */
-  border-color: #0066cc; /* Match border color */
 }
 
 .remove-tag {

@@ -24,7 +24,9 @@
                          "product-tag"
                          (when (= product product-filter)
                            " product-tag-active"))
-                 :onClick #(set-product-filter product)}
+                 :onClick #(if (= product product-filter)
+                             (set-product-filter nil)
+                             (set-product-filter product))}
                 product))
              unique-products)))
      (when product-filter
