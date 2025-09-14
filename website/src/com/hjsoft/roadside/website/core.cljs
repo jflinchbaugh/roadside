@@ -1,4 +1,4 @@
-(ns app.core
+(ns com.hjsoft.roadside.website.core
   (:require ["react-dom/client" :as rdom]
             [helix.core :refer [defnc $]]
             [helix.hooks :as hooks]

@@ -5,4 +5,4 @@
  :builds {:frontend {:target :browser
                 :output-dir "public/js"
                 :asset-path "js"
-                :modules {:main {:init-fn app.core/init}}}}}
+                :modules {:main {:init-fn com.hjsoft.roadside.website.core/init}}}}}

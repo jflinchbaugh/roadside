@@ -3,20 +3,9 @@
 ClojureScript single page application for managing roadside fruit/vegetable stands with Helix (React wrapper).
 
 ## Development Commands
-- Start dev server: `npx shadow-cljs watch app`
-- Build for production: `npx shadow-cljs compile app`
-- View app: http://localhost:8080
-
-## Project Structure
-```
-├── src/app/core.cljs          # Main application code
-├── resources/public/
-│   ├── index.html             # HTML entry point
-│   ├── styles.css            # All CSS styling
-│   └── images/               # Static assets (apple logo)
-├── shadow-cljs.edn           # Build configuration
-└── package.json              # Node.js dependencies
-```
+- Start dev server: `npx shadow-cljs watch frontend
+- Build for production: `npx shadow-cljs compile frontend`
+- View app: http://localhost:8080/index.html
 
 ## Architecture
 - **Single page app** with modal overlay forms
@@ -48,7 +37,7 @@ ClojureScript single page application for managing roadside fruit/vegetable stan
 
 ## State Management
 - `stands`: Array of stand objects
-- `show-form`: Boolean for modal visibility  
+- `show-form`: Boolean for modal visibility
 - `editing-stand`: Currently edited stand object or nil
 - `form-data`: Current form state with all fields
 - `current-product`: Temporary input for adding products
