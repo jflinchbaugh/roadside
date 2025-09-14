@@ -155,6 +155,11 @@
   (let [[stand-map set-stand-map] (hooks/use-state nil)
         [layer-group set-layer-group] (hooks/use-state nil)]
     (hooks/use-effect
+     [center]
+     (when stand-map
+       (.setView ^js stand-map (clj->js center) (.getZoom ^js stand-map))))
+
+    (hooks/use-effect
      :once
      (let [m (init-map div-id center zoom-level)]
        (when set-coordinate-form-data
@@ -617,6 +622,8 @@
         [product-filter set-product-filter] (hooks/use-state nil)
         [selected-stand set-selected-stand] (hooks/use-state nil)
         [current-location set-current-location] (hooks/use-state map-home)
+        [is-locating-main-map set-is-locating-main-map] (hooks/use-state true)
+        [main-map-location-error set-main-map-location-error] (hooks/use-state nil)
         filtered-stands (if product-filter
                           (filter
                            #(some
@@ -638,9 +645,11 @@
           (let [coords (.-coords position)
                 lat (.-latitude coords)
                 lng (.-longitude coords)]
-            (set-current-location [lat lng])))
+            (set-current-location [lat lng])
+            (set-is-locating-main-map false)))
         (fn [error]
-          (tel/log! :error {:geolocation-error (.-message error)}))))
+          (tel/log! :error {:geolocation-error (.-message error)})
+          (set-is-locating-main-map false))))
 
     (hooks/use-effect
      [stands]
@@ -657,13 +666,39 @@
             :stands filtered-stands
             :zoom-level 10
             :set-selected-stand set-selected-stand
-            :selected-stand selected-stand}))
+            :selected-stand selected-stand
+            :is-locating is-locating-main-map}))
      (d/div
       {:class "content"}
-      (d/button
-       {:class "add-stand-btn"
-        :onClick #(set-show-form true)}
-       "Add Stand")
+      (d/div
+       {:class "map-actions"}
+       (d/button
+        {:class "add-stand-btn"
+         :onClick #(set-show-form true)}
+        "Add Stand")
+       (d/div
+        {:class "map-actions-right"}
+        (when main-map-location-error
+          (d/p {:class "error-message"} main-map-location-error))
+        (d/button
+         {:type "button"
+          :class "location-btn"
+          :onClick (fn []
+                     (set-main-map-location-error nil)
+                     (set-is-locating-main-map true)
+                     (js/navigator.geolocation.getCurrentPosition
+                      (fn [position]
+                        (let [coords (.-coords position)
+                              lat (.-latitude coords)
+                              lng (.-longitude coords)]
+                          (set-current-location [lat lng])
+                          (set-is-locating-main-map false)))
+                      (fn [error]
+                        (tel/log! :error
+                                  {:failed-location (.-message error)})
+                        (set-main-map-location-error "No Location")
+                        (set-is-locating-main-map false))))}
+         "\u2316")))
       ($ product-list
          {:stands stands
           :set-product-filter set-product-filter
