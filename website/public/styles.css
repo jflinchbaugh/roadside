@@ -477,3 +477,19 @@ body {
 .add-product-btn:hover {
   background-color: #0056b3;
 }
+
+.coordinate-link {
+  display: inline-block; /* or inline-flex */
+  color: #007bff; /* A standard link color */
+  text-decoration: underline; /* Make it look like a link */
+  cursor: pointer;
+}
+
+.coordinate-link:hover {
+  color: #0056b3; /* Darker color on hover */
+}
+
+.coordinate-link p {
+  margin: 0; /* Remove default paragraph margin */
+  display: inline; /* Ensure the text stays inline with the link */
+}

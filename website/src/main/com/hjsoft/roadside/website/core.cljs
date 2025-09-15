@@ -115,6 +115,11 @@
 (defn get-current-timestamp []
   (.toISOString (js/Date.)))
 
+(defn make-map-link [coordinate-str]
+  (when coordinate-str
+    (let [[lat lng] (str/split coordinate-str #", *")]
+      (str "https://maps.google.com/?q=" lat "," lng))))
+
 (defn update-stand
   [form-data editing-stand current-stands]
   (vec
@@ -275,7 +280,9 @@
                                               vec)))
                  :title "Delete this stand"}
                 "Delete")))
-             (d/p (:coordinate stand))
+             (when-let [map-link (make-map-link (:coordinate stand))]
+               (d/a {:href map-link :target "_blank" :rel "noopener noreferrer" :class "coordinate-link"}
+                    (d/p (:coordinate stand))))
              (when (not (empty? (:address stand)))
                (d/p (:address stand)))
              (when (not (empty? (:town stand)))
