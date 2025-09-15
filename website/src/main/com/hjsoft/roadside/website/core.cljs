@@ -688,7 +688,7 @@
      (d/div
       {:class "content"}
       (d/div
-       {:class "map-actions"}
+       {:class "main-actions"}
        (d/button
         {:class "add-stand-btn"
          :onClick #(set-show-form true)}

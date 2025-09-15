@@ -57,7 +57,7 @@ body {
   padding: 0.5em 0;
 }
 
-.map-actions {
+.main-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
