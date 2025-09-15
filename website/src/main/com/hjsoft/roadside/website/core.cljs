@@ -223,7 +223,8 @@
      set-form-data
      set-show-form
      selected-stand
-     set-selected-stand]}]
+     set-selected-stand
+     set-is-locating-main-map]}]
   (do
     (let [stand-refs (hooks/use-ref {})]
       (hooks/use-effect
@@ -262,7 +263,8 @@
                                        :state (:state stand)
                                        :address (:address stand)
                                        :notes (:notes stand)))
-                               (set-show-form true))
+                               (set-show-form true)
+                               (set-is-locating-main-map false))
                  :title "Edit this stand"}
                 "Edit")
                (d/button
@@ -691,7 +693,8 @@
        {:class "main-actions"}
        (d/button
         {:class "add-stand-btn"
-         :onClick #(set-show-form true)}
+         :onClick #(do (set-show-form true)
+                       (set-is-locating-main-map false))}
         "Add Stand")
        (d/div
         {:class "map-actions-right"}
@@ -736,7 +739,8 @@
           :set-form-data set-form-data
           :set-show-form set-show-form
           :selected-stand selected-stand
-          :set-selected-stand set-selected-stand})))))
+          :set-selected-stand set-selected-stand
+          :set-is-locating-main-map set-is-locating-main-map})))))
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]
