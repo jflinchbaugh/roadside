@@ -643,13 +643,14 @@
         [current-location set-current-location] (hooks/use-state map-home)
         [is-locating-main-map set-is-locating-main-map] (hooks/use-state true)
         [main-map-location-error set-main-map-location-error] (hooks/use-state nil)
-        filtered-stands (if product-filter
-                          (filter
-                           #(some
-                             (fn [p] (= p product-filter))
-                             (:products %))
-                           stands)
-                          stands)]
+        filtered-stands (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
+                          (if product-filter
+                            (filter
+                             #(some
+                               (fn [p] (= p product-filter))
+                               (:products %))
+                             sorted-stands)
+                            sorted-stands))]
 
     (hooks/use-effect
      :once
