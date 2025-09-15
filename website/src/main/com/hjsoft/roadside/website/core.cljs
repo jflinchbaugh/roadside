@@ -230,7 +230,9 @@
        [selected-stand]
        (when selected-stand
          (when-let [stand-el (get @stand-refs (stand-key selected-stand))]
-           (.scrollIntoView stand-el (clj->js {:behavior "smooth" :block "nearest"})))))
+           (.scrollIntoView
+            stand-el
+            (clj->js {:behavior "smooth" :block "nearest"})))))
 
       (d/div
        {:class "stands-list"}
@@ -441,25 +443,40 @@
         (d/form
          {:onSubmit (fn [e]
                       (.preventDefault e)
-                      (let [all-unique-products (get-all-unique-products stands)
+                      (let [all-unique-products (get-all-unique-products
+                                                 stands)
                             stand-name (:name form-data)
                             updated-products (reduce
                                               (fn [acc product]
-                                                (if (and (str/includes? (str/lower-case stand-name) (str/lower-case product))
-                                                         (not (some #(= % product) acc)))
+                                                (if
+                                                 (and
+                                                  (str/includes?
+                                                   (str/lower-case stand-name)
+                                                   (str/lower-case product))
+                                                  (not
+                                                   (some
+                                                    #(= % product) acc)))
                                                   (conj acc product)
                                                   acc))
                                               (:products form-data)
                                               all-unique-products)
-                            processed-form-data (assoc form-data :products updated-products)]
+                            processed-form-data (assoc
+                                                 form-data
+                                                 :products
+                                                 updated-products)]
                         (if editing-stand
                           ;; Update existing stand
                           (do
                             (set-stands
-                             (partial update-stand processed-form-data editing-stand))
+                             (partial
+                              update-stand
+                              processed-form-data
+                              editing-stand))
                             (set-show-form false))
                           ;; Add new stand
-                          (let [new-stands (add-stand processed-form-data stands)]
+                          (let [new-stands (add-stand
+                                            processed-form-data
+                                            stands)]
                             (set-stands new-stands)
                             (when (not= new-stands stands)
                               (set-show-form false))))))}
@@ -612,7 +629,7 @@
 (defnc fixed-header [{:keys [children]}]
   (d/div
    {:id "fixed-header"}
-    children))
+   children))
 
 (defnc app []
   (let [[stands set-stands] (hooks/use-state [])
@@ -640,16 +657,16 @@
 
     (hooks/use-effect
      :once
-      (js/navigator.geolocation.getCurrentPosition
-        (fn [position]
-          (let [coords (.-coords position)
-                lat (.-latitude coords)
-                lng (.-longitude coords)]
-            (set-current-location [lat lng])
-            (set-is-locating-main-map false)))
-        (fn [error]
-          (tel/log! :error {:geolocation-error (.-message error)})
-          (set-is-locating-main-map false))))
+     (js/navigator.geolocation.getCurrentPosition
+      (fn [position]
+        (let [coords (.-coords position)
+              lat (.-latitude coords)
+              lng (.-longitude coords)]
+          (set-current-location [lat lng])
+          (set-is-locating-main-map false)))
+      (fn [error]
+        (tel/log! :error {:geolocation-error (.-message error)})
+        (set-is-locating-main-map false))))
 
     (hooks/use-effect
      [stands]
