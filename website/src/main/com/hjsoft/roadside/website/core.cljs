@@ -118,7 +118,7 @@
 (defn make-map-link [coordinate-str]
   (when coordinate-str
     (let [[lat lng] (str/split coordinate-str #", *")]
-      (str "https://maps.google.com/?q=" lat "," lng))))
+      (str "geo:" lat "," lng))))
 
 (defn update-stand
   [form-data editing-stand current-stands]
