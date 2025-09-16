@@ -8,36 +8,10 @@
             [clojure.string :as str]
             [clojure.edn :as edn]))
 
-(defnc product-list [{:keys [stands set-product-filter product-filter]}]
-  (let [all-products (flatten (map :products stands))
-        unique-products (sort (distinct all-products))]
-    (d/div
-     {:class "product-list"}
-     (if (empty? unique-products)
-       (d/p "No products available yet.")
-       (d/div
-        {:class "products-tags"}
-        (map (fn [product]
-               (d/span
-                {:key product
-                 :class (str
-                         "product-tag"
-                         (when (= product product-filter)
-                           " product-tag-active"))
-                 :onClick #(if (= product product-filter)
-                             (set-product-filter nil)
-                             (set-product-filter product))}
-                product))
-             unique-products)))
-     (when product-filter
-       (d/button
-        {:class "clear-filter-btn"
-         :onClick #(set-product-filter nil)}
-        "Clear Filter")))))
-
 (def map-home [40.0379 -76.3055])
 
 ; utils
+
 (defn in-a-week []
   (let [date (js/Date.)
         week-later (+ (.getTime date) (* 7 24 60 60 1000))]
@@ -193,7 +167,6 @@
                           {:coord coord
                            :stand stand
                            :set-selected-stand set-selected-stand}))))
-           _ (tel/log! :info {:locations locations})
            new-layer-group (when (not (empty? locations))
                              (js/L.layerGroup
                               (clj->js (map second locations))))]
@@ -281,7 +254,10 @@
                  :title "Delete this stand"}
                 "Delete")))
              (when-let [map-link (make-map-link (:coordinate stand))]
-               (d/a {:href map-link :target "_blank" :rel "noopener noreferrer" :class "coordinate-link"}
+               (d/a {:href map-link
+                     :target "_blank"
+                     :rel "noopener noreferrer"
+                     :class "coordinate-link"}
                     (d/p (:coordinate stand))))
              (when (not (empty? (:address stand)))
                (d/p (:address stand)))
@@ -639,6 +615,36 @@
   (d/div
    {:id "fixed-header"}
    children))
+
+(defnc product-list
+  [{:keys [stands
+           set-product-filter
+           product-filter]}]
+  (let [all-products (flatten (map :products stands))
+        unique-products (sort (distinct all-products))]
+    (d/div
+     {:class "product-list"}
+     (if (empty? unique-products)
+       (d/p "No products available yet.")
+       (d/div
+        {:class "products-tags"}
+        (map (fn [product]
+               (d/span
+                {:key product
+                 :class (str
+                         "product-tag"
+                         (when (= product product-filter)
+                           " product-tag-active"))
+                 :onClick #(if (= product product-filter)
+                             (set-product-filter nil)
+                             (set-product-filter product))}
+                product))
+             unique-products)))
+     (when product-filter
+       (d/button
+        {:class "clear-filter-btn"
+         :onClick #(set-product-filter nil)}
+        "Clear Filter")))))
 
 (defnc app []
   (let [[stands set-stands] (hooks/use-state [])
