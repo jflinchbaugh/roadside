@@ -229,10 +229,45 @@
                       (when (= (stand-key stand) (stand-key selected-stand))
                         " selected-stand"))
               :onClick #(do (set-selected-stand stand))}
+              (d/div {:class "stand-content"}
+                (when [not (empty? (:name stand))]
+                  (d/div
+                    {:class "stand-header"}
+                    (d/h4 (:name stand))))
+                (when [not (empty? (:coordinate stand))]
+                  (d/p {:class "coordinate-text"} (:coordinate stand)))
+                (when (not (empty? (:address stand)))
+                  (d/p (:address stand)))
+                (when (not (empty? (:town stand)))
+                  (d/p (str (:town stand) ", " (:state stand))))
+                (when (not (empty? (:products stand)))
+                  (d/div
+                    {:class "stand-products"}
+                    (d/strong "Products: ")
+                    (d/div
+                      {:class "products-tags"}
+                      (map (fn [product]
+                             (d/span
+                               {:key product
+                                :class "product-tag"}
+                               product))
+                        (:products stand)))))
+                (when (not (empty? (:notes stand)))
+                  (d/p
+                    {:class "stand-notes"}
+                    (d/strong "Notes: ")
+                    (:notes stand)))
+                (when (not (empty? (:expiration stand)))
+                  (d/p
+                    {:class "expiration-date"}
+                    (d/strong "Expires: ")
+                    (:expiration stand)))
+                (when (:updated stand)
+                  (d/p
+                    {:class "stand-updated"}
+                    (d/strong "Last Updated: ")
+                    (:updated stand))))
              (d/div
-              {:class "stand-header"}
-              (d/h4 (:name stand))
-              (d/div
                {:class "stand-actions"}
                (when-let [map-link (make-map-link (:coordinate stand))]
                  (d/a {:href map-link
@@ -260,40 +295,7 @@
                                               (remove #{stand})
                                               vec)))
                  :title "Delete this stand"}
-                "Delete")))
-             (when [not (empty? (:coordinate stand))]
-               (d/p {:class "coordinate-text"} (:coordinate stand)))
-             (when (not (empty? (:address stand)))
-               (d/p (:address stand)))
-             (when (not (empty? (:town stand)))
-               (d/p (str (:town stand) ", " (:state stand))))
-             (when (not (empty? (:products stand)))
-               (d/div
-                {:class "stand-products"}
-                (d/strong "Products: ")
-                (d/div
-                 {:class "products-tags"}
-                 (map (fn [product]
-                        (d/span
-                         {:key product
-                          :class "product-tag"}
-                         product))
-                      (:products stand)))))
-             (when (not (empty? (:notes stand)))
-               (d/p
-                {:class "stand-notes"}
-                (d/strong "Notes: ")
-                (:notes stand)))
-             (when (not (empty? (:expiration stand)))
-               (d/p
-                {:class "expiration-date"}
-                (d/strong "Expires: ")
-                (:expiration stand)))
-             (when (:updated stand)
-               (d/p
-                {:class "stand-updated"}
-                (d/strong "Last Updated: ")
-                (:updated stand)))))
+                "Delete"))))
           stands))))))
 
 (defnc location-input

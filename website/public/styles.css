@@ -207,6 +207,8 @@ body {
   margin-bottom: 1rem;
   border-radius: 4px;
   background-color: #f9f9f9;
+  display: flex;
+  justify-content: space-between;
 }
 
 .stand-item h4 {
@@ -283,10 +285,10 @@ body {
   color: #666;
 }
 
+.stand-content {
+}
+
 .stand-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 0.5rem;
 }
 
@@ -296,7 +298,9 @@ body {
 
 .stand-actions {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
+  align-items: flex-end;
 }
 
 .delete-stand-btn, .edit-stand-btn, .go-stand-btn {
