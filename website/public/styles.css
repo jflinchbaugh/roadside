@@ -9,14 +9,15 @@
   flex-shrink: 0;
 }
 
-html, body {
-  height: 98vh;
+html {
+  font-size: 18px; /* Define 1rem as 18px */
 }
 
 body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
+  height: 98vh;
 }
 
 .app-container {
@@ -90,12 +91,7 @@ body {
   margin-right: 10px;
 }
 
-.add-stand-btn {
-  background-color: #4CAF50;
-  border: none;
-  color: white;
-  padding: 12px 24px;
-  font-size: 16px;
+  font-size: 1rem;
   cursor: pointer;
   border-radius: 4px;
 }
@@ -144,7 +140,7 @@ body {
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 0.875rem;
   box-sizing: border-box;
 }
 
@@ -153,7 +149,7 @@ body {
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 0.875rem;
   box-sizing: border-box;
   resize: vertical; /* Allow vertical resizing */
 }
@@ -181,7 +177,7 @@ body {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .form-buttons button[type="submit"] {
@@ -234,7 +230,7 @@ body {
   color: #0066cc;
   padding: 4px 8px;
   border-radius: 16px;
-  font-size: 14px;
+  font-size: 0.875rem;
   border: 1px solid #b3d9ff;
 }
 
@@ -301,7 +297,7 @@ body {
   padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: bold;
 }
 
@@ -321,7 +317,7 @@ body {
   padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: bold;
 }
 
@@ -359,7 +355,7 @@ body {
 }
 
 .location-btn {
-  font-size: 32px;
+  font-size: 2rem;
   line-height: 1;
   color: darkred;
   background-color: white;
@@ -403,7 +399,7 @@ body {
   border: none;
   padding: 0;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.875rem;
   margin-top: 0;
   text-decoration: none;
 }
@@ -466,7 +462,7 @@ body {
 
 .add-product-btn {
   padding: 8px 12px; /* Slightly increased padding */
-  font-size: 14px;
+  font-size: 0.875rem;
   background-color: #007bff;
   color: white;
   border: none;
@@ -486,7 +482,7 @@ body {
   padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: bold;
   text-decoration: none;
 }
@@ -496,5 +492,5 @@ body {
 }
 
 .coordinate-text {
-  font-size: 0.8em;
+  font-size: 0.8rem;
 }
