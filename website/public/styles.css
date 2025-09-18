@@ -90,7 +90,11 @@ body {
   flex-grow: 1;
   margin-right: 10px;
 }
-
+.add-stand-btn {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 12px 24px;
   font-size: 1rem;
   cursor: pointer;
   border-radius: 4px;
