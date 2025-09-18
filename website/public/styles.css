@@ -300,9 +300,8 @@ body {
   border: none;
   padding: 6px 12px;
   border-radius: 4px;
+  font-size: 0.845rem;
   cursor: pointer;
-  font-size: 0.75rem;
-  font-weight: bold;
 }
 
 .delete-stand-btn:hover {
@@ -320,9 +319,8 @@ body {
   border: none;
   padding: 6px 12px;
   border-radius: 4px;
+  font-size: 0.845rem;
   cursor: pointer;
-  font-size: 0.75rem;
-  font-weight: bold;
 }
 
 .edit-stand-btn:hover {
@@ -485,9 +483,8 @@ body {
   border: none;
   padding: 6px 12px;
   border-radius: 4px;
+  font-size: 0.845rem;
   cursor: pointer;
-  font-size: 0.75rem;
-  font-weight: bold;
   text-decoration: none;
 }
 
