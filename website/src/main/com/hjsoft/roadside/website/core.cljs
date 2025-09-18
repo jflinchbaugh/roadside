@@ -1,6 +1,6 @@
 (ns com.hjsoft.roadside.website.core
   (:require ["react-dom/client" :as rdom]
-            [helix.core :refer [defnc $]]
+            [helix.core :refer [defnc $ <>]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
             [taoensso.telemere :as tel]
@@ -234,6 +234,12 @@
               (d/h4 (:name stand))
               (d/div
                {:class "stand-actions"}
+               (when-let [map-link (make-map-link (:coordinate stand))]
+                 (d/a {:href map-link
+                       :target "_blank"
+                       :rel "noopener noreferrer"
+                       :class "coordinate-link"}
+                      "Go"))
                (d/button
                 {:class "edit-stand-btn"
                  :onClick #(do (set-editing-stand stand)
@@ -255,12 +261,8 @@
                                               vec)))
                  :title "Delete this stand"}
                 "Delete")))
-             (when-let [map-link (make-map-link (:coordinate stand))]
-               (d/a {:href map-link
-                     :target "_blank"
-                     :rel "noopener noreferrer"
-                     :class "coordinate-link"}
-                    (d/p (:coordinate stand))))
+             (when [not (empty? (:coordinate stand))]
+               (d/p {:class "coordinate-text"} (:coordinate stand)))
              (when (not (empty? (:address stand)))
                (d/p (:address stand)))
              (when (not (empty? (:town stand)))

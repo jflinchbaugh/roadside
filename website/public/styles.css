@@ -479,17 +479,22 @@ body {
 }
 
 .coordinate-link {
-  display: inline-block; /* or inline-flex */
-  color: #007bff; /* A standard link color */
-  text-decoration: underline; /* Make it look like a link */
+  display: inline-block;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
   cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  text-decoration: none;
 }
 
 .coordinate-link:hover {
-  color: #0056b3; /* Darker color on hover */
+  background-color: #0056b3;
 }
 
-.coordinate-link p {
-  margin: 0; /* Remove default paragraph margin */
-  display: inline; /* Ensure the text stays inline with the link */
+.coordinate-text {
+  font-size: 0.8em;
 }
