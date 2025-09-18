@@ -9,6 +9,8 @@
             [clojure.edn :as edn]))
 
 (def map-home [40.0379 -76.3055])
+(def add-zoom-level 16)
+(def initial-zoom-level 11)
 
 ; utils
 
@@ -320,7 +322,7 @@
      ($ leaflet-map
         {:div-id "map-form"
          :center (or (parse-coordinates (:coordinate form-data)) map-home)
-         :zoom-level 14
+         :zoom-level add-zoom-level
          :show-crosshairs true
          :set-coordinate-form-data (fn [coord-str]
                                      (set-form-data
@@ -697,7 +699,7 @@
            {:div-id "map-container"
             :center current-location
             :stands filtered-stands
-            :zoom-level 10
+            :zoom-level initial-zoom-level
             :set-selected-stand set-selected-stand
             :selected-stand selected-stand
             :is-locating is-locating-main-map}))
