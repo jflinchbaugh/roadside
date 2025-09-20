@@ -80,6 +80,15 @@
     (.on marker "click" #(set-selected-stand stand))
     [stand marker]))
 
+(defn make-current-location-marker
+  [coord]
+  (js/L.circleMarker (clj->js coord)
+                     (clj->js {:radius 6
+                               :color "#3388ff"
+                               :fillColor "#3388ff"
+                               :fillOpacity 0.8
+                               :weight 2})))
+
 (defn- init-map [div-id center zoom-level]
   (let [m (js/L.map div-id)
         tl (js/L.tileLayer
@@ -132,9 +141,11 @@
            show-crosshairs
            set-coordinate-form-data
            map-ref
-           is-locating]}]
+           is-locating
+           current-location-coords]}]
   (let [[stand-map set-stand-map] (hooks/use-state nil)
-        [layer-group set-layer-group] (hooks/use-state nil)]
+        [layer-group set-layer-group] (hooks/use-state nil)
+        [current-location-marker set-current-location-marker] (hooks/use-state nil)]
     (hooks/use-effect
      [center]
      (when stand-map
@@ -184,7 +195,17 @@
              (= (stand-key selected-stand) (stand-key s))))
           first
           second
-          (#(.openPopup ^js %)))))))
+          (#(.openPopup ^js %))))))
+
+    (hooks/use-effect
+     [current-location-coords]
+     (when stand-map
+       (when current-location-marker
+         (.removeLayer ^js stand-map current-location-marker))
+       (when current-location-coords
+         (let [marker (make-current-location-marker current-location-coords)]
+           (.addTo ^js marker stand-map)
+           (set-current-location-marker marker))))))
   (d/div {:id div-id
           :style {:position "relative"}}
          (when show-crosshairs
@@ -706,7 +727,8 @@
             :zoom-level initial-zoom-level
             :set-selected-stand set-selected-stand
             :selected-stand selected-stand
-            :is-locating is-locating-main-map}))
+            :is-locating is-locating-main-map
+            :current-location-coords current-location}))
      (d/div
       {:class "content"}
       (d/div
