@@ -25,6 +25,7 @@ body {
   margin: 0 auto;
   display: flex;
   flex-direction: column; /* Arrange children vertically */
+  max-height: 98vh;
 }
 
 .header {
@@ -79,7 +80,7 @@ body {
 
 #map-form {
   height: 200px;
-  width: 100%;
+  width: 80%;
   margin: 0 auto;
   margin-bottom: 1rem; /* Add some space below the map */
 }
