@@ -690,7 +690,22 @@
                                (fn [p] (= p product-filter))
                                (:products %))
                              sorted-stands)
-                            sorted-stands))]
+                            sorted-stands))
+        locate-main-map (fn []
+                          (set-main-map-location-error nil)
+                          (set-is-locating-main-map true)
+                          (js/navigator.geolocation.getCurrentPosition
+                           (fn [position]
+                             (let [coords (.-coords position)
+                                   lat (.-latitude coords)
+                                   lng (.-longitude coords)]
+                               (set-current-location [lat lng])
+                               (set-is-locating-main-map false)))
+                           (fn [error]
+                             (tel/log! :error
+                                       {:failed-location (.-message error)})
+                             (set-main-map-location-error "No Location")
+                             (set-is-locating-main-map false))))]
 
     (hooks/use-effect
      :once
@@ -700,16 +715,7 @@
 
     (hooks/use-effect
      :once
-     (js/navigator.geolocation.getCurrentPosition
-      (fn [position]
-        (let [coords (.-coords position)
-              lat (.-latitude coords)
-              lng (.-longitude coords)]
-          (set-current-location [lat lng])
-          (set-is-locating-main-map false)))
-      (fn [error]
-        (tel/log! :error {:geolocation-error (.-message error)})
-        (set-is-locating-main-map false))))
+     (locate-main-map))
 
     (hooks/use-effect
      [stands]
@@ -745,21 +751,7 @@
         (d/button
          {:type "button"
           :class "location-btn"
-          :onClick (fn []
-                     (set-main-map-location-error nil)
-                     (set-is-locating-main-map true)
-                     (js/navigator.geolocation.getCurrentPosition
-                      (fn [position]
-                        (let [coords (.-coords position)
-                              lat (.-latitude coords)
-                              lng (.-longitude coords)]
-                          (set-current-location [lat lng])
-                          (set-is-locating-main-map false)))
-                      (fn [error]
-                        (tel/log! :error
-                                  {:failed-location (.-message error)})
-                        (set-main-map-location-error "No Location")
-                        (set-is-locating-main-map false))))}
+          :onClick locate-main-map}
          "\u2316")))
       ($ product-list
          {:stands stands
