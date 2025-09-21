@@ -1,6 +1,6 @@
 (ns com.hjsoft.roadside.website.core
   (:require ["react-dom/client" :as rdom]
-            [helix.core :refer [defnc $ <>]]
+            [helix.core :refer [defnc $]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
             [taoensso.telemere :as tel]
@@ -21,7 +21,7 @@
     (.substring (.toISOString (js/Date. week-later)) 0 10)))
 
 (defn add-product-to-form-data
-  [current-product form-data set-form-data]
+  [current-product set-form-data]
   (when (not= current-product "")
     (set-form-data
      (fn [prev]
@@ -67,7 +67,7 @@
         popup-content (str
                        (when (not (str/blank? (:name stand)))
                          (str "<b>" (:name stand) "</b><br>"))
-                       (when (not (empty? (:products stand)))
+                       (when (seq (:products stand))
                          (str
                           (str/join
                            ", "
@@ -184,7 +184,7 @@
                           {:coord coord
                            :stand stand
                            :set-selected-stand set-selected-stand}))))
-           new-layer-group (when (not (empty? locations))
+           new-layer-group (when (seq locations)
                              (js/L.layerGroup
                               (clj->js (map second locations))))]
        (when layer-group
@@ -195,7 +195,7 @@
          (some->>
           locations
           (filter
-           (fn [[s m]]
+           (fn [[s _]]
              (= (stand-key selected-stand) (stand-key s))))
           first
           second
@@ -230,98 +230,99 @@
      selected-stand
      set-selected-stand
      set-is-locating-main-map]}]
-  (do
-    (let [stand-refs (hooks/use-ref {})]
-      (hooks/use-effect
-       [selected-stand]
-       (when selected-stand
-         (when-let [stand-el (get @stand-refs (stand-key selected-stand))]
-           (.scrollIntoView
-            stand-el
-            (clj->js {:behavior "smooth" :block "nearest"})))))
+  (let [stand-refs (hooks/use-ref {})]
+    (hooks/use-effect
+     [selected-stand]
+     (when selected-stand
+       (when-let [stand-el (get @stand-refs (stand-key selected-stand))]
+         (.scrollIntoView
+          stand-el
+          (clj->js {:behavior "smooth" :block "nearest"})))))
 
-      (d/div
-       {:class "stands-list"}
-       (if (empty? stands)
-         (d/p "No stands added yet.")
-         (map
-          (fn [stand]
-            (d/div
-             {:key (stand-key stand)
-              :ref (fn [el] (swap! stand-refs assoc (stand-key stand) el))
-              :class (str
-                      "stand-item"
-                      (when (= (stand-key stand) (stand-key selected-stand))
-                        " selected-stand"))
-              :onClick #(do (set-selected-stand stand))}
-             (d/div {:class "stand-content"}
-                    (when [not (empty? (:name stand))]
-                      (d/div
-                       {:class "stand-header"}
-                       (d/h4 (:name stand))))
-                    (when [not (empty? (:coordinate stand))]
-                      (d/p {:class "coordinate-text"} (:coordinate stand)))
-                    (when (not (empty? (:address stand)))
-                      (d/p (:address stand)))
-                    (when (not (empty? (:town stand)))
-                      (d/p (str (:town stand) ", " (:state stand))))
-                    (when (not (empty? (:products stand)))
-                      (d/div
-                       {:class "stand-products"}
-                       (d/strong "Products: ")
-                       (d/div
-                        {:class "products-tags"}
-                        (map (fn [product]
-                               (d/span
-                                {:key product
-                                 :class "product-tag"}
-                                product))
-                             (:products stand)))))
-                    (when (not (empty? (:notes stand)))
-                      (d/p
-                       {:class "stand-notes"}
-                       (d/strong "Notes: ")
-                       (:notes stand)))
-                    (when (not (empty? (:expiration stand)))
-                      (d/p
-                       {:class "expiration-date"}
-                       (d/strong "Expires: ")
-                       (:expiration stand)))
-                    (when (:updated stand)
-                      (d/p
-                       {:class "stand-updated"}
-                       (d/strong "Last Updated: ")
-                       (:updated stand))))
-             (d/div
-              {:class "stand-actions"}
-              (when-let [map-link (make-map-link (:coordinate stand))]
-                (d/a {:href map-link
-                      :target "_blank"
-                      :rel "noopener noreferrer"
-                      :class "go-stand-btn"}
-                     "Go"))
-              (d/button
-               {:class "edit-stand-btn"
-                :onClick #(do (set-editing-stand stand)
-                              (set-form-data
-                               (assoc stand
-                                      :town (:town stand)
-                                      :state (:state stand)
-                                      :address (:address stand)
-                                      :notes (:notes stand)))
-                              (set-show-form true)
-                              (set-is-locating-main-map false))
-                :title "Edit this stand"}
-               "Edit")
-              (d/button
-               {:class "delete-stand-btn"
-                :onClick #(set-stands (fn [current-stands]
-                                        (->> current-stands
-                                             (remove #{stand})
-                                             vec)))
-                :title "Delete this stand"}
-               "Delete"))))
-          stands))))))
+    (d/div
+     {:class "stands-list"}
+     (if (empty? stands)
+       (d/p "No stands added yet.")
+       (map
+        (fn [stand]
+          (d/div
+           {:key (stand-key stand)
+            :ref (fn [el] (swap! stand-refs assoc (stand-key stand) el))
+            :class (str
+                    "stand-item"
+                    (when (= (stand-key stand) (stand-key selected-stand))
+                      " selected-stand"))
+            :onClick #(do (set-selected-stand stand))}
+           (d/div
+            {:class "stand-content"}
+            (when (seq (:name stand))
+              (d/div
+               {:class "stand-header"}
+               (d/h4 (:name stand))))
+            (when (seq (:coordinate stand))
+              (d/p {:class "coordinate-text"} (:coordinate stand)))
+            (when (seq (:address stand))
+              (d/p (:address stand)))
+            (let [town-state (remove empty? (:town stand))]
+              (when (seq town-state)
+                (d/p (str/join ", " town-state))))
+            (when (seq (:products stand))
+              (d/div
+               {:class "stand-products"}
+               (d/strong "Products: ")
+               (d/div
+                {:class "products-tags"}
+                (map (fn [product]
+                       (d/span
+                        {:key product
+                         :class "product-tag"}
+                        product))
+                     (:products stand)))))
+            (when (seq (:notes stand))
+              (d/p
+               {:class "stand-notes"}
+               (d/strong "Notes: ")
+               (:notes stand)))
+            (when (seq (:expiration stand))
+              (d/p
+               {:class "expiration-date"}
+               (d/strong "Expires: ")
+               (:expiration stand)))
+            (when (seq  (:updated stand))
+              (d/p
+               {:class "stand-updated"}
+               (d/strong "Last Updated: ")
+               (:updated stand))))
+           (d/div
+            {:class "stand-actions"}
+            (when-let [map-link (make-map-link (:coordinate stand))]
+              (d/a {:href map-link
+                    :target "_blank"
+                    :rel "noopener noreferrer"
+                    :class "go-stand-btn"}
+                   "Go"))
+            (d/button
+             {:class "edit-stand-btn"
+              :onClick #(do (set-editing-stand stand)
+                            (set-form-data
+                             (assoc stand
+                                    :town (:town stand)
+                                    :state (:state stand)
+                                    :address (:address stand)
+                                    :notes (:notes stand)))
+                            (set-show-form true)
+                            (set-is-locating-main-map false))
+              :title "Edit this stand"}
+             "Edit")
+            (d/button
+             {:class "delete-stand-btn"
+              :onClick #(set-stands (fn [current-stands]
+                                      (->> current-stands
+                                           (remove #{stand})
+                                           vec)))
+              :title "Delete this stand"}
+             "Delete"))))
+        stands)))))
 
 (defnc location-input
   [{:keys
@@ -587,7 +588,6 @@
                              (.preventDefault e)
                              (add-product-to-form-data
                               current-product
-                              form-data
                               set-form-data)
                              (set-current-product "")))})
             (d/button
@@ -596,7 +596,6 @@
               :onClick (fn []
                          (add-product-to-form-data
                           current-product
-                          form-data
                           set-form-data)
                          (set-current-product ""))}
              "Add")))
