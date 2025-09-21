@@ -149,7 +149,11 @@
     (hooks/use-effect
      [center]
      (when stand-map
-       (.setView ^js stand-map (clj->js center) (.getZoom ^js stand-map))))
+       (.setView
+        ^js stand-map
+        (clj->js center)
+        (.getZoom ^js stand-map)
+        (clj->js {:animate false}))))
 
     (hooks/use-effect
      :once
@@ -198,7 +202,7 @@
           (#(.openPopup ^js %))))))
 
     (hooks/use-effect
-     [current-location-coords]
+     [current-location-coords is-locating]
      (when stand-map
        (when current-location-marker
          (.removeLayer ^js stand-map current-location-marker))
@@ -250,73 +254,73 @@
                       (when (= (stand-key stand) (stand-key selected-stand))
                         " selected-stand"))
               :onClick #(do (set-selected-stand stand))}
-              (d/div {:class "stand-content"}
-                (when [not (empty? (:name stand))]
-                  (d/div
-                    {:class "stand-header"}
-                    (d/h4 (:name stand))))
-                (when [not (empty? (:coordinate stand))]
-                  (d/p {:class "coordinate-text"} (:coordinate stand)))
-                (when (not (empty? (:address stand)))
-                  (d/p (:address stand)))
-                (when (not (empty? (:town stand)))
-                  (d/p (str (:town stand) ", " (:state stand))))
-                (when (not (empty? (:products stand)))
-                  (d/div
-                    {:class "stand-products"}
-                    (d/strong "Products: ")
-                    (d/div
-                      {:class "products-tags"}
-                      (map (fn [product]
-                             (d/span
-                               {:key product
-                                :class "product-tag"}
-                               product))
-                        (:products stand)))))
-                (when (not (empty? (:notes stand)))
-                  (d/p
-                    {:class "stand-notes"}
-                    (d/strong "Notes: ")
-                    (:notes stand)))
-                (when (not (empty? (:expiration stand)))
-                  (d/p
-                    {:class "expiration-date"}
-                    (d/strong "Expires: ")
-                    (:expiration stand)))
-                (when (:updated stand)
-                  (d/p
-                    {:class "stand-updated"}
-                    (d/strong "Last Updated: ")
-                    (:updated stand))))
+             (d/div {:class "stand-content"}
+                    (when [not (empty? (:name stand))]
+                      (d/div
+                       {:class "stand-header"}
+                       (d/h4 (:name stand))))
+                    (when [not (empty? (:coordinate stand))]
+                      (d/p {:class "coordinate-text"} (:coordinate stand)))
+                    (when (not (empty? (:address stand)))
+                      (d/p (:address stand)))
+                    (when (not (empty? (:town stand)))
+                      (d/p (str (:town stand) ", " (:state stand))))
+                    (when (not (empty? (:products stand)))
+                      (d/div
+                       {:class "stand-products"}
+                       (d/strong "Products: ")
+                       (d/div
+                        {:class "products-tags"}
+                        (map (fn [product]
+                               (d/span
+                                {:key product
+                                 :class "product-tag"}
+                                product))
+                             (:products stand)))))
+                    (when (not (empty? (:notes stand)))
+                      (d/p
+                       {:class "stand-notes"}
+                       (d/strong "Notes: ")
+                       (:notes stand)))
+                    (when (not (empty? (:expiration stand)))
+                      (d/p
+                       {:class "expiration-date"}
+                       (d/strong "Expires: ")
+                       (:expiration stand)))
+                    (when (:updated stand)
+                      (d/p
+                       {:class "stand-updated"}
+                       (d/strong "Last Updated: ")
+                       (:updated stand))))
              (d/div
-               {:class "stand-actions"}
-               (when-let [map-link (make-map-link (:coordinate stand))]
-                 (d/a {:href map-link
-                       :target "_blank"
-                       :rel "noopener noreferrer"
-                       :class "go-stand-btn"}
-                      "Go"))
-               (d/button
-                {:class "edit-stand-btn"
-                 :onClick #(do (set-editing-stand stand)
-                               (set-form-data
-                                (assoc stand
-                                       :town (:town stand)
-                                       :state (:state stand)
-                                       :address (:address stand)
-                                       :notes (:notes stand)))
-                               (set-show-form true)
-                               (set-is-locating-main-map false))
-                 :title "Edit this stand"}
-                "Edit")
-               (d/button
-                {:class "delete-stand-btn"
-                 :onClick #(set-stands (fn [current-stands]
-                                         (->> current-stands
-                                              (remove #{stand})
-                                              vec)))
-                 :title "Delete this stand"}
-                "Delete"))))
+              {:class "stand-actions"}
+              (when-let [map-link (make-map-link (:coordinate stand))]
+                (d/a {:href map-link
+                      :target "_blank"
+                      :rel "noopener noreferrer"
+                      :class "go-stand-btn"}
+                     "Go"))
+              (d/button
+               {:class "edit-stand-btn"
+                :onClick #(do (set-editing-stand stand)
+                              (set-form-data
+                               (assoc stand
+                                      :town (:town stand)
+                                      :state (:state stand)
+                                      :address (:address stand)
+                                      :notes (:notes stand)))
+                              (set-show-form true)
+                              (set-is-locating-main-map false))
+                :title "Edit this stand"}
+               "Edit")
+              (d/button
+               {:class "delete-stand-btn"
+                :onClick #(set-stands (fn [current-stands]
+                                        (->> current-stands
+                                             (remove #{stand})
+                                             vec)))
+                :title "Delete this stand"}
+               "Delete"))))
           stands))))))
 
 (defnc location-input
@@ -326,11 +330,12 @@
      set-is-locating
      form-data
      set-form-data
-     location-btn-ref]}] ; New prop
+     location-btn-ref]}]
   (let [[location-error set-location-error] (hooks/use-state nil)
         [coordinate-display set-coordinate-display] (hooks/use-state
                                                      (:coordinate form-data))
-        map-ref (hooks/use-ref nil)]
+        map-ref (hooks/use-ref nil)
+        [current-location set-current-location] (hooks/use-state nil)]
     (hooks/use-effect
      [map-ref (:coordinate form-data)]
      (when-let [m @map-ref]
@@ -354,7 +359,8 @@
                                       (fn [prev]
                                         (assoc prev :coordinate coord-str))))
          :map-ref map-ref
-         :is-locating is-locating})
+         :is-locating is-locating
+         :current-location-coords current-location})
      (d/label "Coordinate:")
      (d/div
       {:class "coordinate-input-group"}
@@ -381,6 +387,7 @@
                       (let [coords (.-coords position)
                             lat (.-latitude coords)
                             lng (.-longitude coords)]
+                        (set-current-location [lat lng])
                         (set-form-data
                          (fn [prev]
                            (assoc
