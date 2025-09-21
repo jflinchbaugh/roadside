@@ -17,14 +17,12 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  height: 98vh;
 }
 
 .app-container {
   font-family: Arial, sans-serif;
   max-width: 800px;
   margin: 0 auto;
-  height: 100vh; /* Take full viewport height */
   display: flex;
   flex-direction: column; /* Arrange children vertically */
 }
@@ -123,8 +121,8 @@ body {
   border-radius: 8px;
   min-width: 400px;
   max-width: 500px;
-  max-height: 90vh; /* Limit height to 90% of viewport height */
   position: relative;
+  height: 90vh;
   overflow-y: auto; /* Enable vertical scrolling */
 }
 
