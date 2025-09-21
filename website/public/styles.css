@@ -129,6 +129,50 @@ body {
   padding-bottom: 5rem; /* Make space for floating buttons */
 }
 
+.form-header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.form-header-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.button.primary {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.button.primary:hover {
+  background-color: #45a049;
+}
+
+.button {
+  background-color: #f44336;
+  color: white;
+}
+
+.button:hover {
+  background-color: #cc0000;
+}
+
 .form-group {
   margin-bottom: 1rem;
 }
@@ -158,47 +202,8 @@ body {
   resize: vertical; /* Allow vertical resizing */
 }
 
-.form-buttons {
-  display: flex;
-  justify-content: space-between; /* Added to align items to opposite sides */
-  gap: 1rem;
-  margin-top: 1.5rem;
-  margin-left: auto;
-  margin-right: auto;
-  position: sticky; /* Changed to sticky */
-  bottom: 0;
-  width: 90%;
-  box-sizing: border-box;
-  padding: 1rem 2rem;
-  background-color: #f8f8f8; /* Light grey background */
-  border: 1px solid #ddd;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); /* Added shadow */
-  z-index: 1001;
-}
-
-.form-buttons button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
-}
-
-.form-buttons button[type="submit"] {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.form-buttons button[type="button"] {
-  background-color: #f44336;
-  color: white;
-}
-
 .form-content-wrapper {
   padding-bottom: 1rem; /* Space between last field and buttons */
-}
-
-.stands-list {
 }
 
 .stand-item {

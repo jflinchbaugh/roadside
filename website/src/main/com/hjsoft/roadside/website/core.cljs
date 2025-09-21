@@ -458,8 +458,6 @@
        (d/div
         {:class "form-container"
          :onClick #(.stopPropagation %)}
-        (d/h3
-         (if editing-stand "Edit Stand" "Add New Stand"))
         (d/form
          {:onSubmit (fn [e]
                       (.preventDefault e)
@@ -500,6 +498,21 @@
                             (set-stands new-stands)
                             (when (not= new-stands stands)
                               (set-show-form false))))))}
+         (d/div
+          {:class "form-header-actions"}
+          (d/h3 (if editing-stand "Edit Stand" "Add New Stand"))
+           (d/div {:class "form-header-buttons"}
+             (d/button
+               {:type "submit"
+                :class "button icon-button primary"
+                :title "Save"}
+               "\u2713")
+             (d/button
+               {:type "button"
+                :class "button icon-button"
+                :on-click #(set-show-form false)
+                :title "Cancel"}
+               "\u2715")))
          (d/div
           {:class "form-content-wrapper"}
           ($ location-input
@@ -620,16 +633,7 @@
                          (fn [prev]
                            (assoc
                             prev
-                            :expiration (.. % -target -value))))})))
-         (d/div
-          {:class "form-buttons"}
-          (d/button
-           {:type "submit"}
-           (if editing-stand "Save Changes" "Add Stand"))
-          (d/button
-           {:type "button"
-            :onClick #(set-show-form false)}
-           "Cancel"))))))))
+                            :expiration (.. % -target -value))))})))))))))
 
 (defnc header []
   (d/header
