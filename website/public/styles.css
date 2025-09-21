@@ -119,14 +119,13 @@ body {
 
 .form-container {
   background: white;
-  padding: 2rem;
+  padding: 0 2rem 2rem 2rem;
   border-radius: 8px;
   min-width: 400px;
   max-width: 500px;
   max-height: 90vh; /* Limit height to 90% of viewport height */
   position: relative;
   overflow-y: auto; /* Enable vertical scrolling */
-  padding-bottom: 5rem; /* Make space for floating buttons */
 }
 
 .form-header-actions {
@@ -134,6 +133,15 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  position: sticky;
+  top: 0;
+  background-color: white; /* Ensure it's visible over scrolling content */
+  z-index: 2000; /* Ensure it stays on top */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Optional: add a subtle shadow */
+}
+
+.form-header-actions h3 {
+  margin: 0;
 }
 
 .form-header-buttons {
