@@ -387,6 +387,7 @@ body {
 
 .error-message {
   color: red;
+  margin: auto;
 }
 
 .product-list {
