@@ -263,7 +263,7 @@
               (d/p {:class "coordinate-text"} (:coordinate stand)))
             (when (seq (:address stand))
               (d/p (:address stand)))
-            (let [town-state (remove empty? (:town stand))]
+            (let [town-state (remove empty? [(:town stand) (:state stand)])]
               (when (seq town-state)
                 (d/p (str/join ", " town-state))))
             (when (seq (:products stand))
