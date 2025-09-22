@@ -2,3 +2,4 @@
 website/node_modules
 website/public/js
 website/public/index.html
+server/target

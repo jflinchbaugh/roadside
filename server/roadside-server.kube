@@ -1,0 +1,8 @@
+[Install]
+WantedBy=default.target
+
+[Unit]
+Description=roadside server
+
+[Kube]
+Yaml=roadside-server.yaml
