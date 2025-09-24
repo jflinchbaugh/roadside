@@ -734,7 +734,7 @@
     (d/div
      {:class "app-container"}
 
-     ($ fixed-header {}
+     ($ fixed-header
         ($ header)
         ($ leaflet-map
            {:div-id "map-container"
