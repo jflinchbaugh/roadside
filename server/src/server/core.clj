@@ -79,7 +79,7 @@
   [req]
   (let [id nil
         login (:identity req)]
-    (if-not (and logger (owner? login logger))
+    (if-not true
       (not-found)
       (do
         (api-response 200 (format "'%s' deleted" id))))))
