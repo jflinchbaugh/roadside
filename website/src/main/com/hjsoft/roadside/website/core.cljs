@@ -84,7 +84,7 @@
   [coord]
   (js/L.circleMarker (clj->js coord)
                      (clj->js {:radius 6
-                               :color "#3388ff"
+                               :color "#ffffff"
                                :fillColor "#3388ff"
                                :fillOpacity 0.8
                                :weight 2})))
