@@ -1,14 +1,3 @@
-#fixed-header {
-  background-color: #f8f8f8;
-  padding: 10px 20px 0 20px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  box-sizing: border-box; /* Include padding in the width */
-  height: 40vh;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-}
-
 html {
   font-size: 18px; /* Define 1rem as 18px */
 }
@@ -20,12 +9,22 @@ body {
 }
 
 .app-container {
-  font-family: Arial, sans-serif;
   max-width: 800px;
   margin: 0 auto;
   display: flex;
   flex-direction: column; /* Arrange children vertically */
   max-height: 98vh;
+}
+
+#fixed-header {
+  background-color: #f8f8f8;
+  padding: 10px 20px 0 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-sizing: border-box; /* Include padding in the width */
+  height: 40vh;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
 }
 
 .header {
@@ -118,25 +117,24 @@ body {
 
 .form-container {
   background: white;
-  padding: 1rem 2rem 2rem 2rem;
+  padding: 0.5rem 1rem 1rem 1rem;
   border-radius: 8px;
+  box-sizing: border-box;
   min-width: 400px;
   max-width: 500px;
-  position: relative;
-  height: 90vh;
-  overflow-y: auto; /* Enable vertical scrolling */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 95vh;
+  max-height: 95vh;
 }
 
 .form-header-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  position: sticky;
-  top: 0;
-  background-color: white; /* Ensure it's visible over scrolling content */
-  z-index: 2000; /* Ensure it stays on top */
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Optional: add a subtle shadow */
+  margin-bottom: 0.25rem;
+  flex-shrink: 0;
 }
 
 .form-header-actions h3 {
@@ -181,7 +179,7 @@ body {
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  padding: 0.25em;
 }
 
 .form-group label {
@@ -210,7 +208,12 @@ body {
 }
 
 .form-content-wrapper {
-  padding-bottom: 1rem; /* Space between last field and buttons */
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding 0.5em 0;
 }
 
 .stand-item {
