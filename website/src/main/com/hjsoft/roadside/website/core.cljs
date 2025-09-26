@@ -14,22 +14,14 @@
 
 ; utils
 
+(defn get-current-timestamp []
+  (.toISOString (js/Date.)))
+
 (defn in-a-week []
   (let [date (js/Date.)
         week-later (+ (.getTime date) (* 7 24 60 60 1000))]
     (.toISOString (js/Date. week-later))
     (.substring (.toISOString (js/Date. week-later)) 0 10)))
-
-(defn add-product-to-form-data
-  [current-product set-form-data]
-  (when (not= current-product "")
-    (set-form-data
-     (fn [prev]
-       (if (some #(= % current-product) (:products prev))
-         prev
-         (assoc
-          prev
-          :products (conj (:products prev) current-product)))))))
 
 (defn stand-key
   [stand]
@@ -98,8 +90,16 @@
     (.addTo tl m)
     m))
 
-(defn get-current-timestamp []
-  (.toISOString (js/Date.)))
+(defn add-product-to-form-data
+  [current-product set-form-data]
+  (when (not= current-product "")
+    (set-form-data
+     (fn [prev]
+       (if (some #(= % current-product) (:products prev))
+         prev
+         (assoc
+          prev
+          :products (conj (:products prev) current-product)))))))
 
 (defn make-map-link [coordinate-str]
   (when coordinate-str
