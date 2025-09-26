@@ -33,12 +33,12 @@
         "stand key built from fields"))
 
 (t/deftest get-all-unique-products
-  (t/is
-    (= [] (sut/get-all-unique-products nil))
-    "empty list")
-  (t/is
-    (= [] (sut/get-all-unique-products []))
-    "empty list")
+  (t/testing "empty product list for most errors"
+    (t/are [stands]
+        (= [] (sut/get-all-unique-products stands))
+      nil
+      []
+      [nil]))
   (t/is
     (= ["other" "thing"] (sut/get-all-unique-products [{:products ["thing" "thing"]}
                                                        {:products ["thing" "other"]}]))
