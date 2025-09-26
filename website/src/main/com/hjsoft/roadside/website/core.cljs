@@ -58,7 +58,8 @@
   (let [res (->>
              (str/split coords #", *")
              (map str/trim)
-             (map parse-double))]
+             (map parse-double)
+             (remove nil?))]
     (when (= 2 (count res)) res)))
 
 (defn make-marker

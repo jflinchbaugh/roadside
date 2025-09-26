@@ -34,5 +34,21 @@
     "empty list")
   (t/is
     (= ["other" "thing"] (sut/get-all-unique-products [{:products ["thing" "thing"]}
-                                               {:products ["thing" "other"]}]))
+                                                       {:products ["thing" "other"]}]))
     "unique products sorted"))
+
+
+(t/deftest parse-coordinates
+  (t/are
+      [expected provided]
+      (= expected (sut/parse-coordinates provided))
+    nil nil
+    nil ""
+    nil "x"
+    nil "10"
+    nil "10.0,x"
+    nil "x,10.0"
+    nil "10.0,12.0,13.0"
+    [10.0 12.0] "10.0,12.0"
+    [10.0 12.0] " 10.0, 12.0 "
+    [-10.0 -12.0] "-10.0, -12.0"))
