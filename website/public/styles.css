@@ -374,7 +374,6 @@ body {
   width: 30px;
   height: 30px;
   animation: spin 2s linear infinite;
-  margin-bottom: 10px;
 }
 
 @keyframes spin {
