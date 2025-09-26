@@ -2,6 +2,7 @@
   "name": "roadside-web",
   "version": "1.0.0",
   "dependencies": {
+    "global-jsdom": "^27.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
