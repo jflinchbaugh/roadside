@@ -27,3 +27,12 @@
                           :state "state"
                           :products ["prod" "thing"]}))
     "stand key built from fields"))
+
+(t/deftest get-all-unique-products
+  (t/is
+    (= [] (sut/get-all-unique-products []))
+    "empty list")
+  (t/is
+    (= ["other" "thing"] (sut/get-all-unique-products [{:products ["thing" "thing"]}
+                                               {:products ["thing" "other"]}]))
+    "unique products sorted"))
