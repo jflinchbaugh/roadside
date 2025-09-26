@@ -6,7 +6,8 @@
             [taoensso.telemere :as tel]
             [cljs.reader]
             [clojure.string :as str]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            ["leaflet" :as L]))
 
 (def map-home [40.0379 -76.3055])
 (def add-zoom-level 16)
@@ -57,7 +58,7 @@
 
 (defn make-marker
   [{:keys [coord stand set-selected-stand]}]
-  (let [marker (js/L.marker (clj->js coord))
+  (let [marker (L/marker (clj->js coord))
         popup-content (str
                        (when (not (str/blank? (:name stand)))
                          (str "<b>" (:name stand) "</b><br>"))
@@ -70,13 +71,13 @@
     (.bindPopup
      marker
      popup-content
-     (clj->js {"autoPanPadding" (js/L.point 100 100)}))
+     (clj->js {"autoPanPadding" (L/point 100 100)}))
     (.on marker "click" #(set-selected-stand stand))
     [stand marker]))
 
 (defn make-current-location-marker
   [coord]
-  (js/L.circleMarker (clj->js coord)
+  (L/circleMarker (clj->js coord)
                      (clj->js {:radius 6
                                :color "#ffffff"
                                :fillColor "#3388ff"
@@ -84,8 +85,8 @@
                                :weight 2})))
 
 (defn- init-map [div-id center zoom-level]
-  (let [m (js/L.map div-id)
-        tl (js/L.tileLayer
+  (let [m (L/map div-id)
+        tl (L/tileLayer
             "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")]
     (.setView m (clj->js center) zoom-level)
     (.addTo tl m)
@@ -189,7 +190,7 @@
                            :stand stand
                            :set-selected-stand set-selected-stand}))))
            new-layer-group (when (seq locations)
-                             (js/L.layerGroup
+                             (L/layerGroup
                               (clj->js (map second locations))))]
        (when layer-group
          (.removeLayer ^js stand-map layer-group))
