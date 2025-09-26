@@ -34,11 +34,14 @@
 
 (t/deftest get-all-unique-products
   (t/is
-   (= [] (sut/get-all-unique-products []))
-   "empty list")
+    (= [] (sut/get-all-unique-products nil))
+    "empty list")
   (t/is
-   (= ["other" "thing"] (sut/get-all-unique-products [{:products ["thing" "thing"]}
-                                                      {:products ["thing" "other"]}]))
+    (= [] (sut/get-all-unique-products []))
+    "empty list")
+  (t/is
+    (= ["other" "thing"] (sut/get-all-unique-products [{:products ["thing" "thing"]}
+                                                       {:products ["thing" "other"]}]))
    "unique products sorted"))
 
 (t/deftest parse-coordinates
