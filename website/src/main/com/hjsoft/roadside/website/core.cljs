@@ -91,6 +91,13 @@
     (.addTo tl m)
     m))
 
+(defn make-map-link [coordinate-str]
+  (when coordinate-str
+    (let [[lat lng] (str/split coordinate-str #", *")]
+      (str "geo:" lat "," lng))))
+
+;; actions
+
 (defn add-product-to-form-data
   [current-product set-form-data]
   (when (not= current-product "")
@@ -101,11 +108,6 @@
          (assoc
           prev
           :products (conj (:products prev) current-product)))))))
-
-(defn make-map-link [coordinate-str]
-  (when coordinate-str
-    (let [[lat lng] (str/split coordinate-str #", *")]
-      (str "geo:" lat "," lng))))
 
 (defn update-stand
   [form-data editing-stand current-stands]
