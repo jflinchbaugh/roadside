@@ -35,14 +35,18 @@
 (t/deftest get-all-unique-products
   (t/testing "empty product list for most errors"
     (t/are [stands]
-        (= [] (sut/get-all-unique-products stands))
+           (= [] (sut/get-all-unique-products stands))
       nil
       []
-      [nil]))
+      [nil]
+      [{:other "thing"}]
+      [{:products nil}]))
   (t/is
-    (= ["other" "thing"] (sut/get-all-unique-products [{:products ["thing" "thing"]}
-                                                       {:products ["thing" "other"]}]))
-   "unique products sorted"))
+   (= ["other" "thing"]
+      (sut/get-all-unique-products
+       [{:products [" thing " "thing"]}
+        {:products ["thing" "other"]}]))
+   "unique products trimmed and sorted"))
 
 (t/deftest parse-coordinates
   (t/are
