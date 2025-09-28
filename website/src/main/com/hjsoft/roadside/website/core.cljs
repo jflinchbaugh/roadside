@@ -529,50 +529,6 @@
              :location-btn-ref location-btn-ref}) ; Pass the new ref
          (d/div
           {:class "form-group"}
-          (d/label "Stand Name:")
-          (d/input
-           {:type "text"
-            :value (:name form-data)
-            :onChange #(set-form-data
-                        (fn [prev]
-                          (assoc
-                           prev
-                           :name (.. % -target -value))))}))
-         (d/div
-          {:class "form-group"}
-          (d/label "Address:")
-          (d/input
-           {:type "text"
-            :value (:address form-data)
-            :onChange #(set-form-data
-                        (fn [prev]
-                          (assoc
-                           prev
-                           :address (.. % -target -value))))}))
-         (d/div
-          {:class "form-group"}
-          (d/label "Town:")
-          (d/input
-           {:type "text"
-            :value (:town form-data)
-            :onChange #(set-form-data
-                        (fn [prev]
-                          (assoc
-                           prev
-                           :town (.. % -target -value))))}))
-         (d/div
-          {:class "form-group"}
-          (d/label "State:")
-          (d/input
-           {:type "text"
-            :value (:state form-data)
-            :onChange #(set-form-data
-                        (fn [prev]
-                          (assoc
-                           prev
-                           :state (.. % -target -value))))}))
-         (d/div
-          {:class "form-group"}
           (d/label "Products:")
           (d/div
            {:class "products-tags"}
@@ -617,6 +573,50 @@
                          set-form-data)
                         (set-current-product ""))}
             "Add")))
+         (d/div
+          {:class "form-group"}
+          (d/label "Stand Name:")
+          (d/input
+           {:type "text"
+            :value (:name form-data)
+            :onChange #(set-form-data
+                        (fn [prev]
+                          (assoc
+                           prev
+                           :name (.. % -target -value))))}))
+         (d/div
+          {:class "form-group"}
+          (d/label "Address:")
+          (d/input
+           {:type "text"
+            :value (:address form-data)
+            :onChange #(set-form-data
+                        (fn [prev]
+                          (assoc
+                           prev
+                           :address (.. % -target -value))))}))
+         (d/div
+          {:class "form-group"}
+          (d/label "Town:")
+          (d/input
+           {:type "text"
+            :value (:town form-data)
+            :onChange #(set-form-data
+                        (fn [prev]
+                          (assoc
+                           prev
+                           :town (.. % -target -value))))}))
+         (d/div
+          {:class "form-group"}
+          (d/label "State:")
+          (d/input
+           {:type "text"
+            :value (:state form-data)
+            :onChange #(set-form-data
+                        (fn [prev]
+                          (assoc
+                           prev
+                           :state (.. % -target -value))))}))
          (d/div
           {:class "form-group"}
           (d/label "Notes:")
