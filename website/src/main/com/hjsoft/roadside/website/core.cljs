@@ -95,7 +95,8 @@
 (defn make-map-link [coordinate-str]
   (when coordinate-str
     (let [[lat lng] (str/split coordinate-str #", *")]
-      (str "geo:" lat "," lng))))
+      (when (and lat lng)
+        (str "geo:" (str/trim lat) "," (str/trim lng))))))
 
 ;; actions
 

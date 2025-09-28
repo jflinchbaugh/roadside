@@ -62,3 +62,12 @@
     [10.0 12.0] "10.0,12.0"
     [10.0 12.0] " 10.0, 12.0 "
     [-10.0 -12.0] "-10.0, -12.0"))
+
+(t/deftest make-map-link
+  (t/are [expected input]
+      (= expected (sut/make-map-link input))
+    nil nil
+    nil ""
+    nil ","
+    "geo:1,2" " 1, 2 "
+    ))
