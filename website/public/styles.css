@@ -397,16 +397,29 @@ body {
 }
 
 .location-btn {
+  background-color: #6c757d;
+  border: none;
+  color: white;
+  padding: 2px 12px;
   font-size: 2rem;
-  line-height: 1;
-  color: darkred;
-  background-color: white;
-  border: 1px solid darkred;
-  padding: 2px 4px 4px 4px;
+  cursor: pointer;
   border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin-left: 0.5rem;
+}
+
+.location-btn:hover {
+  background-color: #5a6268;
+}
+
+.settings-btn {
+  background-color: #6c757d;
+  border: none;
+  color: white;
+  padding: 12px 15px;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-left: 0.5rem;
 }
 
 .coordinate-input-group {
@@ -459,16 +472,16 @@ body {
 }
 
 .crosshairs {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 20px;
-    height: 20px;
-    border: 2px solid #999;
-    border-radius: 50%;
-    z-index: 1000;
-    pointer-events: none; /* Allow map interaction through the crosshairs */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #999;
+  border-radius: 50%;
+  z-index: 1000;
+  pointer-events: none; /* Allow map interaction through the crosshairs */
 }
 
 .crosshairs::before,
