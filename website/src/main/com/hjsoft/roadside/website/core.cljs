@@ -694,6 +694,26 @@
          :onClick #(set-product-filter nil)}
         "Clear Filter")))))
 
+(defnc settings-dialog [{:keys [show-settings-dialog set-show-settings-dialog]}]
+  (when show-settings-dialog
+    (d/div
+     {:class "settings-overlay"
+      :onClick #(set-show-settings-dialog false)}
+     (d/div
+      {:class "settings-dialog"
+       :onClick #(.stopPropagation %)}
+      (d/div
+       {:class "settings-header"}
+       (d/h3 "Settings")
+       (d/button
+        {:class "button icon-button"
+         :onClick #(set-show-settings-dialog false)
+         :title "Close"}
+        "\u2715"))
+      (d/div
+       {:class "settings-content"}
+       (d/p "Settings will go here."))))))
+
 (defnc app []
   (let [[stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
@@ -704,6 +724,7 @@
         [current-location set-current-location] (hooks/use-state map-home)
         [is-locating-main-map set-is-locating-main-map] (hooks/use-state true)
         [main-map-location-error set-main-map-location-error] (hooks/use-state nil)
+        [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
         filtered-stands (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
                           (if product-filter
                             (filter
@@ -795,7 +816,15 @@
           :set-show-form set-show-form
           :selected-stand selected-stand
           :set-selected-stand set-selected-stand
-          :set-is-locating-main-map set-is-locating-main-map})))))
+          :set-is-locating-main-map set-is-locating-main-map})
+       (d/button
+         {:class "settings-btn"
+          :onClick #(set-show-settings-dialog true)}
+         "\u2699")
+       ($ settings-dialog
+          {:show-settings-dialog show-settings-dialog
+           :set-show-settings-dialog set-show-settings-dialog})))
+     ))
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]
