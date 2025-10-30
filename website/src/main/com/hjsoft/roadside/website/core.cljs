@@ -78,11 +78,11 @@
 (defn make-current-location-marker
   [coord]
   (L/circleMarker (clj->js coord)
-                     (clj->js {:radius 6
-                               :color "#ffffff"
-                               :fillColor "#3388ff"
-                               :fillOpacity 0.8
-                               :weight 1})))
+                  (clj->js {:radius 6
+                            :color "#ffffff"
+                            :fillColor "#3388ff"
+                            :fillOpacity 0.8
+                            :weight 1})))
 
 (defn- init-map [div-id center zoom-level]
   (let [m (L/map div-id)
@@ -153,7 +153,7 @@
         [layer-group set-layer-group] (hooks/use-state nil)
         [current-location-marker set-current-location-marker] (hooks/use-state nil)]
     (hooks/use-effect
-     [center]
+     [center stand-map]
      (when stand-map
        (.setView
         ^js stand-map
@@ -177,38 +177,41 @@
        (set-stand-map m)))
 
     (hooks/use-effect
-     [stands selected-stand]
-     (let [locations (->>
-                      stands
-                      (map (fn [s]
-                             {:coord (parse-coordinates (:coordinate s))
-                              :stand s}))
-                      (remove (comp nil? :coord))
-                      (map
-                       (fn [{:keys [coord stand]}]
-                         (make-marker
-                          {:coord coord
-                           :stand stand
-                           :set-selected-stand set-selected-stand}))))
-           new-layer-group (when (seq locations)
-                             (L/layerGroup
-                              (clj->js (map second locations))))]
-       (when layer-group
-         (.removeLayer ^js stand-map layer-group))
-       (when new-layer-group
-         (.addTo ^js new-layer-group stand-map)
-         (set-layer-group new-layer-group)
-         (some->>
-          locations
-          (filter
-           (fn [[s _]]
-             (= (stand-key selected-stand) (stand-key s))))
-          first
-          second
-          (#(.openPopup ^js %))))))
+     [stands selected-stand stand-map]
+     (when stand-map
+       (let [locations (->>
+                        stands
+                        (map (fn [s]
+                               {:coord (parse-coordinates (:coordinate s))
+                                :stand s}))
+                        (remove (comp nil? :coord))
+                        (map
+                         (fn [{:keys [coord stand]}]
+                           (make-marker
+                            {:coord coord
+                             :stand stand
+                             :set-selected-stand (or
+                                                  set-selected-stand
+                                                  (constantly nil))}))))
+             new-layer-group (when (seq locations)
+                               (L/layerGroup
+                                (clj->js (map second locations))))]
+         (when layer-group
+           (.removeLayer ^js stand-map layer-group))
+         (when new-layer-group
+           (.addTo ^js new-layer-group stand-map)
+           (set-layer-group new-layer-group)
+           (some->>
+            locations
+            (filter
+             (fn [[s _]]
+               (= (stand-key selected-stand) (stand-key s))))
+            first
+            second
+            (#(.openPopup ^js %)))))))
 
     (hooks/use-effect
-     [current-location-coords is-locating]
+     [current-location-coords is-locating stand-map]
      (when stand-map
        (when current-location-marker
          (.removeLayer ^js stand-map current-location-marker))
@@ -258,7 +261,7 @@
                     "stand-item"
                     (when (= (stand-key stand) (stand-key selected-stand))
                       " selected-stand"))
-            :onClick #(do (set-selected-stand stand))}
+            :onClick #(set-selected-stand stand)}
            (d/div
             {:class "stand-content"}
             (when (seq (:name stand))
@@ -337,7 +340,8 @@
      set-is-locating
      form-data
      set-form-data
-     location-btn-ref]}]
+     location-btn-ref
+     stands]}]
   (let [[location-error set-location-error] (hooks/use-state nil)
         [coordinate-display set-coordinate-display] (hooks/use-state
                                                      (:coordinate form-data))
@@ -360,6 +364,7 @@
         {:div-id "map-form"
          :center (or (parse-coordinates (:coordinate form-data)) map-home)
          :zoom-level add-zoom-level
+         :stands stands
          :show-crosshairs true
          :set-coordinate-form-data (fn [coord-str]
                                      (set-form-data
@@ -526,7 +531,8 @@
              :set-is-locating set-is-locating
              :form-data form-data
              :set-form-data set-form-data
-             :location-btn-ref location-btn-ref}) ; Pass the new ref
+             :location-btn-ref location-btn-ref
+             :stands stands}) 
          (d/div
           {:class "form-group"}
           (d/label "Products:")
