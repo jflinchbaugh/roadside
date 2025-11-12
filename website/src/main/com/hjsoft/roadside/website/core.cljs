@@ -423,6 +423,61 @@
         {:class "error-message"}
         location-error)))))
 
+(defnc product-input
+  [{:keys [form-data
+           set-form-data
+           current-product
+           set-current-product]}]
+  (d/div
+   {:class "product-section-wrapper"}
+   (d/div
+    {:class "form-group"}
+    (d/label "Products:")
+    (d/div
+     {:class "products-tags"}
+     (map (fn [product]
+            (d/span
+             {:key product
+              :class "product-tag"}
+             product
+             (d/button
+              {:type "button"
+               :class "remove-tag"
+               :onClick #(set-form-data
+                          (fn [prev]
+                            (assoc
+                             prev
+                             :products (->> prev
+                                            :products
+                                            (remove #{product})
+                                            vec))))}
+              "\u2715")))
+          (:products form-data)))
+    (d/div
+     {:class "product-input-group"}
+     (d/input
+      {:type "text"
+       :value current-product
+       :placeholder "Add a product and press Enter"
+       :onChange #(set-current-product (.. % -target -value))
+       :onKeyDown (fn [e]
+                    (when (= (.-key e) "Enter")
+                      (.preventDefault e)
+                      (add-product-to-form-data
+                       current-product
+                       set-form-data)
+                      (set-current-product "")))
+       :enterkeyhint "enter"})
+     (d/button
+      {:type "button"
+       :class "add-product-btn"
+       :onClick (fn []
+                  (add-product-to-form-data
+                   current-product
+                   set-form-data)
+                  (set-current-product ""))}
+      "Add")))))
+
 (defnc stand-form
   [{:keys [form-data
            set-form-data
@@ -539,55 +594,12 @@
              :set-form-data set-form-data
              :location-btn-ref location-btn-ref
              :stands stands})
-         (d/div
-          {:class "product-section-wrapper"}
-          (d/div
-           {:class "form-group"}
-           (d/label "Products:")
-           (d/div
-            {:class "products-tags"}
-            (map (fn [product]
-                   (d/span
-                    {:key product
-                     :class "product-tag"}
-                    product
-                    (d/button
-                     {:type "button"
-                      :class "remove-tag"
-                      :onClick #(set-form-data
-                                 (fn [prev]
-                                   (assoc
-                                    prev
-                                    :products (->> prev
-                                                   :products
-                                                   (remove #{product})
-                                                   vec))))}
-                    "\u2715")))
-                 (:products form-data)))
-           (d/div
-            {:class "product-input-group"}
-            (d/input
-             {:type "text"
-              :value current-product
-              :placeholder "Add a product and press Enter"
-              :onChange #(set-current-product (.. % -target -value))
-              :onKeyDown (fn [e]
-                           (when (= (.-key e) "Enter")
-                             (.preventDefault e)
-                             (add-product-to-form-data
-                              current-product
-                              set-form-data)
-                             (set-current-product "")))
-              :enterkeyhint "enter"})
-            (d/button
-             {:type "button"
-              :class "add-product-btn"
-              :onClick (fn []
-                         (add-product-to-form-data
-                          current-product
-                          set-form-data)
-                         (set-current-product ""))}
-             "Add"))))
+          ($ product-input
+             {:form-data form-data
+              :set-form-data set-form-data
+              ;; TODO can current product controls be moved into component?
+              :current-product current-product
+              :set-current-product set-current-product})
          (d/div
           {:class "form-group"}
           (d/label "Stand Name:")
