@@ -695,24 +695,48 @@
         "Clear Filter")))))
 
 (defnc settings-dialog [{:keys [show-settings-dialog set-show-settings-dialog]}]
-  (when show-settings-dialog
-    (d/div
-     {:class "settings-overlay"
-      :onClick #(set-show-settings-dialog false)}
-     (d/div
-      {:class "settings-dialog"
-       :onClick #(.stopPropagation %)}
+  (let [[resource set-resource] (hooks/use-state "")
+        [user set-user] (hooks/use-state "")
+        [password set-password] (hooks/use-state "")]
+    (when show-settings-dialog
       (d/div
-       {:class "settings-header"}
-       (d/h3 "Settings")
-       (d/button
-        {:class "button icon-button"
-         :onClick #(set-show-settings-dialog false)
-         :title "Close"}
-        "\u2715"))
-      (d/div
-       {:class "settings-content"}
-       (d/p "Settings will go here."))))))
+       {:class "settings-overlay"
+        :onClick #(set-show-settings-dialog false)}
+       (d/div
+        {:class "settings-dialog"
+         :onClick #(.stopPropagation %)}
+        (d/div
+         {:class "settings-header"}
+         (d/h3 "Settings")
+         (d/button
+          {:class "button icon-button"
+           :onClick #(set-show-settings-dialog false)
+           :title "Close"}
+          "\u2715"))
+        (d/div
+         {:class "settings-content"}
+         (d/div
+          {:class "form-group"}
+          (d/label "Resource:")
+          (d/input
+           {:type "text"
+            :value resource
+            :onChange #(set-resource (.. % -target -value))}))
+         (d/div
+          {:class "form-group"}
+          (d/label "User:")
+          (d/input
+           {:type "text"
+            :value user
+            :onChange #(set-user (.. % -target -value))}))
+         (d/div
+          {:class "form-group"}
+          (d/label "Password:")
+          (d/input
+           {:type "password"
+            :value password
+            :onChange #(set-password (.. % -target -value))}))))))))
+
 
 (defnc app []
   (let [[stands set-stands] (hooks/use-state [])
