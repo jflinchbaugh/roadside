@@ -318,12 +318,12 @@
              {:class "edit-stand-btn"
               :onClick #(do (set-editing-stand stand)
                             (set-form-data
-                              (assoc stand
-                                :town (:town stand)
-                                :state (:state stand)
-                                :address (:address stand)
-                                :notes (:notes stand)
-                                :shared? (:shared? stand)))
+                             (assoc stand
+                                    :town (:town stand)
+                                    :state (:state stand)
+                                    :address (:address stand)
+                                    :notes (:notes stand)
+                                    :shared? (:shared? stand)))
                             (set-show-form true)
                             (set-is-locating-main-map false))
               :title "Edit this stand"}
@@ -539,55 +539,56 @@
              :set-form-data set-form-data
              :location-btn-ref location-btn-ref
              :stands stands})
-                  (d/div
-                   {:class "product-section-wrapper"}
-                   (d/div
-                    {:class "form-group"}
-                    (d/label "Products:")
-                    (d/div
-                     {:class "products-tags"}
-                     (map (fn [product]
-                            (d/span
-                             {:key product
-                              :class "product-tag"}
-                             product
-                             (d/button
-                              {:type "button"
-                               :class "remove-tag"
-                               :onClick #(set-form-data
-                                          (fn [prev]
-                                            (assoc
-                                             prev
-                                             :products (->> prev
-                                                            :products
-                                                            (remove #{product})
-                                                            vec))))}
-                              "×")))
-                          (:products form-data)))
-                    (d/div
-                     {:class "product-input-group"}
-                     (d/input
-                      {:type "text"
-                       :value current-product
-                       :placeholder "Add a product and press Enter"
-                       :onChange #(set-current-product (.. % -target -value))
-                       :onKeyDown (fn [e]
-                                    (when (= (.-key e) "Enter")
-                                      (.preventDefault e)
-                                      (add-product-to-form-data
-                                       current-product
-                                       set-form-data)
-                                      (set-current-product "")))
-                       :enterkeyhint "enter"})
-                     (d/button
-                      {:type "button"
-                       :class "add-product-btn"
-                       :onClick (fn []
-                                  (add-product-to-form-data
-                                   current-product
-                                   set-form-data)
-                                  (set-current-product ""))}
-                      "Add"))))         (d/div
+         (d/div
+          {:class "product-section-wrapper"}
+          (d/div
+           {:class "form-group"}
+           (d/label "Products:")
+           (d/div
+            {:class "products-tags"}
+            (map (fn [product]
+                   (d/span
+                    {:key product
+                     :class "product-tag"}
+                    product
+                    (d/button
+                     {:type "button"
+                      :class "remove-tag"
+                      :onClick #(set-form-data
+                                 (fn [prev]
+                                   (assoc
+                                    prev
+                                    :products (->> prev
+                                                   :products
+                                                   (remove #{product})
+                                                   vec))))}
+                     "×")))
+                 (:products form-data)))
+           (d/div
+            {:class "product-input-group"}
+            (d/input
+             {:type "text"
+              :value current-product
+              :placeholder "Add a product and press Enter"
+              :onChange #(set-current-product (.. % -target -value))
+              :onKeyDown (fn [e]
+                           (when (= (.-key e) "Enter")
+                             (.preventDefault e)
+                             (add-product-to-form-data
+                              current-product
+                              set-form-data)
+                             (set-current-product "")))
+              :enterkeyhint "enter"})
+            (d/button
+             {:type "button"
+              :class "add-product-btn"
+              :onClick (fn []
+                         (add-product-to-form-data
+                          current-product
+                          set-form-data)
+                         (set-current-product ""))}
+             "Add"))))
+         (d/div
           {:class "form-group"}
           (d/label "Stand Name:")
           (d/input
@@ -743,8 +744,8 @@
          {:type "text"
           :value (:resource form-data)
           :onChange #(set-form-data
-                       (fn [prev]
-                         (assoc prev :resource (.. % -target -value))))}))
+                      (fn [prev]
+                        (assoc prev :resource (.. % -target -value))))}))
        (d/div
         {:class "form-group"}
         (d/label "User:")
@@ -752,7 +753,7 @@
          {:type "text"
           :value (:user form-data)
           :onChange #(set-form-data
-                       (fn [prev] (assoc prev :user (.. % -target -value))))}))
+                      (fn [prev] (assoc prev :user (.. % -target -value))))}))
        (d/div
         {:class "form-group"}
         (d/label "Password:")
@@ -760,7 +761,7 @@
          {:type "password"
           :value (:password form-data)
           :onChange #(set-form-data
-                       (fn [prev] (assoc prev :password (.. % -target -value))))}))
+                      (fn [prev] (assoc prev :password (.. % -target -value))))}))
        (d/div
         {:class "settings-actions"}
         (d/button
@@ -788,9 +789,9 @@
         [main-map-location-error set-main-map-location-error] (hooks/use-state nil)
         [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
         [settings-form-data set-settings-form-data] (hooks/use-state
-                                                      {:resource ""
-                                                       :user ""
-                                                       :password ""})
+                                                     {:resource ""
+                                                      :user ""
+                                                      :password ""})
         [settings set-settings] (hooks/use-state {})
         filtered-stands (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
                           (if product-filter
