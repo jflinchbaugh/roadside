@@ -562,7 +562,7 @@
                                                    :products
                                                    (remove #{product})
                                                    vec))))}
-                     "×")))
+                    "\u2715")))
                  (:products form-data)))
            (d/div
             {:class "product-input-group"}
