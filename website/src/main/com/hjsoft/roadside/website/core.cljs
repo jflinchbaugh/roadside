@@ -513,16 +513,16 @@
          (d/h3 (if editing-stand "Edit Stand" "Add New Stand"))
          (d/div {:class "form-header-buttons"}
                 (d/button
-                 {:type "submit"
-                  :class "button icon-button primary"
-                  :title "Save"}
-                 "\u2713")
-                (d/button
                  {:type "button"
                   :class "button icon-button"
                   :on-click #(set-show-form false)
                   :title "Cancel"}
-                 "\u2715")))
+                 "\u2715")
+                (d/button
+                 {:type "submit"
+                  :class "button icon-button primary"
+                  :title "Save"}
+                 "\u2713")))
         (d/div
          {:class "form-content-wrapper"}
          ($ location-input
@@ -745,18 +745,18 @@
        (d/div
         {:class "settings-actions"}
         (d/button
+         {:type "button"
+          :class "button secondary"
+          :onClick #(set-show-settings-dialog false)}
+         "Cancel")
+        (d/button
          {:type "submit"
           :class "button primary"
           :onClick #(do
                       (tel/log! :info {:saving-form form-data})
                       (set-settings form-data)
                       (set-show-settings-dialog false))}
-         "Save")
-        (d/button
-         {:type "button"
-          :class "button secondary"
-          :onClick #(set-show-settings-dialog false)}
-         "Cancel")))))))
+         "Save")))))))
 
 (defnc app []
   (let [[stands set-stands] (hooks/use-state [])
