@@ -735,8 +735,19 @@
           (d/input
            {:type "password"
             :value password
-            :onChange #(set-password (.. % -target -value))}))))))))
-
+            :onChange #(set-password (.. % -target -value))}))
+         (d/div
+          {:class "settings-actions"}
+          (d/button
+           {:type "submit"
+            :class "button primary"
+            :onClick #(set-show-settings-dialog false)}
+           "Save")
+          (d/button
+           {:type "button"
+            :class "button"
+            :onClick #(set-show-settings-dialog false)}
+           "Cancel"))))))))
 
 (defnc app []
   (let [[stands set-stands] (hooks/use-state [])
