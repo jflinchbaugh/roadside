@@ -652,10 +652,11 @@
                            prev
                            :expiration (.. % -target -value))))}))
          (d/div
-          {:class "form-group checkbox-group"}
+          {:class "form-group"}
           (d/label {:for "shared-checkbox"} "Shared?")
           (d/input
            {:id "shared-checkbox"
+            :class "checkbox"
             :type "checkbox"
             :checked (get form-data :shared? false)
             :onChange #(set-form-data
