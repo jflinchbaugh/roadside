@@ -575,7 +575,8 @@
                             (add-product-to-form-data
                              current-product
                              set-form-data)
-                            (set-current-product "")))})
+                            (set-current-product "")))
+             :enterkeyhint "enter"})
            (d/button
             {:type "button"
              :class "add-product-btn"
