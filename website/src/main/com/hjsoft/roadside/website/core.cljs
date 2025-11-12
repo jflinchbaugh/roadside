@@ -301,7 +301,11 @@
               (d/p
                {:class "stand-updated"}
                (d/strong "Last Updated: ")
-               (:updated stand))))
+               (:updated stand)))
+            (d/p
+             {:class "stand-shared"}
+             (d/strong "Shared: ")
+             (if (:shared? stand) "Yes" "No")))
            (d/div
             {:class "stand-actions"}
             (when-let [map-link (make-map-link (:coordinate stand))]
@@ -314,11 +318,12 @@
              {:class "edit-stand-btn"
               :onClick #(do (set-editing-stand stand)
                             (set-form-data
-                             (assoc stand
-                                    :town (:town stand)
-                                    :state (:state stand)
-                                    :address (:address stand)
-                                    :notes (:notes stand)))
+                              (assoc stand
+                                :town (:town stand)
+                                :state (:state stand)
+                                :address (:address stand)
+                                :notes (:notes stand)
+                                :shared? (:shared? stand)))
                             (set-show-form true)
                             (set-is-locating-main-map false))
               :title "Edit this stand"}
@@ -443,7 +448,8 @@
          :state ""
          :products []
          :expiration (in-a-week)
-         :notes ""})))
+         :notes ""
+         :shared? true})))
 
     (hooks/use-effect
      [show-form]
@@ -644,7 +650,17 @@
                         (fn [prev]
                           (assoc
                            prev
-                           :expiration (.. % -target -value))))}))))))))
+                           :expiration (.. % -target -value))))}))
+         (d/div
+          {:class "form-group checkbox-group"}
+          (d/label {:for "shared-checkbox"} "Shared?")
+          (d/input
+           {:id "shared-checkbox"
+            :type "checkbox"
+            :checked (get form-data :shared? false)
+            :onChange #(set-form-data
+                        (fn [prev]
+                          (assoc prev :shared? (.. % -target -checked))))}))))))))
 
 (defnc header []
   (d/header
