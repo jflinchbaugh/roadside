@@ -532,7 +532,7 @@
              :form-data form-data
              :set-form-data set-form-data
              :location-btn-ref location-btn-ref
-             :stands stands}) 
+             :stands stands})
          (d/div
           {:class "form-group"}
           (d/label "Products:")
@@ -694,72 +694,86 @@
          :onClick #(set-product-filter nil)}
         "Clear Filter")))))
 
-(defnc settings-dialog [{:keys [show-settings-dialog set-show-settings-dialog]}]
-  (let [[resource set-resource] (hooks/use-state "")
-        [user set-user] (hooks/use-state "")
-        [password set-password] (hooks/use-state "")]
-    (when show-settings-dialog
+(defnc settings-dialog
+  [{:keys [show-settings-dialog
+           set-show-settings-dialog
+           form-data
+           set-form-data
+           set-settings]}]
+  (when show-settings-dialog
+    (d/div
+     {:class "settings-overlay"
+      :onClick #(set-show-settings-dialog false)}
+     (d/div
+      {:class "settings-dialog"
+       :onClick #(.stopPropagation %)}
       (d/div
-       {:class "settings-overlay"
-        :onClick #(set-show-settings-dialog false)}
+       {:class "settings-header"}
+       (d/h3 "Settings")
+       (d/button
+        {:class "button icon-button"
+         :onClick #(set-show-settings-dialog false)
+         :title "Close"}
+        "\u2715"))
+      (d/div
+       {:class "settings-content"}
        (d/div
-        {:class "settings-dialog"
-         :onClick #(.stopPropagation %)}
-        (d/div
-         {:class "settings-header"}
-         (d/h3 "Settings")
-         (d/button
-          {:class "button icon-button"
-           :onClick #(set-show-settings-dialog false)
-           :title "Close"}
-          "\u2715"))
-        (d/div
-         {:class "settings-content"}
-         (d/div
-          {:class "form-group"}
-          (d/label "Resource:")
-          (d/input
-           {:type "text"
-            :value resource
-            :onChange #(set-resource (.. % -target -value))}))
-         (d/div
-          {:class "form-group"}
-          (d/label "User:")
-          (d/input
-           {:type "text"
-            :value user
-            :onChange #(set-user (.. % -target -value))}))
-         (d/div
-          {:class "form-group"}
-          (d/label "Password:")
-          (d/input
-           {:type "password"
-            :value password
-            :onChange #(set-password (.. % -target -value))}))
-         (d/div
-          {:class "settings-actions"}
-          (d/button
-           {:type "submit"
-            :class "button primary"
-            :onClick #(set-show-settings-dialog false)}
-           "Save")
-          (d/button
-           {:type "button"
-            :class "button"
-            :onClick #(set-show-settings-dialog false)}
-           "Cancel"))))))))
+        {:class "form-group"}
+        (d/label "Resource:")
+        (d/input
+         {:type "text"
+          :value (:resource form-data)
+          :onChange #(set-form-data
+                       (fn [prev]
+                         (assoc prev :resource (.. % -target -value))))}))
+       (d/div
+        {:class "form-group"}
+        (d/label "User:")
+        (d/input
+         {:type "text"
+          :value (:user form-data)
+          :onChange #(set-form-data
+                       (fn [prev] (assoc prev :user (.. % -target -value))))}))
+       (d/div
+        {:class "form-group"}
+        (d/label "Password:")
+        (d/input
+         {:type "password"
+          :value (:password form-data)
+          :onChange #(set-form-data
+                       (fn [prev] (assoc prev :password (.. % -target -value))))}))
+       (d/div
+        {:class "settings-actions"}
+        (d/button
+         {:type "submit"
+          :class "button primary"
+          :onClick #(do
+                      (tel/log! :info {:saving-form form-data})
+                      (set-settings form-data)
+                      (set-show-settings-dialog false))}
+         "Save")
+        (d/button
+         {:type "button"
+          :class "button secondary"
+          :onClick #(set-show-settings-dialog false)}
+         "Cancel")))))))
 
 (defnc app []
   (let [[stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
         [editing-stand set-editing-stand] (hooks/use-state nil)
-        [form-data set-form-data] (hooks/use-state {})
+        [stand-form-data set-stand-form-data] (hooks/use-state {})
         [product-filter set-product-filter] (hooks/use-state nil)
         [selected-stand set-selected-stand] (hooks/use-state nil)
         [current-location set-current-location] (hooks/use-state map-home)
         [is-locating-main-map set-is-locating-main-map] (hooks/use-state true)
         [main-map-location-error set-main-map-location-error] (hooks/use-state nil)
         [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
+        [settings-form-data set-settings-form-data] (hooks/use-state
+                                                      {:resource ""
+                                                       :user ""
+                                                       :password ""})
+        [settings set-settings] (hooks/use-state {})
         filtered-stands (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
                           (if product-filter
                             (filter
@@ -791,12 +805,26 @@
          (set-stands (edn/read-string saved-stands)))))
 
     (hooks/use-effect
-     :once
-     (locate-main-map))
+     [stands]
+     (js/localStorage.setItem "roadside-stands" (pr-str stands)))
 
     (hooks/use-effect
-     [stands]
-     (js/localStorage.setItem "roadside-stands" stands))
+     :once
+     (let [saved-settings (js/localStorage.getItem "roadside-settings")]
+       (tel/log! :info {:read-roadside-settings saved-settings})
+       (when saved-settings
+         (set-settings-form-data (edn/read-string saved-settings))
+         (set-settings (edn/read-string saved-settings)))))
+
+    (hooks/use-effect
+     [settings]
+     (let [to-save (pr-str settings)]
+       (tel/log! :info {:write-roadside-settings to-save})
+       (js/localStorage.setItem "roadside-settings" to-save)))
+
+    (hooks/use-effect
+     :once
+     (locate-main-map))
 
     (d/div
      {:class "app-container"}
@@ -835,8 +863,8 @@
           :set-product-filter set-product-filter
           :product-filter product-filter})
       ($ stand-form
-         {:form-data form-data
-          :set-form-data set-form-data
+         {:form-data stand-form-data
+          :set-form-data set-stand-form-data
           :show-form show-form
           :set-show-form set-show-form
           :editing-stand editing-stand
@@ -847,19 +875,21 @@
          {:stands filtered-stands
           :set-stands set-stands
           :set-editing-stand set-editing-stand
-          :set-form-data set-form-data
+          :set-form-data set-stand-form-data
           :set-show-form set-show-form
           :selected-stand selected-stand
           :set-selected-stand set-selected-stand
           :set-is-locating-main-map set-is-locating-main-map})
-       (d/button
-         {:class "settings-btn"
-          :onClick #(set-show-settings-dialog true)}
-         "\u2699")
-       ($ settings-dialog
-          {:show-settings-dialog show-settings-dialog
-           :set-show-settings-dialog set-show-settings-dialog})))
-     ))
+      (d/button
+       {:class "settings-btn"
+        :onClick #(set-show-settings-dialog true)}
+       "\u2699")
+      ($ settings-dialog
+         {:show-settings-dialog show-settings-dialog
+          :set-show-settings-dialog set-show-settings-dialog
+          :form-data settings-form-data
+          :set-form-data set-settings-form-data
+          :set-settings set-settings})))))
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]
