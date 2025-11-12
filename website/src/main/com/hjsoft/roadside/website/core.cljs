@@ -753,7 +753,6 @@
          {:type "submit"
           :class "button primary"
           :onClick #(do
-                      (tel/log! :info {:saving-form form-data})
                       (set-settings form-data)
                       (set-show-settings-dialog false))}
          "Save")))))))
@@ -811,7 +810,6 @@
     (hooks/use-effect
      :once
      (let [saved-settings (js/localStorage.getItem "roadside-settings")]
-       (tel/log! :info {:read-roadside-settings saved-settings})
        (when saved-settings
          (set-settings-form-data (edn/read-string saved-settings))
          (set-settings (edn/read-string saved-settings)))))
@@ -819,7 +817,6 @@
     (hooks/use-effect
      [settings]
      (let [to-save (pr-str settings)]
-       (tel/log! :info {:write-roadside-settings to-save})
        (js/localStorage.setItem "roadside-settings" to-save)))
 
     (hooks/use-effect
