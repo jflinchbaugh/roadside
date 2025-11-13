@@ -14,8 +14,6 @@
 
 (def ^:const base-url "/roadside")
 
-(defonce storage (atom {}))
-
 (defn api-response
   [code document]
   {:status code
@@ -39,49 +37,61 @@
   [_]
   (api-response 200 "pong"))
 
-(defn download-handler
-  [req]
-  (if-not (:identity req)
-    (not-found)
-    (let [logger (get-logger req)]
-      (api-response
-       200
-       nil))))
-
-(defn upload-handler
-  [req]
-  (if-not (:identity req)
-    (not-found)
-    (let [request-body (rur/body-string req)
-          id (get-logger req)]
-      (api-response
-       200
-       request-body))))
-
-(defn owner?
-  [login logger]
-  (= (:login logger) login))
-
 (defn register-handler
   [req]
   (let [id (get-in req [:params :id])
         login (get-in req [:params :login])
         password (get-in req [:params :password])
         resource (format "%s/api/document/%s" base-url id)]
-    (if (get @storage id)
-      (api-response 200 (format "'%s' already exists" id))
-      (do
-        (api-response
-          200
-          (format "'%s' created. Access it as '%s'." id resource))))))
+    ;; do stuff
+    ))
 
-(defn delete-handler
+(defn get-stands-handler
+  [req]
+  (if-not (:identity req)
+    (not-found)
+    (let [stand (identity req)]
+      (api-response
+        200
+        stand))))
+
+(defn get-stand-handler
+  [req]
+  (if-not (:identity req)
+    (not-found)
+    (let [stand (identity req)]
+      (api-response
+        200
+        stand))))
+
+(defn create-stand-handler
+  [req]
+  (if-not (:identity req)
+    (not-found)
+    (let [request-body (rur/body-string req)
+          id (identity req)]
+      (api-response
+        200
+        request-body))))
+
+(defn update-stand-handler
   [req]
   (let [id nil
         login (:identity req)]
     (if-not true
       (not-found)
       (do
+        ;; update
+        (api-response 200 (format "'%s' deleted" id))))))
+
+(defn delete-stand-handler
+  [req]
+  (let [id nil
+        login (:identity req)]
+    (if-not true
+      (not-found)
+      (do
+        ;; delete
         (api-response 200 (format "'%s' deleted" id))))))
 
 (defn identity-required-wrapper
@@ -108,11 +118,15 @@
        ["/api"
         ["/ping" ping-handler]
         ["/register" {:post register-handler}]
+        ["/stands" {:middleware
+                    [authenticated-for-logger identity-required-wrapper]
+                    :get get-stands-handler
+                    :post create-stand-handler}]
         ["/stands/:id" {:middleware
                         [authenticated-for-logger identity-required-wrapper]
-                        :get download-handler
-                        :post upload-handler
-                        :delete unregister-handler}]]]
+                        :get get-stand-handler
+                        :put update-stand-handler
+                        :delete delete-stand-handler}]]]
       (ring/router)
       (ring/ring-handler
        (ring/routes
@@ -138,7 +152,7 @@
   [port db-host]
   (if (nil? @server)
     (do
-      (connect-db db-host)
+      #_(connect-db db-host)
       (reset! server (hks/run-server #'app {:port port}))
       (tel/log! :info "Server started."))
     "server already running"))
