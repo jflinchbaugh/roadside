@@ -14,4 +14,4 @@ run-server:
 	podman kube play --wait roadside-server.yaml
 
 run-xtdb:
-	podman kube play --wait xtdb.yaml
+	podman kube play --wait roadside-xtdb.yaml
