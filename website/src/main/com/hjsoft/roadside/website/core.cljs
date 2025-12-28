@@ -7,7 +7,9 @@
             [cljs.reader]
             [clojure.string :as str]
             [clojure.edn :as edn]
-            ["leaflet" :as L]))
+            ["leaflet" :as L]
+            [com.hjsoft.roadside.website.api :as api]
+            [cljs.core.async :refer [go <!]]))
 
 (def map-home [40.0379 -76.3055])
 (def add-zoom-level 16)
@@ -804,6 +806,7 @@
                                                       :user ""
                                                       :password ""})
         [settings set-settings] (hooks/use-state {})
+        [is-synced set-is-synced] (hooks/use-state false)
         filtered-stands (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
                           (if product-filter
                             (filter
@@ -835,8 +838,12 @@
          (set-stands (edn/read-string saved-stands)))))
 
     (hooks/use-effect
-     [stands]
-     (js/localStorage.setItem "roadside-stands" (pr-str stands)))
+     [stands is-synced settings]
+     (js/localStorage.setItem "roadside-stands" (pr-str stands))
+     (let [{:keys [resource user password]} settings]
+       (when (and (seq resource) (seq user) (seq password) #_is-synced)
+         (go
+           (<! (api/save-stands resource user password stands))))))
 
     (hooks/use-effect
      :once
@@ -848,7 +855,17 @@
     (hooks/use-effect
      [settings]
      (let [to-save (pr-str settings)]
-       (js/localStorage.setItem "roadside-settings" to-save)))
+       (js/localStorage.setItem "roadside-settings" to-save))
+     (let [{:keys [resource user password]} settings]
+       (when (and (seq resource) (seq user) (seq password))
+         (go
+           (let [{:keys [success data error]} (<! (api/fetch-stands resource user password))]
+             (if success
+               (do
+                 (set-stands data)
+                 (set-is-synced true))
+               (tel/log! :error {:msg "Failed to fetch stands"
+                                 :error error})))))))
 
     (hooks/use-effect
      :once

@@ -5,7 +5,9 @@
                 [com.taoensso/telemere "1.2.1"]
                 [cider/cider-nrepl "0.58.0"]
                 [binaryage/devtools "1.0.7"]
-                [refactor-nrepl "3.11.0"]]
+                [refactor-nrepl "3.11.0"]
+                [cljs-http "0.1.49"]
+                [org.clojure/core.async "1.8.741"]]
  :dev-http {3000 "public"}
  :builds
  {
