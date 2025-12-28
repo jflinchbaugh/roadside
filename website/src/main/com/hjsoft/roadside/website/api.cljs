@@ -12,7 +12,7 @@
                                         {:accept :json})))]
       (if (:success response)
         {:success true :data (:body response)}
-        {:success false :error (str "HTTP Error: " (:status response))}))))
+        {:success false :error (str "HTTP Error: " url ", " (:status response))}))))
 
 (defn save-stands [url user password stands]
   (go
