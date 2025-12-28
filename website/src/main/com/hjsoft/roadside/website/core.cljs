@@ -790,6 +790,21 @@
                       (set-show-settings-dialog false))}
          "Save")))))))
 
+(defnc notification-toast
+  [{:keys [notification set-notification]}]
+  (hooks/use-effect
+   [notification]
+   (when notification
+     (let [timer (js/setTimeout
+                  #(set-notification nil)
+                  3000)]
+       (fn [] (js/clearTimeout timer)))))
+  
+  (when notification
+    (d/div
+     {:class (str "notification-toast " (name (:type notification)))}
+     (:message notification))))
+
 (defnc app []
   (let [[stands set-stands] (hooks/use-state [])
         [show-form set-show-form] (hooks/use-state false)
@@ -807,6 +822,9 @@
                                                       :password ""})
         [settings set-settings] (hooks/use-state {})
         [is-synced set-is-synced] (hooks/use-state false)
+        [notification set-notification] (hooks/use-state nil)
+        show-notification (fn [type message]
+                            (set-notification {:type type :message message}))
         filtered-stands (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
                           (if product-filter
                             (filter
@@ -841,9 +859,14 @@
      [stands is-synced settings]
      (js/localStorage.setItem "roadside-stands" (pr-str stands))
      (let [{:keys [resource user password]} settings]
-       (when (and (seq resource) (seq user) (seq password) #_is-synced)
+       (when (and (seq resource) (seq user) (seq password) is-synced)
          (go
-           (<! (api/save-stands resource user password stands))))))
+           (let [{:keys [success error]} (<! (api/save-stands resource user password stands))]
+             (if success
+               (show-notification :success "Stands saved!")
+               (do
+                 (tel/log! :error {:msg "Failed to save stands" :error error})
+                 (show-notification :error (str "Save failed: " error)))))))))
 
     (hooks/use-effect
      :once
@@ -863,9 +886,12 @@
              (if success
                (do
                  (set-stands data)
-                 (set-is-synced true))
-               (tel/log! :error {:msg "Failed to fetch stands"
-                                 :error error})))))))
+                 (set-is-synced true)
+                 (show-notification :success "Stands synced!"))
+               (do
+                 (tel/log! :error {:msg "Failed to fetch stands"
+                                   :error error})
+                 (show-notification :error (str "Sync failed: " error)))))))))
 
     (hooks/use-effect
      :once
@@ -874,6 +900,7 @@
     (d/div
      {:class "app-container"}
 
+     ($ notification-toast {:notification notification :set-notification set-notification})
      ($ fixed-header
         ($ header)
         ($ leaflet-map
