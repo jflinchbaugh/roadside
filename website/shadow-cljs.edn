@@ -8,7 +8,10 @@
                 [refactor-nrepl "3.11.0"]
                 [cljs-http "0.1.49"]
                 [org.clojure/core.async "1.8.741"]]
- :dev-http {3000 "public"}
+ :dev-http {3000 {:root "public"
+                  :handler shadow.http.push-state/handle
+                  :proxy-url "http://localhost:8000/roadside/stands"
+                  :proxy-path "/api/stands"}}
  :builds
  {
   :frontend
