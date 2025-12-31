@@ -348,12 +348,13 @@
      form-data
      set-form-data
      location-btn-ref
+     current-location
+     set-current-location
      stands]}]
   (let [[location-error set-location-error] (hooks/use-state nil)
         [coordinate-display set-coordinate-display] (hooks/use-state
                                                      (:coordinate form-data))
-        map-ref (hooks/use-ref nil)
-        [current-location set-current-location] (hooks/use-state nil)]
+        map-ref (hooks/use-ref nil)]
     (hooks/use-effect
      [map-ref (:coordinate form-data)]
      (when-let [m @map-ref]
@@ -369,7 +370,7 @@
      {:class "form-group"}
      ($ leaflet-map
         {:div-id "map-form"
-         :center (or (parse-coordinates (:coordinate form-data)) map-home)
+         :center (or (parse-coordinates (:coordinate form-data)) current-location)
          :zoom-level add-zoom-level
          :stands stands
          :show-crosshairs true
@@ -487,7 +488,9 @@
            show-form
            set-show-form
            stands
-           set-stands]}]
+           set-stands
+           current-location
+           set-current-location]}]
   (let [[current-product set-current-product] (hooks/use-state "")
         [is-locating set-is-locating] (hooks/use-state false)
         coordinate-input-ref (hooks/use-ref nil)
@@ -498,7 +501,7 @@
        (set-editing-stand nil)
        (set-form-data
         {:name ""
-         :coordinate (str (first map-home) ", " (second map-home))
+         :coordinate (str (first current-location) ", " (second current-location))
          :address ""
          :town ""
          :state ""
@@ -594,6 +597,8 @@
              :form-data form-data
              :set-form-data set-form-data
              :location-btn-ref location-btn-ref
+             :current-location current-location
+             :set-current-location set-current-location
              :stands stands})
           ($ product-input
              {:form-data form-data
@@ -799,7 +804,7 @@
                   #(set-notification nil)
                   3000)]
        (fn [] (js/clearTimeout timer)))))
-  
+
   (when notification
     (d/div
      {:class (str "notification-toast " (name (:type notification)))}
@@ -942,7 +947,9 @@
           :editing-stand editing-stand
           :set-editing-stand set-editing-stand
           :stands stands
-          :set-stands set-stands})
+          :set-stands set-stands
+          :current-location current-location
+          :set-current-location set-current-location})
       ($ stands-list
          {:stands filtered-stands
           :set-stands set-stands
