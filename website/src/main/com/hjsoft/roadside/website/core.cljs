@@ -501,7 +501,10 @@
        (set-editing-stand nil)
        (set-form-data
         {:name ""
-         :coordinate (str (first current-location) ", " (second current-location))
+         :coordinate (str
+                       (first current-location)
+                       ", "
+                       (second current-location))
          :address ""
          :town ""
          :state ""
