@@ -499,9 +499,9 @@
        (set-form-data
         {:name ""
          :coordinate (str
-                       (first current-location)
+                       (first map-home)
                        ", "
-                       (second current-location))
+                       (second map-home))
          :address ""
          :town ""
          :state ""
