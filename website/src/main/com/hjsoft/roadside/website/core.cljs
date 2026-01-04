@@ -373,11 +373,12 @@
 (defnc location-input
   [{:keys
     [coordinate-input-ref
+     user-location
      form-data
      set-form-data
      location-btn-ref
      stands]}]
-  (let [{:keys [location error is-locating get-location]} (use-user-location)
+  (let [{:keys [location error is-locating get-location]} user-location
         [coordinate-display set-coordinate-display] (hooks/use-state
                                                      (:coordinate form-data))
         map-ref (hooks/use-ref nil)]
@@ -500,6 +501,7 @@
            set-editing-stand
            show-form
            set-show-form
+           user-location
            stands
            set-stands]}]
   (let [[current-product set-current-product] (hooks/use-state "")
@@ -605,6 +607,7 @@
          {:class "form-content-wrapper"}
          ($ location-input
             {:coordinate-input-ref coordinate-input-ref
+             :user-location user-location
              :form-data form-data
              :set-form-data set-form-data
              :location-btn-ref location-btn-ref
@@ -825,7 +828,8 @@
         [stand-form-data set-stand-form-data] (hooks/use-state {})
         [product-filter set-product-filter] (hooks/use-state nil)
         [selected-stand set-selected-stand] (hooks/use-state nil)
-        {:keys [location error is-locating get-location]} (use-user-location)
+        user-location (use-user-location)
+        {:keys [location error is-locating get-location]} user-location
         [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
         [settings-form-data set-settings-form-data] (hooks/use-state
                                                      {:resource ""
@@ -934,6 +938,7 @@
           :set-form-data set-stand-form-data
           :show-form show-form
           :set-show-form set-show-form
+          :user-location user-location
           :editing-stand editing-stand
           :set-editing-stand set-editing-stand
           :stands stands
