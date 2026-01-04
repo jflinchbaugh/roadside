@@ -813,7 +813,7 @@
                   #(set-notification nil)
                   3000)]
        (fn [] (js/clearTimeout timer)))))
-  
+
   (when notification
     (d/div
      {:class (str "notification-toast " (name (:type notification)))}
