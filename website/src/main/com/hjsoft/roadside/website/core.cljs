@@ -137,6 +137,38 @@
       current-stands)
     (conj current-stands (assoc form-data :updated (get-current-timestamp)))))
 
+(defn use-user-location []
+  (let [[location set-location] (hooks/use-state nil)
+        [error set-error] (hooks/use-state nil)
+        [is-locating set-is-locating] (hooks/use-state false)]
+    {:location location
+     :error error
+     :is-locating is-locating
+     :get-location (fn [& [on-success on-error]]
+                     (set-is-locating true)
+                     (set-error nil)
+                     (if (and
+                           (exists? js/navigator)
+                           (exists? js/navigator.geolocation))
+                       (js/navigator.geolocation.getCurrentPosition
+                        (fn [position]
+                          (let [coords (.-coords position)
+                                loc [(.-latitude coords)
+                                     (.-longitude coords)]]
+                            (set-location loc)
+                            (set-is-locating false)
+                            (when on-success (on-success loc))))
+                        (fn [err]
+                          (let [msg (.-message err)]
+                            (tel/log! :error {:failed-location msg})
+                            (set-error "Unable to retrieve location.")
+                            (set-is-locating false)
+                            (when on-error (on-error msg)))))
+                       (do
+                         (set-error "Geolocation not supported.")
+                         (set-is-locating false)
+                         (when on-error (on-error "Geolocation not supported.")))))}))
+
 ; components
 
 (defnc leaflet-map
@@ -239,8 +271,7 @@
      set-form-data
      set-show-form
      selected-stand
-     set-selected-stand
-     set-is-locating-main-map]}]
+     set-selected-stand]}]
   (let [stand-refs (hooks/use-ref {})]
     (hooks/use-effect
      [selected-stand]
@@ -326,8 +357,7 @@
                                     :address (:address stand)
                                     :notes (:notes stand)
                                     :shared? (:shared? stand)))
-                            (set-show-form true)
-                            (set-is-locating-main-map false))
+                            (set-show-form true))
               :title "Edit this stand"}
              "Edit")
             (d/button
@@ -343,17 +373,14 @@
 (defnc location-input
   [{:keys
     [coordinate-input-ref
-     is-locating
-     set-is-locating
      form-data
      set-form-data
      location-btn-ref
      stands]}]
-  (let [[location-error set-location-error] (hooks/use-state nil)
+  (let [{:keys [location error is-locating get-location]} (use-user-location)
         [coordinate-display set-coordinate-display] (hooks/use-state
                                                      (:coordinate form-data))
-        map-ref (hooks/use-ref nil)
-        [current-location set-current-location] (hooks/use-state nil)]
+        map-ref (hooks/use-ref nil)]
     (hooks/use-effect
      [map-ref (:coordinate form-data)]
      (when-let [m @map-ref]
@@ -379,7 +406,7 @@
                                         (assoc prev :coordinate coord-str))))
          :map-ref map-ref
          :is-locating is-locating
-         :current-location-coords current-location})
+         :current-location-coords location})
      (d/label "Coordinate:")
      (d/div
       {:class "coordinate-input-group"}
@@ -399,31 +426,18 @@
         :class "location-btn"
         :ref location-btn-ref ; Apply the ref here
         :onClick (fn []
-                   (set-location-error nil)
-                   (set-is-locating true)
-                   (js/navigator.geolocation.getCurrentPosition
-                    (fn [position]
-                      (let [coords (.-coords position)
-                            lat (.-latitude coords)
-                            lng (.-longitude coords)]
-                        (set-current-location [lat lng])
-                        (set-form-data
-                         (fn [prev]
-                           (assoc
-                            prev
-                            :coordinate (str lat ", " lng))))
-                        (set-is-locating false)))
-                    (fn [error]
-                      (tel/log! :error
-                                {:failed-location (.-message error)})
-                      (set-location-error
-                       "Please try again or enter location manually.")
-                      (set-is-locating false))))}
+                   (get-location
+                    (fn [[lat lng]]
+                      (set-form-data
+                       (fn [prev]
+                         (assoc
+                          prev
+                          :coordinate (str lat ", " lng)))))))}
        "\u2316"))
-     (when location-error
+     (when error
        (d/p
         {:class "error-message"}
-        location-error)))))
+        error)))))
 
 (defnc product-input
   [{:keys [form-data
@@ -489,7 +503,6 @@
            stands
            set-stands]}]
   (let [[current-product set-current-product] (hooks/use-state "")
-        [is-locating set-is-locating] (hooks/use-state false)
         coordinate-input-ref (hooks/use-ref nil)
         location-btn-ref (hooks/use-ref nil)]
     (hooks/use-effect
@@ -592,8 +605,6 @@
          {:class "form-content-wrapper"}
          ($ location-input
             {:coordinate-input-ref coordinate-input-ref
-             :is-locating is-locating
-             :set-is-locating set-is-locating
              :form-data form-data
              :set-form-data set-form-data
              :location-btn-ref location-btn-ref
@@ -815,9 +826,7 @@
         [stand-form-data set-stand-form-data] (hooks/use-state {})
         [product-filter set-product-filter] (hooks/use-state nil)
         [selected-stand set-selected-stand] (hooks/use-state nil)
-        [current-location set-current-location] (hooks/use-state map-home)
-        [is-locating-main-map set-is-locating-main-map] (hooks/use-state true)
-        [main-map-location-error set-main-map-location-error] (hooks/use-state nil)
+        {:keys [location error is-locating get-location]} (use-user-location)
         [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
         [settings-form-data set-settings-form-data] (hooks/use-state
                                                      {:resource ""
@@ -835,22 +844,7 @@
                                (fn [p] (= p product-filter))
                                (:products %))
                              sorted-stands)
-                            sorted-stands))
-        locate-main-map (fn []
-                          (set-main-map-location-error nil)
-                          (set-is-locating-main-map true)
-                          (js/navigator.geolocation.getCurrentPosition
-                           (fn [position]
-                             (let [coords (.-coords position)
-                                   lat (.-latitude coords)
-                                   lng (.-longitude coords)]
-                               (set-current-location [lat lng])
-                               (set-is-locating-main-map false)))
-                           (fn [error]
-                             (tel/log! :error
-                                       {:failed-location (.-message error)})
-                             (set-main-map-location-error "No Location")
-                             (set-is-locating-main-map false))))]
+                            sorted-stands))]
 
     (hooks/use-effect
      :once
@@ -898,7 +892,7 @@
 
     (hooks/use-effect
      :once
-     (locate-main-map))
+     (get-location))
 
     (d/div
      {:class "app-container"}
@@ -908,30 +902,29 @@
         ($ header)
         ($ leaflet-map
            {:div-id "map-container"
-            :center current-location
+            :center (or location map-home)
             :stands filtered-stands
             :zoom-level initial-zoom-level
             :set-selected-stand set-selected-stand
             :selected-stand selected-stand
-            :is-locating is-locating-main-map
-            :current-location-coords current-location}))
+            :is-locating is-locating
+            :current-location-coords location}))
      (d/div
       {:class "content"}
       (d/div
        {:class "main-actions"}
        (d/button
         {:class "add-stand-btn"
-         :onClick #(do (set-show-form true)
-                       (set-is-locating-main-map false))}
+         :onClick #(set-show-form true)}
         "Add Stand")
        (d/div
         {:class "map-actions-right"}
-        (when main-map-location-error
-          (d/p {:class "error-message"} main-map-location-error))
+        (when error
+          (d/p {:class "error-message"} error))
         (d/button
          {:type "button"
           :class "location-btn"
-          :onClick locate-main-map}
+          :onClick get-location}
          "\u2316")))
       ($ product-list
          {:stands stands
@@ -953,8 +946,7 @@
           :set-form-data set-stand-form-data
           :set-show-form set-show-form
           :selected-stand selected-stand
-          :set-selected-stand set-selected-stand
-          :set-is-locating-main-map set-is-locating-main-map})
+          :set-selected-stand set-selected-stand})
       (d/button
        {:class "settings-btn"
         :onClick #(set-show-settings-dialog true)}
