@@ -6,8 +6,7 @@
                 [cider/cider-nrepl "0.58.0"]
                 [binaryage/devtools "1.0.7"]
                 [refactor-nrepl "3.11.0"]
-                [cljs-http "0.1.49"]
-                [org.clojure/core.async "1.8.741"]]
+                [cljs-http "0.1.49"]]
  :dev-http {3000 {:root "public"
                   :handler shadow.http.push-state/handle
                   :proxy-url "http://localhost:8000/roadside/stands"
