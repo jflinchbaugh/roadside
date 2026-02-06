@@ -82,14 +82,12 @@
 
 (defn make-current-location-marker
   [coord]
-  (let [marker (L/circleMarker (clj->js coord)
-                               (clj->js {:radius 6
-                                         :color "#ffffff"
-                                         :fillColor "#3388ff"
-                                         :fillOpacity 0.8
-                                         :weight 1}))]
-    (.bindPopup marker "(no details)")
-    marker))
+  (L/circleMarker (clj->js coord)
+                  (clj->js {:radius 6
+                            :color "#ffffff"
+                            :fillColor "#3388ff"
+                            :fillOpacity 0.8
+                            :weight 1})))
 
 (defn- init-map [div-id center zoom-level]
   (let [m (L/map div-id)
