@@ -79,7 +79,7 @@ body {
 
 #map-container {
   height: 100%;
-  width: 75%;
+  width: 100%;
   margin: 0 auto;
   margin-bottom: 0.5rem; /* Add some space below the map */
   flex-grow: 1;
@@ -87,7 +87,7 @@ body {
 
 #map-form {
   height: 200px;
-  width: 80%;
+  width: 100%;
   margin: 0 auto;
   margin-bottom: 1rem; /* Add some space below the map */
 }
