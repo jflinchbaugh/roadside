@@ -26,9 +26,25 @@ If the server was already running, stop it with Ctrl+C and restart it.
 
 ### View the App
 
-Visit: http://localhost:8080/index.html
+Visit: http://localhost:3000/index.html
 
-The development server includes hot reload, so changes to your ClojureScript code will be automatically reflected in the browser.
+The development server includes hot reload,
+so changes to your ClojureScript code
+will be automatically reflected in the browser.
+
+### Run the Automated Tests in the Browser
+
+```bash
+npx shadow-cljs watch frontend
+```
+
+Visit http://localhost:3021/
+to see the execution and results of the tests.
+
+Run both simultaneously with:
+```bash
+npx shadow-cljs watch frontend test-browser
+```
 
 ### Build for Release
 
