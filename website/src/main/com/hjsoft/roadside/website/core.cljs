@@ -188,12 +188,17 @@
         [current-location-marker set-current-location-marker] (hooks/use-state nil)]
     (hooks/use-effect
      [center stand-map]
-     (when stand-map
-       (.setView
-        ^js stand-map
-        (clj->js center)
-        (.getZoom ^js stand-map)
-        (clj->js {:animate false}))))
+     (when (and stand-map center)
+       (let [current-center (.getCenter ^js stand-map)
+             new-lat (first center)
+             new-lng (second center)]
+         (when (or (not= (.toFixed (.-lat current-center) 6) (.toFixed new-lat 6))
+                   (not= (.toFixed (.-lng current-center) 6) (.toFixed new-lng 6)))
+           (.setView
+            ^js stand-map
+            (clj->js center)
+            (.getZoom ^js stand-map)
+            (clj->js {:animate false}))))))
 
     (hooks/use-effect
      :once
@@ -502,6 +507,7 @@
            show-form
            set-show-form
            user-location
+           user-map-center
            stands
            set-stands]}]
   (let [[current-product set-current-product] (hooks/use-state "")
@@ -509,38 +515,39 @@
         location-btn-ref (hooks/use-ref nil)]
     (hooks/use-effect
      [show-form]
-     (when-not show-form
-       (set-editing-stand nil)
-       (set-form-data
-        {:name ""
-         :coordinate (str
-                       (first map-home)
-                       ", "
-                       (second map-home))
-         :address ""
-         :town ""
-         :state ""
-         :products []
-         :expiration (in-a-week)
-         :notes ""
-         :shared? true})))
-
-    (hooks/use-effect
-     [show-form]
-     (when show-form
-       (.addEventListener
-        js/document
-        "keydown"
-        (fn [e]
-          (when (= (.-key e) "Escape")
-            (set-show-form false))))
-       (.focus @coordinate-input-ref)
-       ;; Simulate click on location button ONLY if adding a new stand
-       (when
-        (and
-         (nil? editing-stand)
-         (when-let [btn @location-btn-ref] btn))
-         (.click @location-btn-ref))))
+     (if-not show-form
+       (do
+         (set-editing-stand nil)
+         (set-form-data
+          {:name ""
+           :coordinate (str
+                        (first map-home)
+                        ", "
+                        (second map-home))
+           :address ""
+           :town ""
+           :state ""
+           :products []
+           :expiration (in-a-week)
+           :notes ""
+           :shared? true}))
+       (do
+         (.addEventListener
+          js/document
+          "keydown"
+          (fn [e]
+            (when (= (.-key e) "Escape")
+              (set-show-form false))))
+         (.focus @coordinate-input-ref)
+         (when (nil? editing-stand)
+           (set-form-data
+            (fn [prev]
+              (assoc
+               prev
+               :coordinate (str
+                            (first (or user-map-center map-home))
+                            ", "
+                            (second (or user-map-center map-home))))))))))
 
     (when show-form
       (d/div
@@ -830,6 +837,7 @@
         [selected-stand set-selected-stand] (hooks/use-state nil)
         user-location (use-user-location)
         {:keys [location error is-locating get-location]} user-location
+        [map-center set-map-center] (hooks/use-state map-home)
         [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
         [settings-form-data set-settings-form-data] (hooks/use-state
                                                      {:resource ""
@@ -848,6 +856,11 @@
                                (:products %))
                              sorted-stands)
                             sorted-stands))]
+
+    (hooks/use-effect
+     [location]
+     (when location
+       (set-map-center location)))
 
     (hooks/use-effect
      :once
@@ -905,12 +918,13 @@
         ($ header)
         ($ leaflet-map
            {:div-id "map-container"
-            :center (or location map-home)
+            :center map-center
             :stands filtered-stands
             :zoom-level initial-zoom-level
             :set-selected-stand set-selected-stand
             :selected-stand selected-stand
             :is-locating is-locating
+            :set-coordinate-form-data (fn [c] (set-map-center (parse-coordinates c)))
             :current-location-coords location}))
      (d/div
       {:class "content"}
@@ -939,6 +953,7 @@
           :show-form show-form
           :set-show-form set-show-form
           :user-location user-location
+          :user-map-center map-center
           :editing-stand editing-stand
           :set-editing-stand set-editing-stand
           :stands stands
