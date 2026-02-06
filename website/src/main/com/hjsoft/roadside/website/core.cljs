@@ -61,15 +61,18 @@
 (defn make-marker
   [{:keys [coord stand set-selected-stand]}]
   (let [marker (L/marker (clj->js coord))
-        popup-content (str
-                       (when (not (str/blank? (:name stand)))
-                         (str "<b>" (:name stand) "</b><br>"))
-                       (when (seq (:products stand))
-                         (str
-                          (str/join
-                           ", "
-                           (:products stand))
-                          "<br>")))]
+        content (str
+                 (when (not (str/blank? (:name stand)))
+                   (str "<b>" (:name stand) "</b><br>"))
+                 (when (seq (:products stand))
+                   (str
+                    (str/join
+                     ", "
+                     (:products stand))
+                    "<br>")))
+        popup-content (if (str/blank? content)
+                        "(no details)"
+                        content)]
     (.bindPopup
      marker
      popup-content
@@ -79,12 +82,14 @@
 
 (defn make-current-location-marker
   [coord]
-  (L/circleMarker (clj->js coord)
-                  (clj->js {:radius 6
-                            :color "#ffffff"
-                            :fillColor "#3388ff"
-                            :fillOpacity 0.8
-                            :weight 1})))
+  (let [marker (L/circleMarker (clj->js coord)
+                               (clj->js {:radius 6
+                                         :color "#ffffff"
+                                         :fillColor "#3388ff"
+                                         :fillOpacity 0.8
+                                         :weight 1}))]
+    (.bindPopup marker "(no details)")
+    marker))
 
 (defn- init-map [div-id center zoom-level]
   (let [m (L/map div-id)
