@@ -511,13 +511,22 @@
            stands
            set-stands]}]
   (let [[current-product set-current-product] (hooks/use-state "")
+        [show-address? set-show-address?] (hooks/use-state false)
         coordinate-input-ref (hooks/use-ref nil)
         location-btn-ref (hooks/use-ref nil)]
+    (hooks/use-effect
+     [(:address form-data) (:town form-data) (:state form-data)]
+     (when (or (seq (:address form-data))
+               (seq (:town form-data))
+               (seq (:state form-data)))
+       (set-show-address? true)))
+
     (hooks/use-effect
      [show-form]
      (if-not show-form
        (do
          (set-editing-stand nil)
+         (set-show-address? false)
          (set-form-data
           {:name ""
            :coordinate (str
@@ -638,39 +647,6 @@
                            :name (.. % -target -value))))}))
          (d/div
           {:class "form-group"}
-          (d/label "Address:")
-          (d/input
-           {:type "text"
-            :value (:address form-data)
-            :onChange #(set-form-data
-                        (fn [prev]
-                          (assoc
-                           prev
-                           :address (.. % -target -value))))}))
-         (d/div
-          {:class "form-group"}
-          (d/label "Town:")
-          (d/input
-           {:type "text"
-            :value (:town form-data)
-            :onChange #(set-form-data
-                        (fn [prev]
-                          (assoc
-                           prev
-                           :town (.. % -target -value))))}))
-         (d/div
-          {:class "form-group"}
-          (d/label "State:")
-          (d/input
-           {:type "text"
-            :value (:state form-data)
-            :onChange #(set-form-data
-                        (fn [prev]
-                          (assoc
-                           prev
-                           :state (.. % -target -value))))}))
-         (d/div
-          {:class "form-group"}
           (d/label "Notes:")
           (d/textarea
            {:value (:notes form-data)
@@ -680,6 +656,51 @@
                            prev
                            :notes (.. % -target -value))))
             :rows 4}))
+         (d/div
+          {:class "form-group"}
+          (d/button
+           {:type "button"
+            :class "toggle-address-btn"
+            :onClick #(set-show-address? not)}
+           (if show-address?
+             "Collapse Address \u25B4"
+             "Expand Address \u25BE")))
+         (when show-address?
+           (d/div
+            {:class "address-fields-wrapper"}
+            (d/div
+             {:class "form-group"}
+             (d/label "Address:")
+             (d/input
+              {:type "text"
+               :value (:address form-data)
+               :onChange #(set-form-data
+                           (fn [prev]
+                             (assoc
+                              prev
+                              :address (.. % -target -value))))}))
+            (d/div
+             {:class "form-group"}
+             (d/label "Town:")
+             (d/input
+              {:type "text"
+               :value (:town form-data)
+               :onChange #(set-form-data
+                           (fn [prev]
+                             (assoc
+                              prev
+                              :town (.. % -target -value))))}))
+            (d/div
+             {:class "form-group"}
+             (d/label "State:")
+             (d/input
+              {:type "text"
+               :value (:state form-data)
+               :onChange #(set-form-data
+                           (fn [prev]
+                             (assoc
+                              prev
+                              :state (.. % -target -value))))}))))
          (d/div
           {:class "form-group"}
           (d/label "Expiration Date:")

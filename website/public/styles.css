@@ -541,6 +541,30 @@ body {
   background-color: #0056b3;
 }
 
+.toggle-address-btn {
+  background: none;
+  border: 1px solid #007bff;
+  color: #007bff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+
+.toggle-address-btn:hover {
+  background-color: #f0f7ff;
+}
+
+.address-fields-wrapper {
+  border-left: 2px solid #007bff;
+  padding-left: 1rem;
+  margin-bottom: 1rem;
+  background-color: #fcfcfc;
+}
+
 .coordinate-text {
   font-size: 0.8rem;
 }
