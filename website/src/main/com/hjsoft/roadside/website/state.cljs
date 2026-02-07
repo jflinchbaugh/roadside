@@ -5,7 +5,7 @@
 (def map-home [40.0379 -76.3055])
 
 (def initial-app-state
-  {:stands []
+  {:stands (or (storage/get-item "roadside-stands") [])
    :show-form false
    :editing-stand nil
    :stand-form-data {:name ""
