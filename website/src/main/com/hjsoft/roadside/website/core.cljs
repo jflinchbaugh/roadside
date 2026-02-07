@@ -143,34 +143,39 @@
 (defn use-user-location []
   (let [[location set-location] (hooks/use-state nil)
         [error set-error] (hooks/use-state nil)
-        [is-locating set-is-locating] (hooks/use-state false)]
-    {:location location
-     :error error
-     :is-locating is-locating
-     :get-location (fn [& [on-success on-error]]
-                     (set-is-locating true)
-                     (set-error nil)
-                     (if (and
-                           (exists? js/navigator)
-                           (exists? js/navigator.geolocation))
-                       (js/navigator.geolocation.getCurrentPosition
-                        (fn [position]
-                          (let [coords (.-coords position)
-                                loc [(.-latitude coords)
-                                     (.-longitude coords)]]
-                            (set-location loc)
+        [is-locating set-is-locating] (hooks/use-state false)
+        get-location (hooks/use-callback
+                      :once
+                      (fn [& [on-success on-error]]
+                        (set-is-locating true)
+                        (set-error nil)
+                        (if (and
+                             (exists? js/navigator)
+                             (exists? js/navigator.geolocation))
+                          (js/navigator.geolocation.getCurrentPosition
+                           (fn [position]
+                             (let [coords (.-coords position)
+                                   loc [(.-latitude coords)
+                                        (.-longitude coords)]]
+                               (set-location loc)
+                               (set-is-locating false)
+                               (when on-success (on-success loc))))
+                           (fn [err]
+                             (let [msg (.-message err)]
+                               (tel/log! :error {:failed-location msg})
+                               (set-error "Unable to retrieve location.")
+                               (set-is-locating false)
+                               (when on-error (on-error msg)))))
+                          (do
+                            (set-error "Geolocation not supported.")
                             (set-is-locating false)
-                            (when on-success (on-success loc))))
-                        (fn [err]
-                          (let [msg (.-message err)]
-                            (tel/log! :error {:failed-location msg})
-                            (set-error "Unable to retrieve location.")
-                            (set-is-locating false)
-                            (when on-error (on-error msg)))))
-                       (do
-                         (set-error "Geolocation not supported.")
-                         (set-is-locating false)
-                         (when on-error (on-error "Geolocation not supported.")))))}))
+                            (when on-error (on-error "Geolocation not supported."))))))]
+    (hooks/use-memo
+     [location error is-locating get-location]
+     {:location location
+      :error error
+      :is-locating is-locating
+      :get-location get-location})))
 
 ; components
 
@@ -187,10 +192,10 @@
            is-locating
            current-location-coords]}]
   (let [[stand-map set-stand-map] (hooks/use-state nil)
-        [layer-group set-layer-group] (hooks/use-state nil)
-        [current-location-marker set-current-location-marker] (hooks/use-state nil)]
+        layer-group-ref (hooks/use-ref nil)
+        current-location-marker-ref (hooks/use-ref nil)]
     (hooks/use-effect
-     [center stand-map]
+     [(first center) (second center) stand-map]
      (when (and stand-map center)
        (let [current-center (.getCenter ^js stand-map)
              new-lat (first center)
@@ -238,11 +243,11 @@
              new-layer-group (when (seq locations)
                                (L/layerGroup
                                 (clj->js (map second locations))))]
-         (when layer-group
-           (.removeLayer ^js stand-map layer-group))
+         (when @layer-group-ref
+           (.removeLayer ^js stand-map @layer-group-ref))
          (when new-layer-group
            (.addTo ^js new-layer-group stand-map)
-           (set-layer-group new-layer-group)
+           (reset! layer-group-ref new-layer-group)
            (some->>
             locations
             (filter
@@ -255,12 +260,12 @@
     (hooks/use-effect
      [current-location-coords is-locating stand-map]
      (when stand-map
-       (when current-location-marker
-         (.removeLayer ^js stand-map current-location-marker))
+       (when @current-location-marker-ref
+         (.removeLayer ^js stand-map @current-location-marker-ref))
        (when current-location-coords
          (let [marker (make-current-location-marker current-location-coords)]
            (.addTo ^js marker stand-map)
-           (set-current-location-marker marker))))))
+           (reset! current-location-marker-ref marker))))))
   (d/div {:id div-id
           :style {:position "relative"}}
          (when show-crosshairs
@@ -338,7 +343,7 @@
                {:class "expiration-date"}
                (d/strong "Expires: ")
                (:expiration stand)))
-            (when (seq  (:updated stand))
+            (when (seq (:updated stand))
               (d/p
                {:class "stand-updated"}
                (d/strong "Last Updated: ")
@@ -390,13 +395,6 @@
         [coordinate-display set-coordinate-display] (hooks/use-state
                                                      (:coordinate form-data))
         map-ref (hooks/use-ref nil)]
-    (hooks/use-effect
-     [map-ref (:coordinate form-data)]
-     (when-let [m @map-ref]
-       (when-let [coords (parse-coordinates (:coordinate form-data))]
-         (let [current-zoom (.getZoom ^js m)]
-           (.setView ^js m (clj->js coords) current-zoom)))))
-
     (hooks/use-effect
      [(:coordinate form-data)]
      (set-coordinate-display (:coordinate form-data)))
@@ -453,54 +451,54 @@
            set-form-data]}]
   (let [[current-product set-current-product] (hooks/use-state "")]
     (d/div
-      {:class "product-section-wrapper"}
+     {:class "product-section-wrapper"}
+     (d/div
+      {:class "form-group"}
+      (d/label "Products:")
       (d/div
-        {:class "form-group"}
-        (d/label "Products:")
-        (d/div
-          {:class "products-tags"}
-          (map (fn [product]
-                 (d/span
-                   {:key product
-                    :class "product-tag"}
-                   product
-                   (d/button
-                     {:type "button"
-                      :class "remove-tag"
-                      :onClick #(set-form-data
-                                  (fn [prev]
-                                    (assoc
-                                      prev
-                                      :products (->> prev
-                                                  :products
-                                                  (remove #{product})
-                                                  vec))))}
-                     "\u2715")))
+       {:class "products-tags"}
+       (map (fn [product]
+              (d/span
+               {:key product
+                :class "product-tag"}
+               product
+               (d/button
+                {:type "button"
+                 :class "remove-tag"
+                 :onClick #(set-form-data
+                            (fn [prev]
+                              (assoc
+                               prev
+                               :products (->> prev
+                                              :products
+                                              (remove #{product})
+                                              vec))))}
+                "\u2715")))
             (:products form-data)))
-        (d/div
-          {:class "product-input-group"}
-          (d/input
-            {:type "text"
-             :value current-product
-             :placeholder "Add a product and press Enter"
-             :onChange #(set-current-product (.. % -target -value))
-             :onKeyDown (fn [e]
-                          (when (= (.-key e) "Enter")
-                            (.preventDefault e)
-                            (add-product-to-form-data
-                              current-product
-                              set-form-data)
-                            (set-current-product "")))
-             :enterkeyhint "enter"})
-          (d/button
-            {:type "button"
-             :class "add-product-btn"
-             :onClick (fn []
+      (d/div
+       {:class "product-input-group"}
+       (d/input
+        {:type "text"
+         :value current-product
+         :placeholder "Add a product and press Enter"
+         :onChange #(set-current-product (.. % -target -value))
+         :onKeyDown (fn [e]
+                      (when (= (.-key e) "Enter")
+                        (.preventDefault e)
                         (add-product-to-form-data
-                          current-product
-                          set-form-data)
-                        (set-current-product ""))}
-            "Add"))))))
+                         current-product
+                         set-form-data)
+                        (set-current-product "")))
+         :enterkeyhint "enter"})
+       (d/button
+        {:type "button"
+         :class "add-product-btn"
+         :onClick (fn []
+                    (add-product-to-form-data
+                     current-product
+                     set-form-data)
+                    (set-current-product ""))}
+        "Add"))))))
 
 (defnc stand-form
   [{:keys [form-data
@@ -631,12 +629,12 @@
              :set-form-data set-form-data
              :location-btn-ref location-btn-ref
              :stands stands})
-          ($ product-input
-             {:form-data form-data
-              :set-form-data set-form-data
+         ($ product-input
+            {:form-data form-data
+             :set-form-data set-form-data
               ;; TODO can current product controls be moved into component?
-              :current-product current-product
-              :set-current-product set-current-product})
+             :current-product current-product
+             :set-current-product set-current-product})
          (d/div
           {:class "form-group"}
           (d/label "Stand Name:")
@@ -872,14 +870,19 @@
         [notification set-notification] (hooks/use-state nil)
         show-notification (fn [type message]
                             (set-notification {:type type :message message}))
-        filtered-stands (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
-                          (if product-filter
-                            (filter
-                             #(some
-                               (fn [p] (= p product-filter))
-                               (:products %))
-                             sorted-stands)
-                            sorted-stands))]
+        filtered-stands (hooks/use-memo
+                         [stands product-filter]
+                         (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
+                           (if product-filter
+                             (vec (filter
+                                   #(some
+                                     (fn [p] (= p product-filter))
+                                     (:products %))
+                                   sorted-stands))
+                             sorted-stands)))
+        set-coordinate-form-data (hooks/use-callback
+                                  [set-map-center]
+                                  (fn [c] (set-map-center (parse-coordinates c))))]
 
     (hooks/use-effect
      [location]
@@ -948,7 +951,7 @@
             :set-selected-stand set-selected-stand
             :selected-stand selected-stand
             :is-locating is-locating
-            :set-coordinate-form-data (fn [c] (set-map-center (parse-coordinates c)))
+            :set-coordinate-form-data set-coordinate-form-data
             :current-location-coords location}))
      (d/div
       {:class "content"}
