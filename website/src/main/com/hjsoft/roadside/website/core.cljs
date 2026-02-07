@@ -9,6 +9,7 @@
             [clojure.edn :as edn]
             ["leaflet" :as L]
             [com.hjsoft.roadside.website.api :as api]
+            [com.hjsoft.roadside.website.storage :as storage]
             [cljs.core.async :refer [go <!]]))
 
 (def map-home [40.0379 -76.3055])
@@ -873,10 +874,8 @@
         user-location (use-user-location)
         {:keys [location error is-locating get-location cancel-location]} user-location
         [map-center set-map-center] (hooks/use-state
-                                     (let [saved (js/localStorage.getItem "roadside-map-center")]
-                                       (if saved
-                                         (edn/read-string saved)
-                                         map-home)))
+                                     (or (storage/get-item "roadside-map-center")
+                                         map-home))
         [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
         [settings-form-data set-settings-form-data] (hooks/use-state
                                                      {:resource ""
@@ -903,7 +902,7 @@
 
     (hooks/use-effect
      [map-center]
-     (js/localStorage.setItem "roadside-map-center" (pr-str map-center)))
+     (storage/set-item! "roadside-map-center" map-center))
 
     (hooks/use-effect
      [location]
@@ -912,13 +911,12 @@
 
     (hooks/use-effect
      :once
-     (let [saved-stands (js/localStorage.getItem "roadside-stands")]
-       (when saved-stands
-         (set-stands (edn/read-string saved-stands)))))
+     (when-let [saved-stands (storage/get-item "roadside-stands")]
+       (set-stands saved-stands)))
 
     (hooks/use-effect
      [stands is-synced settings]
-     (js/localStorage.setItem "roadside-stands" (pr-str stands))
+     (storage/set-item! "roadside-stands" stands)
      (let [{:keys [resource user password]} settings]
        (when (and (seq resource) (seq user) (seq password) is-synced)
          (go
@@ -931,15 +929,13 @@
 
     (hooks/use-effect
      :once
-     (let [saved-settings (js/localStorage.getItem "roadside-settings")]
-       (when saved-settings
-         (set-settings-form-data (edn/read-string saved-settings))
-         (set-settings (edn/read-string saved-settings)))))
+     (when-let [saved-settings (storage/get-item "roadside-settings")]
+       (set-settings-form-data saved-settings)
+       (set-settings saved-settings)))
 
     (hooks/use-effect
      [settings]
-     (let [to-save (pr-str settings)]
-       (js/localStorage.setItem "roadside-settings" to-save))
+     (storage/set-item! "roadside-settings" settings)
      (let [{:keys [resource user password]} settings]
        (when (and (seq resource) (seq user) (seq password))
          (go
