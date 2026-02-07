@@ -1,0 +1,43 @@
+(ns com.hjsoft.roadside.website.utils
+  (:require [clojure.string :as str]))
+
+(defn get-current-timestamp []
+  (.toISOString (js/Date.)))
+
+(defn in-a-week []
+  (let [date (js/Date.)
+        week-later (+ (.getTime date) (* 7 24 60 60 1000))]
+    (.substring (.toISOString (js/Date. week-later)) 0 10)))
+
+(defn stand-key
+  [stand]
+  (->>
+   stand
+   ((juxt :name :coordinate :address :town :state :products))
+   flatten
+   (str/join "-")))
+
+(defn parse-coordinates
+  [coords]
+  (when (string? coords)
+    (let [res (->>
+               (str/split coords #", *")
+               (map str/trim)
+               (map parse-double)
+               (remove nil?))]
+      (when (= 2 (count res)) res))))
+
+(defn make-map-link [coordinate-str]
+  (when coordinate-str
+    (let [[lat lng] (str/split coordinate-str #", *")]
+      (when (and lat lng)
+        (str "geo:" (str/trim lat) "," (str/trim lng))))))
+
+(defn get-all-unique-products [stands]
+  (->> stands
+       (mapcat :products)
+       (map str/trim)
+       (filter some?)
+       distinct
+       sort
+       vec))
