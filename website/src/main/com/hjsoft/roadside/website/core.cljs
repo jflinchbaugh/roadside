@@ -144,9 +144,11 @@
   (let [[location set-location] (hooks/use-state nil)
         [error set-error] (hooks/use-state nil)
         [is-locating set-is-locating] (hooks/use-state false)
+        cancelled-ref (hooks/use-ref false)
         get-location (hooks/use-callback
                       :once
                       (fn [& [on-success on-error]]
+                        (reset! cancelled-ref false)
                         (set-is-locating true)
                         (set-error nil)
                         (if (and
@@ -154,28 +156,36 @@
                              (exists? js/navigator.geolocation))
                           (js/navigator.geolocation.getCurrentPosition
                            (fn [position]
-                             (let [coords (.-coords position)
-                                   loc [(.-latitude coords)
-                                        (.-longitude coords)]]
-                               (set-location loc)
-                               (set-is-locating false)
-                               (when on-success (on-success loc))))
+                             (when-not @cancelled-ref
+                               (let [coords (.-coords position)
+                                     loc [(.-latitude coords)
+                                          (.-longitude coords)]]
+                                 (set-location loc)
+                                 (set-is-locating false)
+                                 (when on-success (on-success loc)))))
                            (fn [err]
-                             (let [msg (.-message err)]
-                               (tel/log! :error {:failed-location msg})
-                               (set-error "Unable to retrieve location.")
-                               (set-is-locating false)
-                               (when on-error (on-error msg)))))
+                             (when-not @cancelled-ref
+                               (let [msg (.-message err)]
+                                 (tel/log! :error {:failed-location msg})
+                                 (set-error "Unable to retrieve location.")
+                                 (set-is-locating false)
+                                 (when on-error (on-error msg))))))
                           (do
                             (set-error "Geolocation not supported.")
                             (set-is-locating false)
-                            (when on-error (on-error "Geolocation not supported."))))))]
+                            (when on-error (on-error "Geolocation not supported."))))))
+        cancel-location (hooks/use-callback
+                         :once
+                         (fn []
+                           (reset! cancelled-ref true)
+                           (set-is-locating false)))]
     (hooks/use-memo
-     [location error is-locating get-location]
+     [location error is-locating get-location cancel-location]
      {:location location
       :error error
       :is-locating is-locating
-      :get-location get-location})))
+      :get-location get-location
+      :cancel-location cancel-location})))
 
 ; components
 
@@ -190,6 +200,7 @@
            set-coordinate-form-data
            map-ref
            is-locating
+           on-cancel-location
            current-location-coords]}]
   (let [[stand-map set-stand-map] (hooks/use-state nil)
         layer-group-ref (hooks/use-ref nil)
@@ -272,7 +283,8 @@
            (d/div {:class "crosshairs"}))
          (when is-locating
            (d/div
-            {:class "loading-overlay"}
+            {:class "loading-overlay"
+             :onClick #(when on-cancel-location (on-cancel-location))}
             (d/div {:class "spinner"})
             (d/p "Locating...")))))
 
@@ -391,7 +403,7 @@
      set-form-data
      location-btn-ref
      stands]}]
-  (let [{:keys [location error is-locating get-location]} user-location
+  (let [{:keys [location error is-locating get-location cancel-location]} user-location
         [coordinate-display set-coordinate-display] (hooks/use-state
                                                      (:coordinate form-data))
         map-ref (hooks/use-ref nil)]
@@ -413,6 +425,7 @@
                                         (assoc prev :coordinate coord-str))))
          :map-ref map-ref
          :is-locating is-locating
+         :on-cancel-location cancel-location
          :current-location-coords location})
      (d/label "Coordinate:")
      (d/div
@@ -858,7 +871,7 @@
         [product-filter set-product-filter] (hooks/use-state nil)
         [selected-stand set-selected-stand] (hooks/use-state nil)
         user-location (use-user-location)
-        {:keys [location error is-locating get-location]} user-location
+        {:keys [location error is-locating get-location cancel-location]} user-location
         [map-center set-map-center] (hooks/use-state
                                      (let [saved (js/localStorage.getItem "roadside-map-center")]
                                        (if saved
@@ -959,6 +972,7 @@
             :set-selected-stand set-selected-stand
             :selected-stand selected-stand
             :is-locating is-locating
+            :on-cancel-location cancel-location
             :set-coordinate-form-data set-coordinate-form-data
             :current-location-coords location}))
      (d/div
