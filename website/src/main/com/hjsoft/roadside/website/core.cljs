@@ -859,7 +859,11 @@
         [selected-stand set-selected-stand] (hooks/use-state nil)
         user-location (use-user-location)
         {:keys [location error is-locating get-location]} user-location
-        [map-center set-map-center] (hooks/use-state map-home)
+        [map-center set-map-center] (hooks/use-state
+                                     (let [saved (js/localStorage.getItem "roadside-map-center")]
+                                       (if saved
+                                         (edn/read-string saved)
+                                         map-home)))
         [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
         [settings-form-data set-settings-form-data] (hooks/use-state
                                                      {:resource ""
@@ -883,6 +887,10 @@
         set-coordinate-form-data (hooks/use-callback
                                   [set-map-center]
                                   (fn [c] (set-map-center (parse-coordinates c))))]
+
+    (hooks/use-effect
+     [map-center]
+     (js/localStorage.setItem "roadside-map-center" (pr-str map-center)))
 
     (hooks/use-effect
      [location]
