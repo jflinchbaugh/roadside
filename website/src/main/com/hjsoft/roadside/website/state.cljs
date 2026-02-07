@@ -45,3 +45,32 @@
       :set-is-synced (update-state :is-synced)
       :set-notification (update-state :notification)
       state)))
+
+(defn process-stand-form
+  "Processes the stand form data, automatically adding products based on name,
+   and returns the updated stands list."
+  [form-data stands editing-stand]
+  (let [all-unique-products (utils/get-all-unique-products stands)
+        stand-name (:name form-data)
+        updated-products (reduce
+                          (fn [acc product]
+                            (if (and
+                                 (clojure.string/includes?
+                                  (clojure.string/lower-case stand-name)
+                                  (clojure.string/lower-case product))
+                                 (not (some #(= % product) acc)))
+                              (conj acc product)
+                              acc))
+                          (:products form-data)
+                          all-unique-products)
+        processed-data (assoc form-data
+                              :products updated-products
+                              :updated (utils/get-current-timestamp))]
+    (if editing-stand
+      (vec (map #(if (= % editing-stand) processed-data %) stands))
+      (if (some #(= (utils/stand-key processed-data) (utils/stand-key %)) stands)
+        (do
+          (js/alert "This stand already exists!")
+          stands)
+        (conj stands processed-data)))))
+

@@ -42,36 +42,14 @@
     (.addTo tl m)
     m))
 
-(defnc leaflet-map
-  [{:keys [div-id
-           center
-           zoom-level
-           stands
-           selected-stand
-           set-selected-stand
-           show-crosshairs
-           set-coordinate-form-data
-           map-ref
-           is-locating
-           on-cancel-location
-           current-location-coords]}]
+(defn use-leaflet-map
+  [{:keys [div-id center zoom-level stands selected-stand set-selected-stand
+           set-coordinate-form-data map-ref current-location-coords is-locating]}]
   (let [[stand-map set-stand-map] (hooks/use-state nil)
         layer-group-ref (hooks/use-ref nil)
         current-location-marker-ref (hooks/use-ref nil)]
-    (hooks/use-effect
-     [(first center) (second center) stand-map]
-     (when (and stand-map center)
-       (let [current-center (.getCenter ^js stand-map)
-             new-lat (first center)
-             new-lng (second center)]
-         (when (or (not= (.toFixed (.-lat current-center) 6) (.toFixed new-lat 6))
-                   (not= (.toFixed (.-lng current-center) 6) (.toFixed new-lng 6)))
-           (.setView
-            ^js stand-map
-            (clj->js center)
-            (.getZoom ^js stand-map)
-            (clj->js {:animate false}))))))
 
+    ;; Initialization
     (hooks/use-effect
      :once
      (let [m (init-map div-id center zoom-level)]
@@ -87,6 +65,22 @@
          (reset! map-ref m))
        (set-stand-map m)))
 
+    ;; Sync Center
+    (hooks/use-effect
+     [(first center) (second center) stand-map]
+     (when (and stand-map center)
+       (let [current-center (.getCenter ^js stand-map)
+             new-lat (first center)
+             new-lng (second center)]
+         (when (or (not= (.toFixed (.-lat current-center) 6) (.toFixed new-lat 6))
+                   (not= (.toFixed (.-lng current-center) 6) (.toFixed new-lng 6)))
+           (.setView
+            ^js stand-map
+            (clj->js center)
+            (.getZoom ^js stand-map)
+            (clj->js {:animate false}))))))
+
+    ;; Sync Stands & Selection
     (hooks/use-effect
      [stands selected-stand stand-map]
      (when stand-map
@@ -121,6 +115,7 @@
             second
             (#(.openPopup ^js %)))))))
 
+    ;; Sync Current Location
     (hooks/use-effect
      [current-location-coords is-locating stand-map]
      (when stand-map
@@ -129,7 +124,11 @@
        (when current-location-coords
          (let [marker (make-current-location-marker current-location-coords)]
            (.addTo ^js marker stand-map)
-           (reset! current-location-marker-ref marker))))))
+           (reset! current-location-marker-ref marker)))))))
+
+(defnc leaflet-map
+  [{:keys [div-id show-crosshairs is-locating on-cancel-location] :as props}]
+  (use-leaflet-map props)
   (d/div {:id div-id
           :style {:position "relative"}}
          (when show-crosshairs

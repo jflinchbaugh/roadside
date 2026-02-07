@@ -3,6 +3,7 @@
             [helix.hooks :as hooks]
             [helix.dom :as d]
             [com.hjsoft.roadside.website.utils :as utils]
+            [com.hjsoft.roadside.website.state :as state]
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
             [clojure.string :as str]))
 
@@ -137,23 +138,6 @@
                     (set-current-product ""))}
         "Add"))))))
 
-(defn- update-stand
-  [form-data editing-stand current-stands]
-  (vec
-   (map
-    #(if (= % editing-stand)
-       (assoc form-data :updated (utils/get-current-timestamp))
-       %)
-    current-stands)))
-
-(defn- add-stand
-  [form-data current-stands]
-  (if (some #(= (utils/stand-key form-data) (utils/stand-key %)) current-stands)
-    (do
-      (js/alert "This stand already exists!")
-      current-stands)
-    (conj current-stands (assoc form-data :updated (utils/get-current-timestamp)))))
-
 (defnc stand-form
   [{:keys [form-data
            set-form-data
@@ -224,28 +208,13 @@
          :onClick #(.stopPropagation %)
          :onSubmit (fn [e]
                      (.preventDefault e)
-                     (let [all-unique-products (utils/get-all-unique-products stands)
-                           stand-name (:name form-data)
-                           updated-products (reduce
-                                             (fn [acc product]
-                                               (if (and
-                                                    (str/includes?
-                                                     (str/lower-case stand-name)
-                                                     (str/lower-case product))
-                                                    (not (some #(= % product) acc)))
-                                                 (conj acc product)
-                                                 acc))
-                                             (:products form-data)
-                                             all-unique-products)
-                           processed-form-data (assoc form-data :products updated-products)]
-                       (if editing-stand
-                         (do
-                           (set-stands (partial update-stand processed-form-data editing-stand))
-                           (set-show-form false))
-                         (let [new-stands (add-stand processed-form-data stands)]
-                           (set-stands new-stands)
-                           (when (not= new-stands stands)
-                             (set-show-form false))))))}
+                     (let [new-stands (state/process-stand-form
+                                       form-data
+                                       stands
+                                       editing-stand)]
+                       (when (not= new-stands stands)
+                         (set-stands new-stands)
+                         (set-show-form false))))}
         (d/div
          {:class "form-header-actions"}
          (d/h3 (if editing-stand "Edit Stand" "Add New Stand"))
