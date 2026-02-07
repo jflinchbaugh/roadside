@@ -864,28 +864,60 @@
      {:class (str "notification-toast " (name (:type notification)))}
      (:message notification))))
 
+(def initial-app-state
+  {:stands []
+   :show-form false
+   :editing-stand nil
+   :stand-form-data {:name ""
+                     :coordinate (str (first map-home) ", " (second map-home))
+                     :address ""
+                     :town ""
+                     :state ""
+                     :products []
+                     :expiration ""
+                     :notes ""
+                     :shared? true}
+   :product-filter nil
+   :selected-stand nil
+   :map-center (or (storage/get-item "roadside-map-center") map-home)
+   :show-settings-dialog false
+   :settings-form-data {:resource "" :user "" :password ""}
+   :settings (or (storage/get-item "roadside-settings") {})
+   :is-synced false
+   :notification nil})
+
+(defn app-reducer [state [action-type payload]]
+  (let [update-state (fn [key]
+                       (if (fn? payload)
+                         (update state key payload)
+                         (assoc state key payload)))]
+    (case action-type
+      :set-stands (update-state :stands)
+      :set-show-form (update-state :show-form)
+      :set-editing-stand (update-state :editing-stand)
+      :set-stand-form-data (update-state :stand-form-data)
+      :set-product-filter (update-state :product-filter)
+      :set-selected-stand (update-state :selected-stand)
+      :set-map-center (update-state :map-center)
+      :set-show-settings-dialog (update-state :show-settings-dialog)
+      :set-settings-form-data (update-state :settings-form-data)
+      :set-settings (update-state :settings)
+      :set-is-synced (update-state :is-synced)
+      :set-notification (update-state :notification)
+      state)))
+
 (defnc app []
-  (let [[stands set-stands] (hooks/use-state [])
-        [show-form set-show-form] (hooks/use-state false)
-        [editing-stand set-editing-stand] (hooks/use-state nil)
-        [stand-form-data set-stand-form-data] (hooks/use-state {})
-        [product-filter set-product-filter] (hooks/use-state nil)
-        [selected-stand set-selected-stand] (hooks/use-state nil)
+  (let [[state dispatch] (hooks/use-reducer app-reducer initial-app-state)
+        {:keys [stands show-form editing-stand stand-form-data product-filter
+                selected-stand map-center show-settings-dialog
+                settings-form-data settings is-synced notification]} state
+
         user-location (use-user-location)
         {:keys [location error is-locating get-location cancel-location]} user-location
-        [map-center set-map-center] (hooks/use-state
-                                     (or (storage/get-item "roadside-map-center")
-                                         map-home))
-        [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
-        [settings-form-data set-settings-form-data] (hooks/use-state
-                                                     {:resource ""
-                                                      :user ""
-                                                      :password ""})
-        [settings set-settings] (hooks/use-state {})
-        [is-synced set-is-synced] (hooks/use-state false)
-        [notification set-notification] (hooks/use-state nil)
+
         show-notification (fn [type message]
-                            (set-notification {:type type :message message}))
+                            (dispatch [:set-notification {:type type :message message}]))
+
         filtered-stands (hooks/use-memo
                          [stands product-filter]
                          (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
@@ -896,9 +928,10 @@
                                      (:products %))
                                    sorted-stands))
                              sorted-stands)))
+
         set-coordinate-form-data (hooks/use-callback
-                                  [set-map-center]
-                                  (fn [c] (set-map-center (parse-coordinates c))))]
+                                  [dispatch]
+                                  (fn [c] (dispatch [:set-map-center (parse-coordinates c)])))]
 
     (hooks/use-effect
      [map-center]
@@ -907,12 +940,12 @@
     (hooks/use-effect
      [location]
      (when location
-       (set-map-center location)))
+       (dispatch [:set-map-center location])))
 
     (hooks/use-effect
      :once
      (when-let [saved-stands (storage/get-item "roadside-stands")]
-       (set-stands saved-stands)))
+       (dispatch [:set-stands saved-stands])))
 
     (hooks/use-effect
      [stands is-synced settings]
@@ -928,12 +961,6 @@
                  (show-notification :error (str "Save failed: " error)))))))))
 
     (hooks/use-effect
-     :once
-     (when-let [saved-settings (storage/get-item "roadside-settings")]
-       (set-settings-form-data saved-settings)
-       (set-settings saved-settings)))
-
-    (hooks/use-effect
      [settings]
      (storage/set-item! "roadside-settings" settings)
      (let [{:keys [resource user password]} settings]
@@ -942,8 +969,8 @@
            (let [{:keys [success data error]} (<! (api/fetch-stands resource user password))]
              (if success
                (do
-                 (set-stands data)
-                 (set-is-synced true)
+                 (dispatch [:set-stands data])
+                 (dispatch [:set-is-synced true])
                  (show-notification :success "Stands synced!"))
                (do
                  (tel/log! :error {:msg "Failed to fetch stands"
@@ -957,7 +984,8 @@
     (d/div
      {:class "app-container"}
 
-     ($ notification-toast {:notification notification :set-notification set-notification})
+     ($ notification-toast {:notification notification
+                            :set-notification #(dispatch [:set-notification %])})
      ($ fixed-header
         ($ header)
         ($ leaflet-map
@@ -965,7 +993,7 @@
             :center map-center
             :stands filtered-stands
             :zoom-level initial-zoom-level
-            :set-selected-stand set-selected-stand
+            :set-selected-stand #(dispatch [:set-selected-stand %])
             :selected-stand selected-stand
             :is-locating is-locating
             :on-cancel-location cancel-location
@@ -977,7 +1005,7 @@
        {:class "main-actions"}
        (d/button
         {:class "add-stand-btn"
-         :onClick #(set-show-form true)}
+         :onClick #(dispatch [:set-show-form true])}
         "Add Stand")
        (d/div
         {:class "map-actions-right"}
@@ -990,37 +1018,37 @@
          "\u2316")))
       ($ product-list
          {:stands stands
-          :set-product-filter set-product-filter
+          :set-product-filter #(dispatch [:set-product-filter %])
           :product-filter product-filter})
       ($ stand-form
          {:form-data stand-form-data
-          :set-form-data set-stand-form-data
+          :set-form-data #(dispatch [:set-stand-form-data %])
           :show-form show-form
-          :set-show-form set-show-form
+          :set-show-form #(dispatch [:set-show-form %])
           :user-location user-location
           :user-map-center map-center
           :editing-stand editing-stand
-          :set-editing-stand set-editing-stand
+          :set-editing-stand #(dispatch [:set-editing-stand %])
           :stands stands
-          :set-stands set-stands})
+          :set-stands #(dispatch [:set-stands %])})
       ($ stands-list
          {:stands filtered-stands
-          :set-stands set-stands
-          :set-editing-stand set-editing-stand
-          :set-form-data set-stand-form-data
-          :set-show-form set-show-form
+          :set-stands #(dispatch [:set-stands %])
+          :set-editing-stand #(dispatch [:set-editing-stand %])
+          :set-form-data #(dispatch [:set-stand-form-data %])
+          :set-show-form #(dispatch [:set-show-form %])
           :selected-stand selected-stand
-          :set-selected-stand set-selected-stand})
+          :set-selected-stand #(dispatch [:set-selected-stand %])})
       (d/button
        {:class "settings-btn"
-        :onClick #(set-show-settings-dialog true)}
+        :onClick #(dispatch [:set-show-settings-dialog true])}
        "\u2699")
       ($ settings-dialog
          {:show-settings-dialog show-settings-dialog
-          :set-show-settings-dialog set-show-settings-dialog
+          :set-show-settings-dialog #(dispatch [:set-show-settings-dialog %])
           :form-data settings-form-data
-          :set-form-data set-settings-form-data
-          :set-settings set-settings})))))
+          :set-form-data #(dispatch [:set-settings-form-data %])
+          :set-settings #(dispatch [:set-settings %])})))))
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]
