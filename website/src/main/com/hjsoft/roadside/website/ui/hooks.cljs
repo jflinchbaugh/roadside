@@ -39,7 +39,7 @@
                                    (set-error "Unable to retrieve location.")
                                    (when (fn? on-error) (on-error msg)))))
                              #js {:enableHighAccuracy false
-                                  :timeout 10000
+                                  :timeout 20000
                                   :maximumAge 30000})
                             (do
                               (reset! locating-ref false)
