@@ -16,7 +16,6 @@
             [com.hjsoft.roadside.website.ui.layout :refer [header fixed-header notification-toast]]
             [cljs.core.async :refer [go <!]]))
 
-(def add-zoom-level 16)
 (def initial-zoom-level 11)
 
 (defn use-app-orchestration
@@ -97,17 +96,11 @@
          ($ notification-toast)
          ($ fixed-header
             ($ header)
-            ($ leaflet-map
-               {:div-id "map-container"
-                :center map-center
-                :stands filtered-stands
-                :zoom-level initial-zoom-level
-                :set-selected-stand #(dispatch [:set-selected-stand %])
-                :selected-stand selected-stand
-                :is-locating is-locating
-                :on-cancel-location cancel-location
-                :set-coordinate-form-data set-coordinate-form-data
-                :current-location-coords location}))
+                     ($ leaflet-map
+                        {:div-id "map-container"
+                         :stands filtered-stands
+                         :zoom-level initial-zoom-level
+                         :set-coordinate-form-data set-coordinate-form-data}))
          (d/div
           {:class "content"}
           (d/div
@@ -126,8 +119,7 @@
               :onClick #(get-location)}
              "\u2316")))
           ($ product-list {:stands stands})
-          ($ stand-form
-             {:add-zoom-level add-zoom-level})
+          ($ stand-form)
           ($ stands-list {:stands filtered-stands})
           (d/button
            {:class "settings-btn"

@@ -4,16 +4,19 @@
             [helix.hooks :as hooks]
             [helix.dom :as d]
             ["leaflet" :as L]
+            [com.hjsoft.roadside.website.state :as state]
             [com.hjsoft.roadside.website.utils :as utils]))
 
 (defn- make-marker
-  [{:keys [coord stand set-selected-stand]}]
+  [{:keys [coord stand set-selected-stand auto-pan?]
+    :or {auto-pan? true}}]
   (let [marker (L/marker (clj->js coord))
         popup-content (utils/stand-popup-html stand)]
     (.bindPopup
      marker
      popup-content
-     (clj->js {"autoPanPadding" (L/point 100 100)}))
+     (clj->js {"autoPan" auto-pan?
+               "autoPanPadding" (L/point 10 10)}))
     (.on marker "click" #(set-selected-stand stand))
     [stand marker]))
 
@@ -35,9 +38,15 @@
     m))
 
 (defn use-leaflet-map
-  [{:keys [div-id center zoom-level stands selected-stand set-selected-stand
-           set-coordinate-form-data map-ref current-location-coords is-locating]}]
-  (let [[stand-map set-stand-map] (hooks/use-state nil)
+  [{:keys [div-id center stands selected-stand zoom-level
+           set-coordinate-form-data map-ref auto-pan?]
+    :or {auto-pan? true}}]
+  (let [{:keys [state dispatch user-location]} (state/use-app)
+        {:keys [location is-locating]} user-location
+        stands (or stands (:stands state))
+        selected-stand (or selected-stand (:selected-stand state))
+        center (or center (:map-center state))
+        [stand-map set-stand-map] (hooks/use-state nil)
         layer-group-ref (hooks/use-ref nil)
         current-location-marker-ref (hooks/use-ref nil)]
 
@@ -55,7 +64,13 @@
                (str (.-lat center) ", " (.-lng center)))))))
        (when map-ref
          (reset! map-ref m))
-       (set-stand-map m)))
+       (set-stand-map m)
+       ;; Ensure map is correctly sized after modal animation/render
+       (js/setTimeout
+        (fn []
+          (.invalidateSize m)
+          (.setView m (clj->js center) zoom-level))
+        100)))
 
     ;; Sync Center
     (hooks/use-effect
@@ -74,7 +89,7 @@
 
     ;; Sync Stands & Selection
     (hooks/use-effect
-     [stands selected-stand stand-map]
+     [stands selected-stand stand-map auto-pan?]
      (when stand-map
        (let [locations (->>
                         stands
@@ -87,9 +102,8 @@
                            (make-marker
                             {:coord coord
                              :stand stand
-                             :set-selected-stand (or
-                                                  set-selected-stand
-                                                  (constantly nil))}))))
+                             :auto-pan? auto-pan?
+                             :set-selected-stand #(dispatch [:set-selected-stand %])}))))
              new-layer-group (when (seq locations)
                                (L/layerGroup
                                 (clj->js (map second locations))))]
@@ -109,25 +123,27 @@
 
     ;; Sync Current Location
     (hooks/use-effect
-     [current-location-coords is-locating stand-map]
+     [location is-locating stand-map]
      (when stand-map
        (when @current-location-marker-ref
          (.removeLayer ^js stand-map @current-location-marker-ref))
-       (when current-location-coords
-         (let [marker (make-current-location-marker current-location-coords)]
+       (when location
+         (let [marker (make-current-location-marker location)]
            (.addTo ^js marker stand-map)
            (reset! current-location-marker-ref marker)))))))
 
 (defnc leaflet-map
-  [{:keys [div-id show-crosshairs is-locating on-cancel-location] :as props}]
-  (use-leaflet-map props)
-  (d/div {:id div-id
-          :class "map-wrapper"}
-         (when show-crosshairs
-           (d/div {:class "crosshairs"}))
-         (when is-locating
-           (d/div
-            {:class "loading-overlay"
-             :onClick #(when on-cancel-location (on-cancel-location))}
-            (d/div {:class "spinner"})
-            (d/p "Locating...")))))
+  [{:keys [div-id show-crosshairs] :as props}]
+  (let [{:keys [user-location]} (state/use-app)
+        {:keys [is-locating cancel-location]} user-location]
+    (use-leaflet-map props)
+    (d/div {:id div-id
+            :class "map-wrapper"}
+           (when show-crosshairs
+             (d/div {:class "crosshairs"}))
+           (when is-locating
+             (d/div
+              {:class "loading-overlay"
+               :onClick #(cancel-location)}
+              (d/div {:class "spinner"})
+              (d/p "Locating..."))))))

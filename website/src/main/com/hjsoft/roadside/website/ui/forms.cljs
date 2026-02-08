@@ -8,6 +8,8 @@
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
             [clojure.string :as str]))
 
+(def add-zoom-level 16)
+
 (defnc form-field
   [{:keys [label type value on-change on-blur rows
            checked id class-name input-ref placeholder]
@@ -49,11 +51,10 @@
 (defnc location-input
   [{:keys
     [coordinate-input-ref
-     location-btn-ref
-     add-zoom-level]}]
+     location-btn-ref]}]
   (let [{:keys [state user-location update-stand-form]} (state/use-app)
         {:keys [stand-form-data stands]} state
-        {:keys [location error is-locating get-location cancel-location]} user-location
+        {:keys [get-location error]} user-location
         [coordinate-display set-coordinate-display] (hooks/use-state
                                                      (:coordinate stand-form-data))
         map-ref (hooks/use-ref nil)]
@@ -71,12 +72,10 @@
          :zoom-level add-zoom-level
          :stands stands
          :show-crosshairs true
+         :auto-pan? false
          :set-coordinate-form-data (fn [coord-str]
                                      (update-stand-form :coordinate coord-str))
-         :map-ref map-ref
-         :is-locating is-locating
-         :on-cancel-location cancel-location
-         :current-location-coords location})
+         :map-ref map-ref})
      (d/label "Coordinate:")
      (d/div
       {:class "coordinate-input-group"}
@@ -146,10 +145,9 @@
                     (set-current-product ""))}
         "Add"))))))
 
-(defnc stand-form
-  [{:keys [add-zoom-level]}]
-  (let [{:keys [dispatch state user-location update-stand-form]} (state/use-app)
-        {:keys [stand-form-data editing-stand show-form stands]} state
+(defnc stand-form []
+  (let [{:keys [dispatch state update-stand-form]} (state/use-app)
+        {:keys [stand-form-data editing-stand show-form]} state
         [show-address? set-show-address?] (hooks/use-state false)
         coordinate-input-ref (hooks/use-ref nil)
         location-btn-ref (hooks/use-ref nil)]
@@ -208,8 +206,7 @@
          {:class "form-content-wrapper"}
          ($ location-input
             {:coordinate-input-ref coordinate-input-ref
-             :location-btn-ref location-btn-ref
-             :add-zoom-level add-zoom-level})
+             :location-btn-ref location-btn-ref})
          ($ product-input)
          ($ form-field
             {:label "Stand Name:"
@@ -244,19 +241,19 @@
             ($ form-field
                {:label "State:"
                 :value (:state stand-form-data)
-                :on-change #(update-stand-form :state (.. % -target -value))})))))
-       ($ form-field
-          {:label "Expiration Date:"
-           :type "date"
-           :value (:expiration stand-form-data)
-           :on-change #(update-stand-form :expiration (.. % -target -value))})
-       ($ form-field
-          {:label "Shared?"
-           :type "checkbox"
-           :id "shared-checkbox"
-           :class-name "checkbox"
-           :checked (get stand-form-data :shared? false)
-           :on-change #(update-stand-form :shared? (.. % -target -checked))})))))
+                :on-change #(update-stand-form :state (.. % -target -value))})))
+         ($ form-field
+            {:label "Expiration Date:"
+             :type "date"
+             :value (:expiration stand-form-data)
+             :on-change #(update-stand-form :expiration (.. % -target -value))})
+         ($ form-field
+            {:label "Shared?"
+             :type "checkbox"
+             :id "shared-checkbox"
+             :class-name "checkbox"
+             :checked (get stand-form-data :shared? false)
+             :on-change #(update-stand-form :shared? (.. % -target -checked))})))))))
 
 (defnc settings-dialog []
   (let [{:keys [dispatch state update-settings-form]} (state/use-app)
