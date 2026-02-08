@@ -12,11 +12,8 @@
 
 (defn stand-key
   [stand]
-  (->>
-   stand
-   ((juxt :name :coordinate :address :town :state :products))
-   flatten
-   (str/join "-")))
+  (let [{:keys [name coordinate address town state products]} stand]
+    (str name "|" coordinate "|" address "|" town "|" state "|" (str/join "," products))))
 
 (defn parse-coordinates
   [coords]

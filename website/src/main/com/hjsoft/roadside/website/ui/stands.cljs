@@ -93,10 +93,7 @@
               "Edit")
              (d/button
               {:class "delete-stand-btn"
-               :onClick #(dispatch [:set-stands (fn [current-stands]
-                                                  (->> current-stands
-                                                       (remove #{stand})
-                                                       vec))])
+               :onClick #(dispatch [:remove-stand stand])
                :title "Delete this stand"}
               "Delete"))))
          stands))))))

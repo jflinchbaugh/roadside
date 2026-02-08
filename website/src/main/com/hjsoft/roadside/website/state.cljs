@@ -6,21 +6,24 @@
 
 (def map-home [40.0379 -76.3055])
 
+(def default-stand-form-data
+  {:name ""
+   :coordinate (str (first map-home) ", " (second map-home))
+   :address ""
+   :town ""
+   :state ""
+   :products []
+   :expiration ""
+   :notes ""
+   :shared? true})
+
 (def app-context (create-context))
 
 (def initial-app-state
   {:stands (or (storage/get-item "roadside-stands") [])
    :show-form false
    :editing-stand nil
-   :stand-form-data {:name ""
-                     :coordinate (str (first map-home) ", " (second map-home))
-                     :address ""
-                     :town ""
-                     :state ""
-                     :products []
-                     :expiration ""
-                     :notes ""
-                     :shared? true}
+   :stand-form-data default-stand-form-data
    :product-filter nil
    :selected-stand nil
    :map-center (or (storage/get-item "roadside-map-center") map-home)
@@ -45,25 +48,21 @@
     :open-add-form (assoc state
                           :show-form true
                           :editing-stand nil
-                          :stand-form-data {:name ""
-                                            :coordinate (str
-                                                         (first
-                                                          (:map-center state))
-                                                         ", "
-                                                         (second
-                                                          (:map-center state)))
-                                            :address ""
-                                            :town ""
-                                            :state ""
-                                            :products []
-                                            :expiration (utils/in-a-week)
-                                            :notes ""
-                                            :shared? true})
+                          :stand-form-data (assoc default-stand-form-data
+                                             :coordinate (str
+                                                          (first
+                                                           (:map-center state))
+                                                          ", "
+                                                          (second
+                                                           (:map-center state)))
+                                             :expiration (utils/in-a-week)))
     :open-edit-form (assoc state
                            :show-form true
                            :editing-stand payload
                            :stand-form-data payload)
     :close-form (assoc state :show-form false :editing-stand nil)
+    :remove-stand (update state :stands (fn [stands]
+                                          (filterv #(not= % payload) stands)))
     ;; Generic handler for :set-* actions
     (let [action-name (name action-type)]
       (if (str/starts-with? action-name "set-")

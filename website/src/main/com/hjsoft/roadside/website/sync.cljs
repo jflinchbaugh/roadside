@@ -9,15 +9,19 @@
   (storage/set-item! "roadside-settings" settings)
   (storage/set-item! "roadside-map-center" map-center))
 
+(defn- has-credentials? [settings]
+  (let [{:keys [resource user password]} settings]
+    (and (seq resource) (seq user) (seq password))))
+
 (defn fetch-remote-stands!
   [{:keys [settings]} dispatch show-notification]
-  (let [{:keys [resource user password]} settings]
-    (when (and (seq resource) (seq user) (seq password))
+  (when (has-credentials? settings)
+    (let [{:keys [resource user password]} settings]
       (go
         (let [{:keys [success data error]} (<! (api/fetch-stands
-                                                 resource
-                                                 user
-                                                 password))]
+                                                resource
+                                                user
+                                                password))]
           (if success
             (do
               (dispatch [:set-stands data])
@@ -29,14 +33,14 @@
 
 (defn save-remote-stands!
   [{:keys [stands settings is-synced]} show-notification]
-  (let [{:keys [resource user password]} settings]
-    (when (and (seq resource) (seq user) (seq password) is-synced)
+  (when (and (has-credentials? settings) is-synced)
+    (let [{:keys [resource user password]} settings]
       (go
         (let [{:keys [success error]} (<! (api/save-stands
-                                            resource
-                                            user
-                                            password
-                                            stands))]
+                                           resource
+                                           user
+                                           password
+                                           stands))]
           (if success
             (show-notification :success "Stands saved!")
             (do

@@ -20,11 +20,11 @@
         "7 days into the future"))
 
 (t/deftest stand-key
-  (t/is (= "-----" (sut/stand-key nil))
+  (t/is (= "|||||" (sut/stand-key nil))
         "nil key")
-  (t/is (= "-----" (sut/stand-key {}))
+  (t/is (= "|||||" (sut/stand-key {}))
         "empty key")
-  (t/is (= "name-1-2-address-town-state-prod-thing"
+  (t/is (= "name|[1 2]|address|town|state|prod,thing"
            (sut/stand-key {:name "name"
                            :coordinate [1.0 2.0]
                            :address "address"

@@ -83,9 +83,7 @@
                            (vec
                             (if product-filter
                               (filter
-                               #(some
-                                 (fn [p] (= p product-filter))
-                                 (:products %))
+                               #(some #{product-filter} (:products %))
                                sorted-stands)
                               sorted-stands))))
 
