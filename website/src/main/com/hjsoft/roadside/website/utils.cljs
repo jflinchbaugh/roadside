@@ -1,5 +1,6 @@
 (ns com.hjsoft.roadside.website.utils
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [goog.string]))
 
 (defn get-current-timestamp []
   (.toISOString (js/Date.)))
@@ -42,3 +43,19 @@
        distinct
        sort
        vec))
+
+(defn stand-popup-html
+  "Generates sanitized HTML content for a stand's map popup."
+  [stand]
+  (let [name (:name stand)
+        products (:products stand)
+        content (str
+                 (when (seq name)
+                   (str "<b>" (goog.string/htmlEscape name) "</b><br>"))
+                 (when (seq products)
+                   (str
+                    (str/join ", " (map goog.string/htmlEscape products))
+                    "<br>")))]
+    (if (empty? content)
+      "(no details)"
+      content)))

@@ -4,22 +4,12 @@
             [helix.hooks :as hooks]
             [helix.dom :as d]
             ["leaflet" :as L]
-            [com.hjsoft.roadside.website.utils :as utils]
-            [goog.string]))
+            [com.hjsoft.roadside.website.utils :as utils]))
 
 (defn- make-marker
   [{:keys [coord stand set-selected-stand]}]
   (let [marker (L/marker (clj->js coord))
-        content (str
-                 (when-not (empty? (:name stand))
-                   (str "<b>" (goog.string/htmlEscape (:name stand)) "</b><br>"))
-                 (when (seq (:products stand))
-                   (str
-                    (str/join ", " (map goog.string/htmlEscape (:products stand)))
-                    "<br>")))
-        popup-content (if (empty? content)
-                        "(no details)"
-                        content)]
+        popup-content (utils/stand-popup-html stand)]
     (.bindPopup
      marker
      popup-content
