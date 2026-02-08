@@ -7,19 +7,6 @@
     (t/is (= {:stands [{:id 1}]}
              (sut/app-reducer {} [:set-stands [{:id 1}]]))))
 
-  (t/testing "set-show-form"
-    (t/is (= {:show-form true}
-             (sut/app-reducer {} [:set-show-form true]))))
-
-  (t/testing "set-stand-form-data with value"
-    (t/is (= {:stand-form-data {:name "New"}}
-             (sut/app-reducer {} [:set-stand-form-data {:name "New"}]))))
-
-  (t/testing "set-stand-form-data with function"
-    (t/is (= {:stand-form-data {:name "Old"}}
-             (sut/app-reducer {:stand-form-data {:name "Initial"}}
-                             [:set-stand-form-data (fn [_] {:name "Old"})]))))
-
   (t/testing "set-product-filter"
     (t/is (= {:product-filter "Apples"}
              (sut/app-reducer {} [:set-product-filter "Apples"]))))
@@ -36,10 +23,6 @@
     (t/is (= {:show-settings-dialog true}
              (sut/app-reducer {} [:set-show-settings-dialog true]))))
 
-  (t/testing "set-settings-form-data"
-    (t/is (= {:settings-form-data {:user "test"}}
-             (sut/app-reducer {} [:set-settings-form-data {:user "test"}]))))
-
   (t/testing "set-settings"
     (t/is (= {:settings {:user "test"}}
              (sut/app-reducer {} [:set-settings {:user "test"}]))))
@@ -50,14 +33,10 @@
 
   (t/testing "set-notification"
     (t/is (= {:notification {:type :success :message "hi"}}
-             (sut/app-reducer {} [:set-notification {:type :success :message "hi"}]))))
-
-  (t/testing "generic set-* action"
-    (t/is (= {:some-new-prop "value"}
-             (sut/app-reducer {} [:set-some-new-prop "value"])))
-    (t/is (= {:some-new-prop "updated"}
-             (sut/app-reducer {:some-new-prop "value"}
-                             [:set-some-new-prop (fn [_] "updated")])))))
+             (sut/app-reducer {} [:set-notification {:type :success :message "hi"}])))
+    (t/is (= {:notification {:type :updated}}
+             (sut/app-reducer {:notification {:type :original}}
+                              [:set-notification (fn [_] {:type :updated})])))))
 
 (t/deftest process-stand-form-test
   (let [stands [{:name "Apple Farm" :products ["Apples"] :coordinate "1,2"}]]

@@ -38,6 +38,11 @@
    :is-synced false
    :notification nil})
 
+(defn set-value [state key payload]
+  (if (fn? payload)
+    (update state key payload)
+    (assoc state key payload)))
+
 (defn app-reducer [state [action-type payload]]
   (case action-type
     :set-stands (assoc state
@@ -59,14 +64,15 @@
     :close-form (assoc state :show-form false :editing-stand nil)
     :remove-stand (update state :stands (fn [stands]
                                           (filterv #(not= % payload) stands)))
-    ;; Generic handler for :set-* actions
-    (let [action-name (name action-type)]
-      (if (str/starts-with? action-name "set-")
-        (let [key (keyword (subs action-name 4))]
-          (if (fn? payload)
-            (update state key payload)
-            (assoc state key payload)))
-        state))))
+    ;; Explicit handlers
+    :set-notification (set-value state :notification payload)
+    :set-is-synced (set-value state :is-synced payload)
+    :set-selected-stand (set-value state :selected-stand payload)
+    :set-product-filter (set-value state :product-filter payload)
+    :set-show-settings-dialog (set-value state :show-settings-dialog payload)
+    :set-settings (set-value state :settings payload)
+    :set-map-center (set-value state :map-center payload)
+    state))
 
 (defn process-stand-form
   "Processes the stand form data, automatically adding products based on name,
