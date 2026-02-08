@@ -18,22 +18,22 @@
 
 (def initial-zoom-level 11)
 
-(defn use-app-orchestration
-  [{:keys [app-state dispatch user-location]}]
-  (let [{:keys [stands settings map-center is-synced]} app-state
-        {:keys [location get-location]} user-location]
+(defn use-local-persistence
+  [{:keys [stands settings map-center]}]
+  (hooks/use-effect
+   [stands settings map-center]
+   (sync/save-local-data! stands settings map-center)))
 
-    ;; Persist to Local Storage
-    (hooks/use-effect
-     [stands settings map-center]
-     (sync/save-local-data! stands settings map-center))
+(defn use-location-sync
+  [dispatch {:keys [location]}]
+  (hooks/use-effect
+   [location]
+   (when location
+     (dispatch [:set-map-center location]))))
 
-    ;; Update map-center when location changes
-    (hooks/use-effect
-     [location]
-     (when location
-       (dispatch [:set-map-center location])))
-
+(defn use-remote-sync
+  [app-state dispatch]
+  (let [{:keys [stands is-synced settings]} app-state]
     ;; Sync with Remote API
     (hooks/use-effect
      [stands is-synced settings]
@@ -42,42 +42,28 @@
     ;; Fetch from Remote API on settings change
     (hooks/use-effect
      [settings]
-     (sync/fetch-remote-stands! app-state dispatch))
+     (sync/fetch-remote-stands! app-state dispatch))))
 
-    ;; Initialize
-    (hooks/use-effect
-     :once
-     (get-location))))
+(defn use-initial-location
+  [{:keys [get-location]}]
+  (hooks/use-effect :once (get-location)))
 
 (defnc app []
   (let [[app-state dispatch] (hooks/use-reducer
                               state/app-reducer
                               state/initial-app-state)
-        {:keys [stands selected-stand map-center product-filter show-form show-settings-dialog]} app-state
+        {:keys [stands map-center show-form show-settings-dialog]} app-state
 
         user-location (use-user-location)
-        {:keys [location
-                error
-                is-locating
-                get-location
-                cancel-location]} user-location
 
-        _ (use-app-orchestration {:app-state app-state
-                                  :dispatch dispatch
-                                  :user-location user-location})
+        _ (use-local-persistence app-state)
+        _ (use-location-sync dispatch user-location)
+        _ (use-remote-sync app-state dispatch)
+        _ (use-initial-location user-location)
 
         filtered-stands (hooks/use-memo
-                         [stands product-filter]
-                         (let [sorted-stands (sort-by
-                                              :updated
-                                              #(compare %2 %1)
-                                              stands)]
-                           (vec
-                            (if product-filter
-                              (filter
-                               #(some #{product-filter} (:products %))
-                               sorted-stands)
-                              sorted-stands))))
+                         [stands (:product-filter app-state)]
+                         (state/select-filtered-stands app-state))
 
         set-coordinate-form-data (hooks/use-callback
                                   [dispatch]
@@ -111,12 +97,12 @@
             "Add Stand")
            (d/div
             {:class "map-actions-right"}
-            (when (and error (string? error))
-              (d/p {:class "error-message"} error))
+            (when (and (:error user-location) (string? (:error user-location)))
+              (d/p {:class "error-message"} (:error user-location)))
             (d/button
              {:type "button"
               :class "location-btn"
-              :onClick #(get-location)}
+              :onClick #((:get-location user-location))}
              "\u2316")))
           ($ product-list {:stands stands})
           (when show-form ($ stand-form))

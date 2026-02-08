@@ -50,11 +50,7 @@
                        (let [data (if (fn? payload)
                                     (payload (:stands state))
                                     payload)]
-                         (cond
-                           (vector? data) data
-                           (map? data) (vec (vals data))
-                           (nil? data) []
-                           :else (vec data))))
+                         (if (coll? data) (vec data) [])))
     :open-add-form (assoc state
                           :show-form true
                           :editing-stand nil)
@@ -74,29 +70,10 @@
     :set-map-center (set-value state :map-center payload)
     state))
 
-(defn process-stand-form
-  "Processes the stand form data, automatically adding products based on name,
-   and returns a map with :success and the updated stands list or an error message."
-  [form-data stands editing-stand]
-  (let [all-unique-products (utils/get-all-unique-products stands)
-        stand-name (str/lower-case (:name form-data))
-        current-products (set (:products form-data))
-        inferred-products (filter
-                           (fn [p]
-                             (and (str/includes? stand-name (str/lower-case p))
-                                  (not (contains? current-products p))))
-                           all-unique-products)
-        final-products (into (:products form-data) inferred-products)
-        processed-data (assoc form-data
-                              :products (vec final-products)
-                              :updated (utils/get-current-timestamp))]
-    (if editing-stand
-      {:success true
-       :processed-data processed-data
-       :stands (mapv #(if (= % editing-stand) processed-data %) stands)}
-      (if (some #(= (utils/stand-key processed-data) (utils/stand-key %)) stands)
-        {:success false :error "This stand already exists!"}
-        {:success true
-         :processed-data processed-data
-         :stands (conj stands processed-data)}))))
+(defn select-filtered-stands
+  [{:keys [stands product-filter]}]
+  (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
+    (if product-filter
+      (filterv #(some #{product-filter} (:products %)) sorted-stands)
+      (vec sorted-stands))))
 

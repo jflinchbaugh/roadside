@@ -38,21 +38,14 @@
              (sut/app-reducer {:notification {:type :original}}
                               [:set-notification (fn [_] {:type :updated})])))))
 
-(t/deftest process-stand-form-test
-  (let [stands [{:name "Apple Farm" :products ["Apples"] :coordinate "1,2"}]]
-    (t/testing "adding a new stand with auto-product detection"
-      (let [result (sut/process-stand-form
-                    {:name "Better Apples" :coordinate "3,4" :products []}
-                    stands
-                    nil)]
-        (t/is (:success result))
-        (t/is (some #(= "Apples" %) (:products (first (:stands result))))
-              "Automatically added Apples because it was in the name and exists in other stands")))
+(t/deftest select-filtered-stands-test
+  (let [stands [{:name "B" :updated "2023-01-01T12:00:00Z" :products ["Apples"]}
+                {:name "A" :updated "2023-01-02T12:00:00Z" :products ["Corn"]}
+                {:name "C" :updated "2023-01-01T10:00:00Z" :products ["Apples"]}]]
+    (t/testing "sorting by updated date (descending)"
+      (let [result (sut/select-filtered-stands {:stands stands})]
+        (t/is (= ["A" "B" "C"] (map :name result)))))
 
-    (t/testing "preventing duplicates"
-      (let [result (sut/process-stand-form
-                    {:name "Apple Farm" :coordinate "1,2" :products ["Apples"]}
-                    stands
-                    nil)]
-        (t/is (not (:success result)))
-        (t/is (= "This stand already exists!" (:error result)))))))
+    (t/testing "filtering by product"
+      (let [result (sut/select-filtered-stands {:stands stands :product-filter "Apples"})]
+        (t/is (= ["B" "C"] (map :name result)))))))

@@ -4,6 +4,7 @@
             [helix.dom :as d]
             [com.hjsoft.roadside.website.utils :as utils]
             [com.hjsoft.roadside.website.state :as state]
+            [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.version :as version]
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
             [clojure.string :as str]))
@@ -191,7 +192,7 @@
        :onClick #(.stopPropagation %)
        :onSubmit (fn [e]
                    (.preventDefault e)
-                   (let [{:keys [success stands error processed-data]} (state/process-stand-form
+                   (let [{:keys [success stands error processed-data]} (stand-domain/process-stand-form
                                                                         stand-form-data
                                                                         (:stands state)
                                                                         editing-stand)]
