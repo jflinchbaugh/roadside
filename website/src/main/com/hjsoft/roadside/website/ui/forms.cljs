@@ -102,7 +102,7 @@
         error)))))
 
 (defnc product-input []
-  (let [{:keys [state update-stand-form]} (state/use-app)
+  (let [{:keys [state add-form-product remove-form-product]} (state/use-app)
         {:keys [stand-form-data]} state
         [current-product set-current-product] (hooks/use-state "")]
     (d/div
@@ -120,12 +120,7 @@
                (d/button
                 {:type "button"
                  :class "remove-tag"
-                 :onClick #(update-stand-form
-                            :products
-                            (->> stand-form-data
-                                 :products
-                                 (remove #{product})
-                                 vec))}
+                 :onClick #(remove-form-product product)}
                 "\u2715")))
             (filter string? (:products stand-form-data))))
       (d/div
@@ -139,11 +134,7 @@
                       (when (= (.-key e) "Enter")
                         (.preventDefault e)
                         (when (not= current-product "")
-                          (update-stand-form
-                           :products
-                           (if (some #(= % current-product) (:products stand-form-data))
-                             (:products stand-form-data)
-                             (conj (:products stand-form-data) current-product))))
+                          (add-form-product current-product))
                         (set-current-product "")))
          :enterKeyHint "enter"})
        (d/button
@@ -151,11 +142,7 @@
          :class "add-product-btn"
          :onClick (fn []
                     (when (not= current-product "")
-                      (update-stand-form
-                       :products
-                       (if (some #(= % current-product) (:products stand-form-data))
-                         (:products stand-form-data)
-                         (conj (:products stand-form-data) current-product))))
+                      (add-form-product current-product))
                     (set-current-product ""))}
         "Add"))))))
 
