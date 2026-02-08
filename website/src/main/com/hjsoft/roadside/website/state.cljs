@@ -43,6 +43,30 @@
                                            (nil? data) []
                                            :else (vec data))))
       :set-show-form (update-state :show-form)
+      :open-add-form (assoc state
+                            :show-form true
+                            :editing-stand nil
+                            :stand-form-data {:name ""
+                                              :coordinate (str (first (:map-center state))
+                                                               ", "
+                                                               (second (:map-center state)))
+                                              :address ""
+                                              :town ""
+                                              :state ""
+                                              :products []
+                                              :expiration (utils/in-a-week)
+                                              :notes ""
+                                              :shared? true})
+      :open-edit-form (assoc state
+                             :show-form true
+                             :editing-stand payload
+                             :stand-form-data (assoc payload
+                                                     :town (:town payload)
+                                                     :state (:state payload)
+                                                     :address (:address payload)
+                                                     :notes (:notes payload)
+                                                     :shared? (:shared? payload)))
+      :close-form (assoc state :show-form false :editing-stand nil)
       :set-editing-stand (update-state :editing-stand)
       :set-stand-form-data (update-state :stand-form-data)
       :set-product-filter (update-state :product-filter)

@@ -9,6 +9,7 @@
             [com.hjsoft.roadside.website.utils :as utils]
             [com.hjsoft.roadside.website.state :as state]
             [com.hjsoft.roadside.website.sync :as sync]
+            [com.hjsoft.roadside.website.ui.hooks :refer [use-user-location]]
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
             [com.hjsoft.roadside.website.ui.stands :refer [stands-list product-list]]
             [com.hjsoft.roadside.website.ui.forms :refer [stand-form settings-dialog]]
@@ -17,53 +18,6 @@
 
 (def add-zoom-level 16)
 (def initial-zoom-level 11)
-
-(defn use-user-location []
-  (let [[location set-location] (hooks/use-state nil)
-        [error set-error] (hooks/use-state nil)
-        [is-locating set-is-locating] (hooks/use-state false)
-        cancelled-ref (hooks/use-ref false)
-        get-location (hooks/use-callback
-                      :once
-                      (fn [& [on-success on-error]]
-                        (reset! cancelled-ref false)
-                        (set-is-locating true)
-                        (set-error nil)
-                        (if (and
-                             (exists? js/navigator)
-                             (exists? js/navigator.geolocation))
-                          (js/navigator.geolocation.getCurrentPosition
-                           (fn [position]
-                             (when-not @cancelled-ref
-                               (let [coords (.-coords position)
-                                     loc [(.-latitude coords)
-                                          (.-longitude coords)]]
-                                 (set-location loc)
-                                 (set-is-locating false)
-                                 (when (fn? on-success) (on-success loc)))))
-                           (fn [err]
-                             (when-not @cancelled-ref
-                               (let [msg (.-message err)]
-                                 (tel/log! :error {:failed-location msg})
-                                 (set-error "Unable to retrieve location.")
-                                 (set-is-locating false)
-                                 (when (fn? on-error) (on-error msg))))))
-                          (do
-                            (set-error "Geolocation not supported.")
-                            (set-is-locating false)
-                            (when on-error (on-error "Geolocation not supported."))))))
-        cancel-location (hooks/use-callback
-                         :once
-                         (fn []
-                           (reset! cancelled-ref true)
-                           (set-is-locating false)))]
-    (hooks/use-memo
-     [location error is-locating get-location cancel-location]
-     {:location location
-      :error error
-      :is-locating is-locating
-      :get-location get-location
-      :cancel-location cancel-location})))
 
 (defn use-app-orchestration
   [{:keys [app-state dispatch user-location]}]
@@ -129,7 +83,9 @@
 
     (d/div
      {:class "app-container"}
-     ($ (.-Provider state/app-context) {:value {:state app-state :dispatch dispatch}}
+     ($ (.-Provider state/app-context) {:value {:state app-state
+                                                :dispatch dispatch
+                                                :user-location user-location}}
         (<>
          ($ notification-toast)
          ($ fixed-header
@@ -151,7 +107,7 @@
            {:class "main-actions"}
            (d/button
             {:class "add-stand-btn"
-             :onClick #(dispatch [:set-show-form true])}
+             :onClick #(dispatch [:open-add-form])}
             "Add Stand")
            (d/div
             {:class "map-actions-right"}
@@ -164,8 +120,7 @@
              "\u2316")))
           ($ product-list {:stands stands})
           ($ stand-form
-             {:user-location user-location
-              :add-zoom-level add-zoom-level})
+             {:add-zoom-level add-zoom-level})
           ($ stands-list {:stands filtered-stands})
           (d/button
            {:class "settings-btn"

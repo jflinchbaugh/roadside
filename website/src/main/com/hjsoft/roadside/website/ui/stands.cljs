@@ -86,20 +86,11 @@
                      :rel "noopener noreferrer"
                      :class "go-stand-btn"}
                     "Go"))
-             (d/button
-              {:class "edit-stand-btn"
-               :onClick #(do (dispatch [:set-editing-stand stand])
-                             (dispatch [:set-stand-form-data
-                                        (assoc stand
-                                               :town (:town stand)
-                                               :state (:state stand)
-                                               :address (:address stand)
-                                               :notes (:notes stand)
-                                               :shared? (:shared? stand))])
-                             (dispatch [:set-show-form true]))
-               :title "Edit this stand"}
-              "Edit")
-             (d/button
+                         (d/button
+                          {:class "edit-stand-btn"
+                           :onClick #(dispatch [:open-edit-form stand])
+                           :title "Edit this stand"}
+                          "Edit")             (d/button
               {:class "delete-stand-btn"
                :onClick #(dispatch [:set-stands (fn [current-stands]
                                                  (->> current-stands

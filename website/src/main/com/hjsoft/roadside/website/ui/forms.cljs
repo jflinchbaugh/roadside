@@ -47,10 +47,9 @@
 (defnc location-input
   [{:keys
     [coordinate-input-ref
-     user-location
      location-btn-ref
      add-zoom-level]}]
-  (let [{:keys [dispatch state]} (hooks/use-context state/app-context)
+  (let [{:keys [dispatch state user-location]} (hooks/use-context state/app-context)
         {:keys [stand-form-data stands]} state
         {:keys [location error is-locating get-location cancel-location]} user-location
         [coordinate-display set-coordinate-display] (hooks/use-state
@@ -153,10 +152,9 @@
         "Add"))))))
 
 (defnc stand-form
-  [{:keys [user-location
-           add-zoom-level]}]
-  (let [{:keys [dispatch state]} (hooks/use-context state/app-context)
-        {:keys [stand-form-data editing-stand show-form stands map-center]} state
+  [{:keys [add-zoom-level]}]
+  (let [{:keys [dispatch state user-location]} (hooks/use-context state/app-context)
+        {:keys [stand-form-data editing-stand show-form stands]} state
         [show-address? set-show-address?] (hooks/use-state false)
         coordinate-input-ref (hooks/use-ref nil)
         location-btn-ref (hooks/use-ref nil)]
@@ -169,45 +167,19 @@
 
     (hooks/use-effect
      [show-form]
-     (if-not show-form
-       (do
-         (dispatch [:set-editing-stand nil])
-         (set-show-address? false)
-         (dispatch [:set-stand-form-data
-                    {:name ""
-                     :coordinate (str
-                                  (first state/map-home)
-                                  ", "
-                                  (second state/map-home))
-                     :address ""
-                     :town ""
-                     :state ""
-                     :products []
-                     :expiration (utils/in-a-week)
-                     :notes ""
-                     :shared? true}]))
-       (do
-         (.addEventListener
-          js/document
-          "keydown"
-          (fn [e]
-            (when (= (.-key e) "Escape")
-              (dispatch [:set-show-form false]))))
+     (when show-form
+       (let [handle-keydown (fn [e]
+                              (when (= (.-key e) "Escape")
+                                (dispatch [:close-form])))]
+         (.addEventListener js/document "keydown" handle-keydown)
          (.focus @coordinate-input-ref)
-         (when (nil? editing-stand)
-           (dispatch [:set-stand-form-data
-                      (fn [prev]
-                        (assoc
-                         prev
-                         :coordinate (str
-                                      (first (or map-center state/map-home))
-                                      ", "
-                                      (second (or map-center state/map-home)))))])))))
+         (fn []
+           (.removeEventListener js/document "keydown" handle-keydown)))))
 
     (when show-form
       (d/div
        {:class "form-overlay"
-        :onClick #(dispatch [:set-show-form false])}
+        :onClick #(dispatch [:close-form])}
        (d/form
         {:class "form-container"
          :onClick #(.stopPropagation %)
@@ -219,7 +191,7 @@
                                        editing-stand)]
                        (when (not= new-stands stands)
                          (dispatch [:set-stands new-stands])
-                         (dispatch [:set-show-form false]))))}
+                         (dispatch [:close-form]))))}
         (d/div
          {:class "form-header-actions"}
          (d/h3 (if editing-stand "Edit Stand" "Add New Stand"))
@@ -227,7 +199,7 @@
                 (d/button
                  {:type "button"
                   :class "button icon-button"
-                  :on-click #(dispatch [:set-show-form false])
+                  :onClick #(dispatch [:close-form])
                   :title "Cancel"}
                  "\u2715")
                 (d/button
