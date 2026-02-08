@@ -51,7 +51,7 @@
     [coordinate-input-ref
      location-btn-ref
      add-zoom-level]}]
-  (let [{:keys [dispatch state user-location]} (hooks/use-context state/app-context)
+  (let [{:keys [state user-location update-stand-form]} (state/use-app)
         {:keys [stand-form-data stands]} state
         {:keys [location error is-locating get-location cancel-location]} user-location
         [coordinate-display set-coordinate-display] (hooks/use-state
@@ -66,16 +66,13 @@
      ($ leaflet-map
         {:div-id "map-form"
          :center (or
-                   (utils/parse-coordinates (:coordinate stand-form-data))
-                   state/map-home)
+                  (utils/parse-coordinates (:coordinate stand-form-data))
+                  state/map-home)
          :zoom-level add-zoom-level
          :stands stands
          :show-crosshairs true
          :set-coordinate-form-data (fn [coord-str]
-                                     (dispatch [:set-stand-form-data
-                                                (fn [prev]
-                                                  (assoc prev
-                                                    :coordinate coord-str))]))
+                                     (update-stand-form :coordinate coord-str))
          :map-ref map-ref
          :is-locating is-locating
          :on-cancel-location cancel-location
@@ -88,10 +85,7 @@
         :ref coordinate-input-ref
         :value coordinate-display
         :onChange #(set-coordinate-display (.. % -target -value))
-        :onBlur #(dispatch [:set-stand-form-data
-                            (fn [prev]
-                              (assoc prev
-                                :coordinate coordinate-display))])
+        :onBlur #(update-stand-form :coordinate coordinate-display)
         :class "coordinate-input"})
       (d/button
        {:type "button"
@@ -100,10 +94,7 @@
         :onClick (fn []
                    (get-location
                     (fn [[lat lng]]
-                      (dispatch [:set-stand-form-data
-                                 (fn [prev]
-                                   (assoc prev
-                                     :coordinate (str lat ", " lng)))]))))}
+                      (update-stand-form :coordinate (str lat ", " lng)))))}
        "\u2316"))
      (when error
        (d/p
@@ -111,7 +102,7 @@
         error)))))
 
 (defnc product-input []
-  (let [{:keys [dispatch state]} (hooks/use-context state/app-context)
+  (let [{:keys [state update-stand-form]} (state/use-app)
         {:keys [stand-form-data]} state
         [current-product set-current-product] (hooks/use-state "")]
     (d/div
@@ -129,15 +120,12 @@
                (d/button
                 {:type "button"
                  :class "remove-tag"
-                 :onClick #(dispatch
-                            [:set-stand-form-data
-                             (fn [prev]
-                               (assoc
-                                prev
-                                :products (->> prev
-                                               :products
-                                               (remove #{product})
-                                               vec)))])}
+                 :onClick #(update-stand-form
+                            :products
+                            (->> stand-form-data
+                                 :products
+                                 (remove #{product})
+                                 vec))}
                 "\u2715")))
             (filter string? (:products stand-form-data))))
       (d/div
@@ -150,27 +138,34 @@
          :onKeyDown (fn [e]
                       (when (= (.-key e) "Enter")
                         (.preventDefault e)
-                        (add-product-to-form-data current-product dispatch)
+                        (when (not= current-product "")
+                          (update-stand-form
+                           :products
+                           (if (some #(= % current-product) (:products stand-form-data))
+                             (:products stand-form-data)
+                             (conj (:products stand-form-data) current-product))))
                         (set-current-product "")))
          :enterKeyHint "enter"})
        (d/button
         {:type "button"
          :class "add-product-btn"
          :onClick (fn []
-                    (add-product-to-form-data current-product dispatch)
+                    (when (not= current-product "")
+                      (update-stand-form
+                       :products
+                       (if (some #(= % current-product) (:products stand-form-data))
+                         (:products stand-form-data)
+                         (conj (:products stand-form-data) current-product))))
                     (set-current-product ""))}
         "Add"))))))
 
 (defnc stand-form
   [{:keys [add-zoom-level]}]
-  (let [{:keys [dispatch state user-location]} (hooks/use-context state/app-context)
+  (let [{:keys [dispatch state user-location update-stand-form]} (state/use-app)
         {:keys [stand-form-data editing-stand show-form stands]} state
         [show-address? set-show-address?] (hooks/use-state false)
         coordinate-input-ref (hooks/use-ref nil)
-        location-btn-ref (hooks/use-ref nil)
-        update-field (fn [k v]
-                       (dispatch [:set-stand-form-data
-                                  (fn [prev] (assoc prev k v))]))]
+        location-btn-ref (hooks/use-ref nil)]
     (hooks/use-effect
      [(:address stand-form-data) (:town stand-form-data) (:state stand-form-data)]
      (when (or (seq (:address stand-form-data))
@@ -226,19 +221,18 @@
          {:class "form-content-wrapper"}
          ($ location-input
             {:coordinate-input-ref coordinate-input-ref
-             :user-location user-location
              :location-btn-ref location-btn-ref
              :add-zoom-level add-zoom-level})
          ($ product-input)
          ($ form-field
             {:label "Stand Name:"
              :value (:name stand-form-data)
-             :on-change #(update-field :name (.. % -target -value))})
+             :on-change #(update-stand-form :name (.. % -target -value))})
          ($ form-field
             {:label "Notes:"
              :type "textarea"
              :value (:notes stand-form-data)
-             :on-change #(update-field :notes (.. % -target -value))
+             :on-change #(update-stand-form :notes (.. % -target -value))
              :rows 4})
          (d/div
           {:class "form-group"}
@@ -255,34 +249,31 @@
             ($ form-field
                {:label "Address:"
                 :value (:address stand-form-data)
-                :on-change #(update-field :address (.. % -target -value))})
+                :on-change #(update-stand-form :address (.. % -target -value))})
             ($ form-field
                {:label "Town:"
                 :value (:town stand-form-data)
-                :on-change #(update-field :town (.. % -target -value))})
+                :on-change #(update-stand-form :town (.. % -target -value))})
             ($ form-field
                {:label "State:"
                 :value (:state stand-form-data)
-                :on-change #(update-field :state (.. % -target -value))})))))
-         ($ form-field
-            {:label "Expiration Date:"
-             :type "date"
-             :value (:expiration stand-form-data)
-             :on-change #(update-field :expiration (.. % -target -value))})
-         ($ form-field
-            {:label "Shared?"
-             :type "checkbox"
-             :id "shared-checkbox"
-             :class-name "checkbox"
-             :checked (get stand-form-data :shared? false)
-             :on-change #(update-field :shared? (.. % -target -checked))})))))
+                :on-change #(update-stand-form :state (.. % -target -value))})))))
+       ($ form-field
+          {:label "Expiration Date:"
+           :type "date"
+           :value (:expiration stand-form-data)
+           :on-change #(update-stand-form :expiration (.. % -target -value))})
+       ($ form-field
+          {:label "Shared?"
+           :type "checkbox"
+           :id "shared-checkbox"
+           :class-name "checkbox"
+           :checked (get stand-form-data :shared? false)
+           :on-change #(update-stand-form :shared? (.. % -target -checked))})))))
 
 (defnc settings-dialog []
-  (let [{:keys [dispatch state]} (hooks/use-context state/app-context)
-        {:keys [show-settings-dialog settings-form-data]} state
-        update-field (fn [k v]
-                       (dispatch [:set-settings-form-data
-                                  (fn [prev] (assoc prev k v))]))]
+  (let [{:keys [dispatch state update-settings-form]} (state/use-app)
+        {:keys [show-settings-dialog settings-form-data]} state]
     (when show-settings-dialog
       (d/div
        {:class "settings-overlay"
@@ -303,16 +294,16 @@
          ($ form-field
             {:label "Resource:"
              :value (:resource settings-form-data)
-             :on-change #(update-field :resource (.. % -target -value))})
+             :on-change #(update-settings-form :resource (.. % -target -value))})
          ($ form-field
             {:label "User:"
              :value (:user settings-form-data)
-             :on-change #(update-field :user (.. % -target -value))})
+             :on-change #(update-settings-form :user (.. % -target -value))})
          ($ form-field
             {:label "Password:"
              :type "password"
              :value (:password settings-form-data)
-             :on-change #(update-field :password (.. % -target -value))})
+             :on-change #(update-settings-form :password (.. % -target -value))})
          (d/div
           {:class "settings-actions"}
           (d/button

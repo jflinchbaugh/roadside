@@ -2,7 +2,8 @@
   (:require [com.hjsoft.roadside.website.storage :as storage]
             [com.hjsoft.roadside.website.utils :as utils]
             [clojure.string :as str]
-            [helix.core :refer [create-context]]))
+            [helix.core :refer [create-context]]
+            [helix.hooks :as hooks]))
 
 (def map-home [40.0379 -76.3055])
 
@@ -18,6 +19,18 @@
    :shared? true})
 
 (def app-context (create-context))
+
+(defn use-app []
+  (let [{:keys [state dispatch user-location]} (hooks/use-context app-context)]
+    {:state state
+     :dispatch dispatch
+     :user-location user-location
+     :update-stand-form (fn [k v]
+                          (dispatch [:set-stand-form-data
+                                     (fn [prev] (assoc prev k v))]))
+     :update-settings-form (fn [k v]
+                             (dispatch [:set-settings-form-data
+                                        (fn [prev] (assoc prev k v))]))}))
 
 (def initial-app-state
   {:stands (or (storage/get-item "roadside-stands") [])

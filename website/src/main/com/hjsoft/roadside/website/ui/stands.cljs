@@ -8,7 +8,7 @@
 
 (defnc stands-list
   [{:keys [stands]}]
-  (let [{:keys [state dispatch]} (hooks/use-context state/app-context)
+  (let [{:keys [state dispatch]} (state/use-app)
         {:keys [selected-stand]} state
         stand-refs (hooks/use-ref {})]
     (hooks/use-effect
@@ -100,7 +100,7 @@
 
 (defnc product-list
   [{:keys [stands]}]
-  (let [{:keys [state dispatch]} (hooks/use-context state/app-context)
+  (let [{:keys [state dispatch]} (state/use-app)
         {:keys [product-filter]} state
         unique-products (hooks/use-memo
                          [stands]
