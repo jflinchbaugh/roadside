@@ -407,18 +407,30 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-.location-btn {
+.location-btn, .reset-location-btn {
   background-color: #6c757d;
   border: none;
   color: white;
-  padding: 0px 12px 4px 12px;
-  font-size: 2rem;
   cursor: pointer;
   border-radius: 4px;
   margin-left: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 2.5rem;
+  vertical-align: middle;
 }
 
-.location-btn:hover {
+.location-btn {
+  font-size: 2rem;
+}
+
+.reset-location-btn {
+  font-size: 1.25rem;
+}
+
+.location-btn:hover, .reset-location-btn:hover {
   background-color: #5a6268;
 }
 

@@ -51,7 +51,8 @@
     [coordinate-input-ref
      location-btn-ref
      stand-form-data
-     on-update]}]
+     on-update
+     original-coordinate]}]
   (let [{:keys [state user-location]} (state/use-app)
         {:keys [stands]} state
         {:keys [get-location error]} user-location
@@ -86,6 +87,13 @@
         :onChange #(set-coordinate-display (.. % -target -value))
         :onBlur #(on-update [:update-field [:coordinate coordinate-display]])
         :class "coordinate-input"})
+      (when original-coordinate
+        (d/button
+         {:type "button"
+          :class "reset-location-btn"
+          :onClick #(on-update [:update-field [:coordinate original-coordinate]])
+          :title "Reset to original location"}
+         "\u21BA"))
       (d/button
        {:type "button"
         :class "location-btn"
@@ -214,7 +222,8 @@
           {:coordinate-input-ref coordinate-input-ref
            :location-btn-ref location-btn-ref
            :stand-form-data stand-form-data
-           :on-update local-dispatch})
+           :on-update local-dispatch
+           :original-coordinate (:coordinate editing-stand)})
        ($ product-input
           {:stand-form-data stand-form-data
            :on-update local-dispatch})
