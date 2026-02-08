@@ -46,6 +46,12 @@ Run both simultaneously with:
 npx shadow-cljs watch frontend test-browser
 ```
 
+### Tests Also Run in Node
+
+```bash
+npx shadow-cljs compile test
+```
+
 ### Build for Release
 
 ```bash
