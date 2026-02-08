@@ -1,9 +1,6 @@
 (ns node
   (:require ["global-jsdom" :as global-jsdom]
-            [cljs.test :as test]
-            [com.hjsoft.roadside.website.utils-test]
-            [com.hjsoft.roadside.website.state-test]
-            [com.hjsoft.roadside.website.ui.layout-test]))
+            [cljs.test :as test]))
 
 ;; Initialize JSDOM immediately so that browser globals are available
 ;; during namespace loading.
