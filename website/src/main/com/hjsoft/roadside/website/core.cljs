@@ -51,9 +51,9 @@
 
 (defnc app []
   (let [[app-state dispatch] (hooks/use-reducer
-                               state/app-reducer
-                               state/initial-app-state)
-        {:keys [stands selected-stand map-center product-filter]} app-state
+                              state/app-reducer
+                              state/initial-app-state)
+        {:keys [stands selected-stand map-center product-filter show-form show-settings-dialog]} app-state
 
         user-location (use-user-location)
         {:keys [location
@@ -69,9 +69,9 @@
         filtered-stands (hooks/use-memo
                          [stands product-filter]
                          (let [sorted-stands (sort-by
-                                               :updated
-                                               #(compare %2 %1)
-                                               stands)]
+                                              :updated
+                                              #(compare %2 %1)
+                                              stands)]
                            (vec
                             (if product-filter
                               (filter
@@ -83,24 +83,24 @@
                                   [dispatch]
                                   (fn [c]
                                     (dispatch
-                                      [:set-map-center
-                                       (utils/parse-coordinates c)])))]
+                                     [:set-map-center
+                                      (utils/parse-coordinates c)])))]
 
     (d/div
      {:class "app-container"}
      ($ (.-Provider state/app-context)
-       {:value {:state app-state
-                :dispatch dispatch
-                :user-location user-location}}
+        {:value {:state app-state
+                 :dispatch dispatch
+                 :user-location user-location}}
         (<>
          ($ notification-toast)
          ($ fixed-header
             ($ header)
-                     ($ leaflet-map
-                        {:div-id "map-container"
-                         :stands filtered-stands
-                         :zoom-level initial-zoom-level
-                         :set-coordinate-form-data set-coordinate-form-data}))
+            ($ leaflet-map
+               {:div-id "map-container"
+                :stands filtered-stands
+                :zoom-level initial-zoom-level
+                :set-coordinate-form-data set-coordinate-form-data}))
          (d/div
           {:class "content"}
           (d/div
@@ -119,13 +119,13 @@
               :onClick #(get-location)}
              "\u2316")))
           ($ product-list {:stands stands})
-          ($ stand-form)
+          (when show-form ($ stand-form))
           ($ stands-list {:stands filtered-stands})
           (d/button
            {:class "settings-btn"
             :onClick #(dispatch [:set-show-settings-dialog true])}
            "\u2699")
-          ($ settings-dialog)))))))
+          (when show-settings-dialog ($ settings-dialog))))))))
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]

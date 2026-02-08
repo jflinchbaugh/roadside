@@ -24,26 +24,16 @@
   (let [{:keys [state dispatch user-location]} (hooks/use-context app-context)]
     {:state state
      :dispatch dispatch
-     :user-location user-location
-     :update-stand-form (fn [k v]
-                          (dispatch [:set-stand-form-data
-                                     (fn [prev] (assoc prev k v))]))
-     :update-settings-form (fn [k v]
-                             (dispatch [:set-settings-form-data
-                                        (fn [prev] (assoc prev k v))]))
-     :add-form-product (fn [p] (dispatch [:add-form-product p]))
-     :remove-form-product (fn [p] (dispatch [:remove-form-product p]))}))
+     :user-location user-location}))
 
 (def initial-app-state
   {:stands (or (storage/get-item "roadside-stands") [])
    :show-form false
    :editing-stand nil
-   :stand-form-data default-stand-form-data
    :product-filter nil
    :selected-stand nil
    :map-center (or (storage/get-item "roadside-map-center") map-home)
    :show-settings-dialog false
-   :settings-form-data {:resource "" :user "" :password ""}
    :settings (or (storage/get-item "roadside-settings") {})
    :is-synced false
    :notification nil})
@@ -62,30 +52,13 @@
                            :else (vec data))))
     :open-add-form (assoc state
                           :show-form true
-                          :editing-stand nil
-                          :stand-form-data (assoc default-stand-form-data
-                                                  :coordinate (str
-                                                               (first
-                                                                (:map-center state))
-                                                               ", "
-                                                               (second
-                                                                (:map-center state)))
-                                                  :expiration (utils/in-a-week)))
+                          :editing-stand nil)
     :open-edit-form (assoc state
                            :show-form true
-                           :editing-stand payload
-                           :stand-form-data payload)
+                           :editing-stand payload)
     :close-form (assoc state :show-form false :editing-stand nil)
     :remove-stand (update state :stands (fn [stands]
                                           (filterv #(not= % payload) stands)))
-    :add-form-product (update-in state [:stand-form-data :products]
-                                 (fn [products]
-                                   (if (some #(= % payload) products)
-                                     products
-                                     (conj (or products []) payload))))
-    :remove-form-product (update-in state [:stand-form-data :products]
-                                    (fn [products]
-                                      (filterv #(not= % payload) products)))
     ;; Generic handler for :set-* actions
     (let [action-name (name action-type)]
       (if (str/starts-with? action-name "set-")
