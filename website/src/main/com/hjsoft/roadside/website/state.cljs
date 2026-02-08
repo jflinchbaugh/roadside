@@ -81,7 +81,7 @@
 
 (defn process-stand-form
   "Processes the stand form data, automatically adding products based on name,
-   and returns the updated stands list."
+   and returns a map with :success and the updated stands list or an error message."
   [form-data stands editing-stand]
   (let [all-unique-products (utils/get-all-unique-products stands)
         stand-name (:name form-data)
@@ -100,10 +100,8 @@
                               :products updated-products
                               :updated (utils/get-current-timestamp))]
     (if editing-stand
-      (vec (map #(if (= % editing-stand) processed-data %) stands))
+      {:success true :stands (vec (map #(if (= % editing-stand) processed-data %) stands))}
       (if (some #(= (utils/stand-key processed-data) (utils/stand-key %)) stands)
-        (do
-          (js/alert "This stand already exists!")
-          stands)
-        (conj stands processed-data)))))
+        {:success false :error "This stand already exists!"}
+        {:success true :stands (conj stands processed-data)}))))
 

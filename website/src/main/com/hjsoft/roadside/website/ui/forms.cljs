@@ -185,13 +185,15 @@
          :onClick #(.stopPropagation %)
          :onSubmit (fn [e]
                      (.preventDefault e)
-                     (let [new-stands (state/process-stand-form
-                                       stand-form-data
-                                       stands
-                                       editing-stand)]
-                       (when (not= new-stands stands)
-                         (dispatch [:set-stands new-stands])
-                         (dispatch [:close-form]))))}
+                     (let [{:keys [success stands error]} (state/process-stand-form
+                                                           stand-form-data
+                                                           (:stands state)
+                                                           editing-stand)]
+                       (if success
+                         (do
+                           (dispatch [:set-stands stands])
+                           (dispatch [:close-form]))
+                         (dispatch [:set-notification {:type :error :message error}]))))}
         (d/div
          {:class "form-header-actions"}
          (d/h3 (if editing-stand "Edit Stand" "Add New Stand"))
