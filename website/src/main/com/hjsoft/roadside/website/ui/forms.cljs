@@ -167,7 +167,10 @@
         {:keys [stand-form-data editing-stand show-form stands]} state
         [show-address? set-show-address?] (hooks/use-state false)
         coordinate-input-ref (hooks/use-ref nil)
-        location-btn-ref (hooks/use-ref nil)]
+        location-btn-ref (hooks/use-ref nil)
+        update-field (fn [k v]
+                       (dispatch [:set-stand-form-data
+                                  (fn [prev] (assoc prev k v))]))]
     (hooks/use-effect
      [(:address stand-form-data) (:town stand-form-data) (:state stand-form-data)]
      (when (or (seq (:address stand-form-data))
@@ -230,18 +233,12 @@
          ($ form-field
             {:label "Stand Name:"
              :value (:name stand-form-data)
-             :on-change #(dispatch [:set-stand-form-data
-                                    (fn [prev]
-                                      (assoc prev
-                                        :name (.. % -target -value)))])})
+             :on-change #(update-field :name (.. % -target -value))})
          ($ form-field
             {:label "Notes:"
              :type "textarea"
              :value (:notes stand-form-data)
-             :on-change #(dispatch [:set-stand-form-data
-                                    (fn [prev]
-                                      (assoc prev
-                                        :notes (.. % -target -value)))])
+             :on-change #(update-field :notes (.. % -target -value))
              :rows 4})
          (d/div
           {:class "form-group"}
@@ -258,47 +255,34 @@
             ($ form-field
                {:label "Address:"
                 :value (:address stand-form-data)
-                :on-change #(dispatch [:set-stand-form-data
-                                       (fn [prev]
-                                         (assoc prev
-                                           :address (.. % -target -value)))])})
+                :on-change #(update-field :address (.. % -target -value))})
             ($ form-field
                {:label "Town:"
                 :value (:town stand-form-data)
-                :on-change #(dispatch [:set-stand-form-data
-                                       (fn [prev]
-                                         (assoc prev
-                                           :town (.. % -target -value)))])})
+                :on-change #(update-field :town (.. % -target -value))})
             ($ form-field
                {:label "State:"
                 :value (:state stand-form-data)
-                :on-change #(dispatch [:set-stand-form-data
-                                       (fn [prev]
-                                         (assoc prev
-                                           :state (.. % -target -value)))])})))
+                :on-change #(update-field :state (.. % -target -value))})))))
          ($ form-field
             {:label "Expiration Date:"
              :type "date"
              :value (:expiration stand-form-data)
-             :on-change #(dispatch [:set-stand-form-data
-                                    (fn [prev]
-                                      (assoc prev
-                                        :expiration (.. % -target -value)))])})
+             :on-change #(update-field :expiration (.. % -target -value))})
          ($ form-field
             {:label "Shared?"
              :type "checkbox"
              :id "shared-checkbox"
              :class-name "checkbox"
              :checked (get stand-form-data :shared? false)
-             :on-change #(dispatch [:set-stand-form-data
-                                    (fn [prev]
-                                      (assoc prev
-                                        :shared? (get (.. % -target)
-                                                   "checked")))])})))))))
+             :on-change #(update-field :shared? (.. % -target -checked))})))))
 
 (defnc settings-dialog []
   (let [{:keys [dispatch state]} (hooks/use-context state/app-context)
-        {:keys [show-settings-dialog settings-form-data]} state]
+        {:keys [show-settings-dialog settings-form-data]} state
+        update-field (fn [k v]
+                       (dispatch [:set-settings-form-data
+                                  (fn [prev] (assoc prev k v))]))]
     (when show-settings-dialog
       (d/div
        {:class "settings-overlay"
@@ -319,25 +303,16 @@
          ($ form-field
             {:label "Resource:"
              :value (:resource settings-form-data)
-             :on-change #(dispatch [:set-settings-form-data
-                                    (fn [prev]
-                                      (assoc prev
-                                        :resource (.. % -target -value)))])})
+             :on-change #(update-field :resource (.. % -target -value))})
          ($ form-field
             {:label "User:"
              :value (:user settings-form-data)
-             :on-change #(dispatch [:set-settings-form-data
-                                    (fn [prev]
-                                      (assoc prev
-                                        :user (.. % -target -value)))])})
+             :on-change #(update-field :user (.. % -target -value))})
          ($ form-field
             {:label "Password:"
              :type "password"
              :value (:password settings-form-data)
-             :on-change #(dispatch [:set-settings-form-data
-                                    (fn [prev]
-                                      (assoc prev
-                                        :password (.. % -target -value)))])})
+             :on-change #(update-field :password (.. % -target -value))})
          (d/div
           {:class "settings-actions"}
           (d/button
