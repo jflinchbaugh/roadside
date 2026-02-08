@@ -20,7 +20,8 @@
    :modules
      {:main {:init-fn com.hjsoft.roadside.website.core/init}}
    :build-hooks
-     [(hook/version-index-resources)]}
+     [[com.hjsoft.roadside.website.build-hooks/version-cljs]
+      [com.hjsoft.roadside.website.build-hooks/version-index-resources]]}
 
   :test
   {:target :node-test

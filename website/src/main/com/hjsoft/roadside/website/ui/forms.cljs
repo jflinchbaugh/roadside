@@ -4,11 +4,13 @@
             [helix.dom :as d]
             [com.hjsoft.roadside.website.utils :as utils]
             [com.hjsoft.roadside.website.state :as state]
+            [com.hjsoft.roadside.website.version :as version]
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
             [clojure.string :as str]))
 
 (defnc form-field
-  [{:keys [label type value on-change on-blur rows checked id class-name input-ref placeholder]
+  [{:keys [label type value on-change on-blur rows
+           checked id class-name input-ref placeholder]
     :or {type "text"}}]
   (d/div
    {:class "form-group"}
@@ -63,13 +65,17 @@
      {:class "form-group"}
      ($ leaflet-map
         {:div-id "map-form"
-         :center (or (utils/parse-coordinates (:coordinate stand-form-data)) state/map-home)
+         :center (or
+                   (utils/parse-coordinates (:coordinate stand-form-data))
+                   state/map-home)
          :zoom-level add-zoom-level
          :stands stands
          :show-crosshairs true
          :set-coordinate-form-data (fn [coord-str]
                                      (dispatch [:set-stand-form-data
-                                                (fn [prev] (assoc prev :coordinate coord-str))]))
+                                                (fn [prev]
+                                                  (assoc prev
+                                                    :coordinate coord-str))]))
          :map-ref map-ref
          :is-locating is-locating
          :on-cancel-location cancel-location
@@ -83,7 +89,9 @@
         :value coordinate-display
         :onChange #(set-coordinate-display (.. % -target -value))
         :onBlur #(dispatch [:set-stand-form-data
-                            (fn [prev] (assoc prev :coordinate coordinate-display))])
+                            (fn [prev]
+                              (assoc prev
+                                :coordinate coordinate-display))])
         :class "coordinate-input"})
       (d/button
        {:type "button"
@@ -93,7 +101,9 @@
                    (get-location
                     (fn [[lat lng]]
                       (dispatch [:set-stand-form-data
-                                 (fn [prev] (assoc prev :coordinate (str lat ", " lng)))]))))}
+                                 (fn [prev]
+                                   (assoc prev
+                                     :coordinate (str lat ", " lng)))]))))}
        "\u2316"))
      (when error
        (d/p
@@ -221,13 +231,17 @@
             {:label "Stand Name:"
              :value (:name stand-form-data)
              :on-change #(dispatch [:set-stand-form-data
-                                    (fn [prev] (assoc prev :name (.. % -target -value)))])})
+                                    (fn [prev]
+                                      (assoc prev
+                                        :name (.. % -target -value)))])})
          ($ form-field
             {:label "Notes:"
              :type "textarea"
              :value (:notes stand-form-data)
              :on-change #(dispatch [:set-stand-form-data
-                                    (fn [prev] (assoc prev :notes (.. % -target -value)))])
+                                    (fn [prev]
+                                      (assoc prev
+                                        :notes (.. % -target -value)))])
              :rows 4})
          (d/div
           {:class "form-group"}
@@ -245,23 +259,31 @@
                {:label "Address:"
                 :value (:address stand-form-data)
                 :on-change #(dispatch [:set-stand-form-data
-                                       (fn [prev] (assoc prev :address (.. % -target -value)))])})
+                                       (fn [prev]
+                                         (assoc prev
+                                           :address (.. % -target -value)))])})
             ($ form-field
                {:label "Town:"
                 :value (:town stand-form-data)
                 :on-change #(dispatch [:set-stand-form-data
-                                       (fn [prev] (assoc prev :town (.. % -target -value)))])})
+                                       (fn [prev]
+                                         (assoc prev
+                                           :town (.. % -target -value)))])})
             ($ form-field
                {:label "State:"
                 :value (:state stand-form-data)
                 :on-change #(dispatch [:set-stand-form-data
-                                       (fn [prev] (assoc prev :state (.. % -target -value)))])})))
+                                       (fn [prev]
+                                         (assoc prev
+                                           :state (.. % -target -value)))])})))
          ($ form-field
             {:label "Expiration Date:"
              :type "date"
              :value (:expiration stand-form-data)
              :on-change #(dispatch [:set-stand-form-data
-                                    (fn [prev] (assoc prev :expiration (.. % -target -value)))])})
+                                    (fn [prev]
+                                      (assoc prev
+                                        :expiration (.. % -target -value)))])})
          ($ form-field
             {:label "Shared?"
              :type "checkbox"
@@ -269,7 +291,10 @@
              :class-name "checkbox"
              :checked (get stand-form-data :shared? false)
              :on-change #(dispatch [:set-stand-form-data
-                                    (fn [prev] (assoc prev :shared? (.. % -target -checked)))])})))))))
+                                    (fn [prev]
+                                      (assoc prev
+                                        :shared? (get (.. % -target)
+                                                   "checked")))])})))))))
 
 (defnc settings-dialog []
   (let [{:keys [dispatch state]} (hooks/use-context state/app-context)
@@ -326,4 +351,11 @@
             :onClick #(do
                         (dispatch [:set-settings settings-form-data])
                         (dispatch [:set-show-settings-dialog false]))}
-           "Save"))))))))
+           "Save")))
+        (d/div
+         {:style {:padding "1rem"
+                  :font-size "0.75rem"
+                  :color "#888"
+                  :text-align "center"
+                  :border-top "1px solid #eee"}}
+         "Build: " version/build-date))))))
