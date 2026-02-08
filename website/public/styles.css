@@ -669,3 +669,7 @@ body {
     opacity: 1;
   }
 }
+
+.map-wrapper {
+  position: relative;
+}
