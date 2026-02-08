@@ -105,11 +105,9 @@
   [{:keys [stands]}]
   (let [{:keys [state dispatch]} (hooks/use-context state/app-context)
         {:keys [product-filter]} state
-        all-products (flatten (map :products stands))
-        unique-products (->> all-products
-                             (filter string?)
-                             distinct
-                             sort)]
+        unique-products (hooks/use-memo
+                         [stands]
+                         (utils/get-all-unique-products stands))]
     (d/div
      {:class "product-list"}
      (if (empty? unique-products)
