@@ -353,9 +353,5 @@
                         (dispatch [:set-show-settings-dialog false]))}
            "Save")))
         (d/div
-         {:style {:padding "1rem"
-                  :font-size "0.75rem"
-                  :color "#888"
-                  :text-align "center"
-                  :border-top "1px solid #eee"}}
+         {:class "build-date"}
          "Build: " version/build-date))))))
