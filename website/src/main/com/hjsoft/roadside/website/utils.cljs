@@ -36,8 +36,9 @@
 (defn get-all-unique-products [stands]
   (->> stands
        (mapcat :products)
+       (filter string?)
        (map str/trim)
-       (filter some?)
+       (filter (complement str/blank?))
        distinct
        sort
        vec))

@@ -1,6 +1,7 @@
 (ns com.hjsoft.roadside.website.state
   (:require [com.hjsoft.roadside.website.storage :as storage]
             [com.hjsoft.roadside.website.utils :as utils]
+            [clojure.string :as str]
             [helix.core :refer [create-context]]))
 
 (def map-home [40.0379 -76.3055])
@@ -35,7 +36,12 @@
                          (update state key payload)
                          (assoc state key payload)))]
     (case action-type
-      :set-stands (update-state :stands)
+      :set-stands (assoc state :stands (let [data (if (fn? payload) (payload (:stands state)) payload)]
+                                         (cond
+                                           (vector? data) data
+                                           (map? data) (vec (vals data))
+                                           (nil? data) []
+                                           :else (vec data))))
       :set-show-form (update-state :show-form)
       :set-editing-stand (update-state :editing-stand)
       :set-stand-form-data (update-state :stand-form-data)
@@ -58,9 +64,9 @@
         updated-products (reduce
                           (fn [acc product]
                             (if (and
-                                 (clojure.string/includes?
-                                  (clojure.string/lower-case stand-name)
-                                  (clojure.string/lower-case product))
+                                 (str/includes?
+                                  (str/lower-case stand-name)
+                                  (str/lower-case product))
                                  (not (some #(= % product) acc)))
                               (conj acc product)
                               acc))

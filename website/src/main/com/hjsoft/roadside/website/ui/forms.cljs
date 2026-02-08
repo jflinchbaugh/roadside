@@ -7,6 +7,31 @@
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
             [clojure.string :as str]))
 
+(defnc form-field
+  [{:keys [label type value on-change on-blur rows checked id class-name input-ref placeholder]
+    :or {type "text"}}]
+  (d/div
+   {:class "form-group"}
+   (when label
+     (d/label {:for id} label))
+   (if (= type "textarea")
+     (d/textarea
+      {:value value
+       :onChange on-change
+       :onBlur on-blur
+       :ref input-ref
+       :rows (or rows 3)
+       :placeholder placeholder})
+     (d/input {:id id
+               :value value
+               :checked checked
+               :type type
+               :onChange on-change
+               :onBlur on-blur
+               :ref input-ref
+               :class class-name
+               :placeholder placeholder}))))
+
 (defn- add-product-to-form-data
   [current-product dispatch]
   (when (not= current-product "")
@@ -105,7 +130,7 @@
                                                (remove #{product})
                                                vec)))])}
                 "\u2715")))
-            (:products stand-form-data)))
+            (filter string? (:products stand-form-data))))
       (d/div
        {:class "product-input-group"}
        (d/input
@@ -118,7 +143,7 @@
                         (.preventDefault e)
                         (add-product-to-form-data current-product dispatch)
                         (set-current-product "")))
-         :enterkeyhint "enter"})
+         :enterKeyHint "enter"})
        (d/button
         {:type "button"
          :class "add-product-btn"
@@ -218,76 +243,59 @@
              :location-btn-ref location-btn-ref
              :add-zoom-level add-zoom-level})
          ($ product-input)
-         (d/div
-          {:class "form-group"}
-          (d/label "Stand Name:")
-          (d/input
-           {:type "text"
-            :value (:name stand-form-data)
-            :onChange #(dispatch [:set-stand-form-data
-                                  (fn [prev] (assoc prev :name (.. % -target -value)))])}))
-         (d/div
-          {:class "form-group"}
-          (d/label "Notes:")
-          (d/textarea
-           {:value (:notes stand-form-data)
-            :onChange #(dispatch [:set-stand-form-data
-                                  (fn [prev] (assoc prev :notes (.. % -target -value)))])
-            :rows 4}))
+         ($ form-field
+            {:label "Stand Name:"
+             :value (:name stand-form-data)
+             :on-change #(dispatch [:set-stand-form-data
+                                    (fn [prev] (assoc prev :name (.. % -target -value)))])})
+         ($ form-field
+            {:label "Notes:"
+             :type "textarea"
+             :value (:notes stand-form-data)
+             :on-change #(dispatch [:set-stand-form-data
+                                    (fn [prev] (assoc prev :notes (.. % -target -value)))])
+             :rows 4})
          (d/div
           {:class "form-group"}
           (d/button
            {:type "button"
             :class "toggle-address-btn"
-            :onClick #(set-show-address? not)}
+            :onClick #(set-show-address? (not show-address?))}
            (if show-address?
              "Collapse Address \u25B4"
              "Expand Address \u25BE")))
          (when show-address?
            (d/div
             {:class "address-fields-wrapper"}
-            (d/div
-             {:class "form-group"}
-             (d/label "Address:")
-             (d/input
-              {:type "text"
-               :value (:address stand-form-data)
-               :onChange #(dispatch [:set-stand-form-data
-                                     (fn [prev] (assoc prev :address (.. % -target -value)))])}))
-            (d/div
-             {:class "form-group"}
-             (d/label "Town:")
-             (d/input
-              {:type "text"
-               :value (:town stand-form-data)
-               :onChange #(dispatch [:set-stand-form-data
-                                     (fn [prev] (assoc prev :town (.. % -target -value)))])}))
-            (d/div
-             {:class "form-group"}
-             (d/label "State:")
-             (d/input
-              {:type "text"
-               :value (:state stand-form-data)
-               :onChange #(dispatch [:set-stand-form-data
-                                     (fn [prev] (assoc prev :state (.. % -target -value)))])}))))
-         (d/div
-          {:class "form-group"}
-          (d/label "Expiration Date:")
-          (d/input
-           {:type "date"
-            :value (:expiration stand-form-data)
-            :onChange #(dispatch [:set-stand-form-data
-                                  (fn [prev] (assoc prev :expiration (.. % -target -value)))])}))
-         (d/div
-          {:class "form-group"}
-          (d/label {:for "shared-checkbox"} "Shared?")
-          (d/input
-           {:id "shared-checkbox"
-            :class "checkbox"
-            :type "checkbox"
-            :checked (get stand-form-data :shared? false)
-            :onChange #(dispatch [:set-stand-form-data
-                                  (fn [prev] (assoc prev :shared? (.. % -target -checked)))])}))))))))
+            ($ form-field
+               {:label "Address:"
+                :value (:address stand-form-data)
+                :on-change #(dispatch [:set-stand-form-data
+                                       (fn [prev] (assoc prev :address (.. % -target -value)))])})
+            ($ form-field
+               {:label "Town:"
+                :value (:town stand-form-data)
+                :on-change #(dispatch [:set-stand-form-data
+                                       (fn [prev] (assoc prev :town (.. % -target -value)))])})
+            ($ form-field
+               {:label "State:"
+                :value (:state stand-form-data)
+                :on-change #(dispatch [:set-stand-form-data
+                                       (fn [prev] (assoc prev :state (.. % -target -value)))])})))
+         ($ form-field
+            {:label "Expiration Date:"
+             :type "date"
+             :value (:expiration stand-form-data)
+             :on-change #(dispatch [:set-stand-form-data
+                                    (fn [prev] (assoc prev :expiration (.. % -target -value)))])})
+         ($ form-field
+            {:label "Shared?"
+             :type "checkbox"
+             :id "shared-checkbox"
+             :class-name "checkbox"
+             :checked (get stand-form-data :shared? false)
+             :on-change #(dispatch [:set-stand-form-data
+                                    (fn [prev] (assoc prev :shared? (.. % -target -checked)))])})))))))
 
 (defnc settings-dialog []
   (let [{:keys [dispatch state]} (hooks/use-context state/app-context)
@@ -309,30 +317,22 @@
           "\u2715"))
         (d/div
          {:class "settings-content"}
-         (d/div
-          {:class "form-group"}
-          (d/label "Resource:")
-          (d/input
-           {:type "text"
-            :value (:resource settings-form-data)
-            :onChange #(dispatch [:set-settings-form-data
-                                  (fn [prev] (assoc prev :resource (.. % -target -value)))])}))
-         (d/div
-          {:class "form-group"}
-          (d/label "User:")
-          (d/input
-           {:type "text"
-            :value (:user settings-form-data)
-            :onChange #(dispatch [:set-settings-form-data
-                                  (fn [prev] (assoc prev :user (.. % -target -value)))])}))
-         (d/div
-          {:class "form-group"}
-          (d/label "Password:")
-          (d/input
-           {:type "password"
-            :value (:password settings-form-data)
-            :onChange #(dispatch [:set-settings-form-data
-                                  (fn [prev] (assoc prev :password (.. % -target -value)))])}))
+         ($ form-field
+            {:label "Resource:"
+             :value (:resource settings-form-data)
+             :on-change #(dispatch [:set-settings-form-data
+                                    (fn [prev] (assoc prev :resource (.. % -target -value)))])})
+         ($ form-field
+            {:label "User:"
+             :value (:user settings-form-data)
+             :on-change #(dispatch [:set-settings-form-data
+                                    (fn [prev] (assoc prev :user (.. % -target -value)))])})
+         ($ form-field
+            {:label "Password:"
+             :type "password"
+             :value (:password settings-form-data)
+             :on-change #(dispatch [:set-settings-form-data
+                                    (fn [prev] (assoc prev :password (.. % -target -value)))])})
          (d/div
           {:class "settings-actions"}
           (d/button

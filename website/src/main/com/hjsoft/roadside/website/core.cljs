@@ -1,6 +1,6 @@
 (ns com.hjsoft.roadside.website.core
   (:require ["react-dom/client" :as rdom]
-            [helix.core :refer [defnc $]]
+            [helix.core :refer [defnc $ <>]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
             [taoensso.telemere :as tel]
@@ -40,14 +40,14 @@
                                           (.-longitude coords)]]
                                  (set-location loc)
                                  (set-is-locating false)
-                                 (when on-success (on-success loc)))))
+                                 (when (fn? on-success) (on-success loc)))))
                            (fn [err]
                              (when-not @cancelled-ref
                                (let [msg (.-message err)]
                                  (tel/log! :error {:failed-location msg})
                                  (set-error "Unable to retrieve location.")
                                  (set-is-locating false)
-                                 (when on-error (on-error msg))))))
+                                 (when (fn? on-error) (on-error msg))))))
                           (do
                             (set-error "Geolocation not supported.")
                             (set-is-locating false)
@@ -114,13 +114,14 @@
         filtered-stands (hooks/use-memo
                          [stands product-filter]
                          (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
-                           (if product-filter
-                             (vec (filter
-                                   #(some
-                                     (fn [p] (= p product-filter))
-                                     (:products %))
-                                   sorted-stands))
-                             sorted-stands)))
+                           (vec
+                            (if product-filter
+                              (filter
+                               #(some
+                                 (fn [p] (= p product-filter))
+                                 (:products %))
+                               sorted-stands)
+                              sorted-stands))))
 
         set-coordinate-form-data (hooks/use-callback
                                   [dispatch]
@@ -129,47 +130,48 @@
     (d/div
      {:class "app-container"}
      ($ (.-Provider state/app-context) {:value {:state app-state :dispatch dispatch}}
-        ($ notification-toast)
-        ($ fixed-header
-           ($ header)
-           ($ leaflet-map
-              {:div-id "map-container"
-               :center map-center
-               :stands filtered-stands
-               :zoom-level initial-zoom-level
-               :set-selected-stand #(dispatch [:set-selected-stand %])
-               :selected-stand selected-stand
-               :is-locating is-locating
-               :on-cancel-location cancel-location
-               :set-coordinate-form-data set-coordinate-form-data
-               :current-location-coords location}))
-        (d/div
-         {:class "content"}
+        (<>
+         ($ notification-toast)
+         ($ fixed-header
+            ($ header)
+            ($ leaflet-map
+               {:div-id "map-container"
+                :center map-center
+                :stands filtered-stands
+                :zoom-level initial-zoom-level
+                :set-selected-stand #(dispatch [:set-selected-stand %])
+                :selected-stand selected-stand
+                :is-locating is-locating
+                :on-cancel-location cancel-location
+                :set-coordinate-form-data set-coordinate-form-data
+                :current-location-coords location}))
          (d/div
-          {:class "main-actions"}
-          (d/button
-           {:class "add-stand-btn"
-            :onClick #(dispatch [:set-show-form true])}
-           "Add Stand")
+          {:class "content"}
           (d/div
-           {:class "map-actions-right"}
-           (when error
-             (d/p {:class "error-message"} error))
+           {:class "main-actions"}
            (d/button
-            {:type "button"
-             :class "location-btn"
-             :onClick get-location}
-            "\u2316")))
-         ($ product-list {:stands stands})
-         ($ stand-form
-            {:user-location user-location
-             :add-zoom-level add-zoom-level})
-         ($ stands-list {:stands filtered-stands})
-         (d/button
-          {:class "settings-btn"
-           :onClick #(dispatch [:set-show-settings-dialog true])}
-          "\u2699")
-         ($ settings-dialog))))))
+            {:class "add-stand-btn"
+             :onClick #(dispatch [:set-show-form true])}
+            "Add Stand")
+           (d/div
+            {:class "map-actions-right"}
+            (when (and error (string? error))
+              (d/p {:class "error-message"} error))
+            (d/button
+             {:type "button"
+              :class "location-btn"
+              :onClick #(get-location)}
+             "\u2316")))
+          ($ product-list {:stands stands})
+          ($ stand-form
+             {:user-location user-location
+              :add-zoom-level add-zoom-level})
+          ($ stands-list {:stands filtered-stands})
+          (d/button
+           {:class "settings-btn"
+            :onClick #(dispatch [:set-show-settings-dialog true])}
+           "\u2699")
+          ($ settings-dialog)))))))
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]

@@ -1,5 +1,6 @@
 (ns com.hjsoft.roadside.website.ui.map
-  (:require [helix.core :refer [defnc]]
+  (:require [clojure.string :as str]
+            [helix.core :refer [defnc]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
             ["leaflet" :as L]
@@ -13,7 +14,7 @@
                    (str "<b>" (:name stand) "</b><br>"))
                  (when (seq (:products stand))
                    (str
-                    (clojure.string/join ", " (:products stand))
+                    (str/join ", " (:products stand))
                     "<br>")))
         popup-content (if (empty? content)
                         "(no details)"
