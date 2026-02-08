@@ -65,32 +65,12 @@
       :get-location get-location
       :cancel-location cancel-location})))
 
-(defnc app []
-  (let [[app-state dispatch] (hooks/use-reducer state/app-reducer state/initial-app-state)
-        {:keys [stands show-form editing-stand stand-form-data product-filter
-                selected-stand map-center show-settings-dialog
-                settings-form-data settings is-synced]} app-state
-
-        user-location (use-user-location)
-        {:keys [location error is-locating get-location cancel-location]} user-location
-
+(defn use-app-orchestration
+  [{:keys [app-state dispatch user-location]}]
+  (let [{:keys [stands settings map-center is-synced]} app-state
+        {:keys [location get-location]} user-location
         show-notification (fn [type message]
-                            (dispatch [:set-notification {:type type :message message}]))
-
-        filtered-stands (hooks/use-memo
-                         [stands product-filter]
-                         (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
-                           (if product-filter
-                             (vec (filter
-                                   #(some
-                                     (fn [p] (= p product-filter))
-                                     (:products %))
-                                   sorted-stands))
-                             sorted-stands)))
-
-        set-coordinate-form-data (hooks/use-callback
-                                  [dispatch]
-                                  (fn [c] (dispatch [:set-map-center (utils/parse-coordinates c)])))]
+                            (dispatch [:set-notification {:type type :message message}]))]
 
     ;; Persist to Local Storage
     (hooks/use-effect
@@ -117,6 +97,34 @@
     (hooks/use-effect
      :once
      (get-location))
+
+    {:show-notification show-notification}))
+
+(defnc app []
+  (let [[app-state dispatch] (hooks/use-reducer state/app-reducer state/initial-app-state)
+        {:keys [stands selected-stand map-center product-filter]} app-state
+
+        user-location (use-user-location)
+        {:keys [location error is-locating get-location cancel-location]} user-location
+
+        _ (use-app-orchestration {:app-state app-state
+                                  :dispatch dispatch
+                                  :user-location user-location})
+
+        filtered-stands (hooks/use-memo
+                         [stands product-filter]
+                         (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
+                           (if product-filter
+                             (vec (filter
+                                   #(some
+                                     (fn [p] (= p product-filter))
+                                     (:products %))
+                                   sorted-stands))
+                             sorted-stands)))
+
+        set-coordinate-form-data (hooks/use-callback
+                                  [dispatch]
+                                  (fn [c] (dispatch [:set-map-center (utils/parse-coordinates c)])))]
 
     (d/div
      {:class "app-container"}
