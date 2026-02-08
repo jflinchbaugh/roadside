@@ -86,16 +86,17 @@
                      :rel "noopener noreferrer"
                      :class "go-stand-btn"}
                     "Go"))
-                         (d/button
-                          {:class "edit-stand-btn"
-                           :onClick #(dispatch [:open-edit-form stand])
-                           :title "Edit this stand"}
-                          "Edit")             (d/button
+             (d/button
+              {:class "edit-stand-btn"
+               :onClick #(dispatch [:open-edit-form stand])
+               :title "Edit this stand"}
+              "Edit")
+             (d/button
               {:class "delete-stand-btn"
                :onClick #(dispatch [:set-stands (fn [current-stands]
-                                                 (->> current-stands
-                                                      (remove #{stand})
-                                                      vec))])
+                                                  (->> current-stands
+                                                       (remove #{stand})
+                                                       vec))])
                :title "Delete this stand"}
               "Delete"))))
          stands))))))

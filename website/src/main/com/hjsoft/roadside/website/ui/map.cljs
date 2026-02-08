@@ -4,17 +4,18 @@
             [helix.hooks :as hooks]
             [helix.dom :as d]
             ["leaflet" :as L]
-            [com.hjsoft.roadside.website.utils :as utils]))
+            [com.hjsoft.roadside.website.utils :as utils]
+            [goog.string]))
 
 (defn- make-marker
   [{:keys [coord stand set-selected-stand]}]
   (let [marker (L/marker (clj->js coord))
         content (str
                  (when-not (empty? (:name stand))
-                   (str "<b>" (:name stand) "</b><br>"))
+                   (str "<b>" (goog.string/htmlEscape (:name stand)) "</b><br>"))
                  (when (seq (:products stand))
                    (str
-                    (str/join ", " (:products stand))
+                    (str/join ", " (map goog.string/htmlEscape (:products stand)))
                     "<br>")))
         popup-content (if (empty? content)
                         "(no details)"
@@ -131,7 +132,7 @@
   [{:keys [div-id show-crosshairs is-locating on-cancel-location] :as props}]
   (use-leaflet-map props)
   (d/div {:id div-id
-          :style {:position "relative"}}
+          :class "map-wrapper"}
          (when show-crosshairs
            (d/div {:class "crosshairs"}))
          (when is-locating
