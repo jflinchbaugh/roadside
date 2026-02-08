@@ -14,7 +14,10 @@
   (let [{:keys [resource user password]} settings]
     (when (and (seq resource) (seq user) (seq password))
       (go
-        (let [{:keys [success data error]} (<! (api/fetch-stands resource user password))]
+        (let [{:keys [success data error]} (<! (api/fetch-stands
+                                                 resource
+                                                 user
+                                                 password))]
           (if success
             (do
               (dispatch [:set-stands data])
@@ -29,7 +32,11 @@
   (let [{:keys [resource user password]} settings]
     (when (and (seq resource) (seq user) (seq password) is-synced)
       (go
-        (let [{:keys [success error]} (<! (api/save-stands resource user password stands))]
+        (let [{:keys [success error]} (<! (api/save-stands
+                                            resource
+                                            user
+                                            password
+                                            stands))]
           (if success
             (show-notification :success "Stands saved!")
             (do

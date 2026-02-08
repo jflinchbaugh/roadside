@@ -36,20 +36,27 @@
                          (update state key payload)
                          (assoc state key payload)))]
     (case action-type
-      :set-stands (assoc state :stands (let [data (if (fn? payload) (payload (:stands state)) payload)]
-                                         (cond
-                                           (vector? data) data
-                                           (map? data) (vec (vals data))
-                                           (nil? data) []
-                                           :else (vec data))))
+      :set-stands (assoc state
+                         :stands
+                         (let [data (if (fn? payload)
+                                      (payload (:stands state))
+                                      payload)]
+                           (cond
+                             (vector? data) data
+                             (map? data) (vec (vals data))
+                             (nil? data) []
+                             :else (vec data))))
       :set-show-form (update-state :show-form)
       :open-add-form (assoc state
                             :show-form true
                             :editing-stand nil
                             :stand-form-data {:name ""
-                                              :coordinate (str (first (:map-center state))
-                                                               ", "
-                                                               (second (:map-center state)))
+                                              :coordinate (str
+                                                            (first
+                                                              (:map-center state))
+                                                            ", "
+                                                            (second
+                                                              (:map-center state)))
                                               :address ""
                                               :town ""
                                               :state ""
@@ -60,6 +67,7 @@
       :open-edit-form (assoc state
                              :show-form true
                              :editing-stand payload
+                             ; TODO hmm? copy for no reason?
                              :stand-form-data (assoc payload
                                                      :town (:town payload)
                                                      :state (:state payload)
@@ -100,7 +108,10 @@
                               :products updated-products
                               :updated (utils/get-current-timestamp))]
     (if editing-stand
-      {:success true :stands (vec (map #(if (= % editing-stand) processed-data %) stands))}
+      {:success true
+       :stands (->> stands
+                 (map #(if (= % editing-stand) processed-data %))
+                 vec)}
       (if (some #(= (utils/stand-key processed-data) (utils/stand-key %)) stands)
         {:success false :error "This stand already exists!"}
         {:success true :stands (conj stands processed-data)}))))

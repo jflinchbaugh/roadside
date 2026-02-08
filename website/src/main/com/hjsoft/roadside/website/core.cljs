@@ -24,7 +24,10 @@
   (let [{:keys [stands settings map-center is-synced]} app-state
         {:keys [location get-location]} user-location
         show-notification (fn [type message]
-                            (dispatch [:set-notification {:type type :message message}]))]
+                            (dispatch
+                              [:set-notification
+                               {:type type
+                                :message message}]))]
 
     ;; Persist to Local Storage
     (hooks/use-effect
@@ -55,11 +58,17 @@
     {:show-notification show-notification}))
 
 (defnc app []
-  (let [[app-state dispatch] (hooks/use-reducer state/app-reducer state/initial-app-state)
+  (let [[app-state dispatch] (hooks/use-reducer
+                               state/app-reducer
+                               state/initial-app-state)
         {:keys [stands selected-stand map-center product-filter]} app-state
 
         user-location (use-user-location)
-        {:keys [location error is-locating get-location cancel-location]} user-location
+        {:keys [location
+                error
+                is-locating
+                get-location
+                cancel-location]} user-location
 
         _ (use-app-orchestration {:app-state app-state
                                   :dispatch dispatch
@@ -67,7 +76,10 @@
 
         filtered-stands (hooks/use-memo
                          [stands product-filter]
-                         (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
+                         (let [sorted-stands (sort-by
+                                               :updated
+                                               #(compare %2 %1)
+                                               stands)]
                            (vec
                             (if product-filter
                               (filter
@@ -79,13 +91,17 @@
 
         set-coordinate-form-data (hooks/use-callback
                                   [dispatch]
-                                  (fn [c] (dispatch [:set-map-center (utils/parse-coordinates c)])))]
+                                  (fn [c]
+                                    (dispatch
+                                      [:set-map-center
+                                       (utils/parse-coordinates c)])))]
 
     (d/div
      {:class "app-container"}
-     ($ (.-Provider state/app-context) {:value {:state app-state
-                                                :dispatch dispatch
-                                                :user-location user-location}}
+     ($ (.-Provider state/app-context)
+       {:value {:state app-state
+                :dispatch dispatch
+                :user-location user-location}}
         (<>
          ($ notification-toast)
          ($ fixed-header
