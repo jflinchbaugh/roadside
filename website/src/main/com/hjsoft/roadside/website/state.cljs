@@ -86,8 +86,11 @@
                               :updated (utils/get-current-timestamp))]
     (if editing-stand
       {:success true
+       :processed-data processed-data
        :stands (mapv #(if (= % editing-stand) processed-data %) stands)}
       (if (some #(= (utils/stand-key processed-data) (utils/stand-key %)) stands)
         {:success false :error "This stand already exists!"}
-        {:success true :stands (conj stands processed-data)}))))
+        {:success true
+         :processed-data processed-data
+         :stands (conj stands processed-data)}))))
 

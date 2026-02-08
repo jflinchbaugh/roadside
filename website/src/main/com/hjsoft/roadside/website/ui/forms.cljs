@@ -183,13 +183,14 @@
        :onClick #(.stopPropagation %)
        :onSubmit (fn [e]
                    (.preventDefault e)
-                   (let [{:keys [success stands error]} (state/process-stand-form
-                                                         stand-form-data
-                                                         (:stands state)
-                                                         editing-stand)]
+                   (let [{:keys [success stands error processed-data]} (state/process-stand-form
+                                                                        stand-form-data
+                                                                        (:stands state)
+                                                                        editing-stand)]
                      (if success
                        (do
                          (dispatch [:set-stands stands])
+                         (dispatch [:set-selected-stand processed-data])
                          (dispatch [:close-form]))
                        (dispatch [:set-notification {:type :error :message error}]))))}
       (d/div
@@ -267,7 +268,10 @@
 (defnc settings-dialog []
   (let [{:keys [dispatch state]} (state/use-app)
         {:keys [settings]} state
-        [form-data set-form-data] (hooks/use-state (or settings {:resource "" :user "" :password ""}))]
+        [form-data set-form-data] (hooks/use-state
+                                   (or
+                                    settings
+                                    {:resource "" :user "" :password ""}))]
 
     (hooks/use-effect
      :once
