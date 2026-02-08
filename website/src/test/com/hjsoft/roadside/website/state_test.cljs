@@ -50,7 +50,14 @@
 
   (t/testing "set-notification"
     (t/is (= {:notification {:type :success :message "hi"}}
-             (sut/app-reducer {} [:set-notification {:type :success :message "hi"}])))))
+             (sut/app-reducer {} [:set-notification {:type :success :message "hi"}]))))
+
+  (t/testing "generic set-* action"
+    (t/is (= {:some-new-prop "value"}
+             (sut/app-reducer {} [:set-some-new-prop "value"])))
+    (t/is (= {:some-new-prop "updated"}
+             (sut/app-reducer {:some-new-prop "value"}
+                             [:set-some-new-prop (fn [_] "updated")])))))
 
 (t/deftest process-stand-form-test
   (let [stands [{:name "Apple Farm" :products ["Apples"] :coordinate "1,2"}]]

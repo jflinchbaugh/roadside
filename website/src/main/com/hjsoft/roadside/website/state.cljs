@@ -31,81 +31,67 @@
    :notification nil})
 
 (defn app-reducer [state [action-type payload]]
-  (let [update-state (fn [key]
-                       (if (fn? payload)
-                         (update state key payload)
-                         (assoc state key payload)))]
-    (case action-type
-      :set-stands (assoc state
-                         :stands
-                         (let [data (if (fn? payload)
-                                      (payload (:stands state))
-                                      payload)]
-                           (cond
-                             (vector? data) data
-                             (map? data) (vec (vals data))
-                             (nil? data) []
-                             :else (vec data))))
-      :set-show-form (update-state :show-form)
-      :open-add-form (assoc state
-                            :show-form true
-                            :editing-stand nil
-                            :stand-form-data {:name ""
-                                              :coordinate (str
-                                                            (first
-                                                              (:map-center state))
-                                                            ", "
-                                                            (second
-                                                              (:map-center state)))
-                                              :address ""
-                                              :town ""
-                                              :state ""
-                                              :products []
-                                              :expiration (utils/in-a-week)
-                                              :notes ""
-                                              :shared? true})
-      :open-edit-form (assoc state
-                             :show-form true
-                             :editing-stand payload
-                             :stand-form-data payload)
-      :close-form (assoc state :show-form false :editing-stand nil)
-      :set-editing-stand (update-state :editing-stand)
-      :set-stand-form-data (update-state :stand-form-data)
-      :set-product-filter (update-state :product-filter)
-      :set-selected-stand (update-state :selected-stand)
-      :set-map-center (update-state :map-center)
-      :set-show-settings-dialog (update-state :show-settings-dialog)
-      :set-settings-form-data (update-state :settings-form-data)
-      :set-settings (update-state :settings)
-      :set-is-synced (update-state :is-synced)
-      :set-notification (update-state :notification)
-      state)))
+  (case action-type
+    :set-stands (assoc state
+                       :stands
+                       (let [data (if (fn? payload)
+                                    (payload (:stands state))
+                                    payload)]
+                         (cond
+                           (vector? data) data
+                           (map? data) (vec (vals data))
+                           (nil? data) []
+                           :else (vec data))))
+    :open-add-form (assoc state
+                          :show-form true
+                          :editing-stand nil
+                          :stand-form-data {:name ""
+                                            :coordinate (str
+                                                         (first
+                                                          (:map-center state))
+                                                         ", "
+                                                         (second
+                                                          (:map-center state)))
+                                            :address ""
+                                            :town ""
+                                            :state ""
+                                            :products []
+                                            :expiration (utils/in-a-week)
+                                            :notes ""
+                                            :shared? true})
+    :open-edit-form (assoc state
+                           :show-form true
+                           :editing-stand payload
+                           :stand-form-data payload)
+    :close-form (assoc state :show-form false :editing-stand nil)
+    ;; Generic handler for :set-* actions
+    (let [action-name (name action-type)]
+      (if (str/starts-with? action-name "set-")
+        (let [key (keyword (subs action-name 4))]
+          (if (fn? payload)
+            (update state key payload)
+            (assoc state key payload)))
+        state))))
 
 (defn process-stand-form
   "Processes the stand form data, automatically adding products based on name,
    and returns a map with :success and the updated stands list or an error message."
   [form-data stands editing-stand]
   (let [all-unique-products (utils/get-all-unique-products stands)
-        stand-name (:name form-data)
-        updated-products (reduce
-                          (fn [acc product]
-                            (if (and
-                                 (str/includes?
-                                  (str/lower-case stand-name)
-                                  (str/lower-case product))
-                                 (not (some #(= % product) acc)))
-                              (conj acc product)
-                              acc))
-                          (:products form-data)
-                          all-unique-products)
+        stand-name (str/lower-case (:name form-data))
+        current-products (set (:products form-data))
+        inferred-products (filter
+                           (fn [p]
+                             (and (str/includes? stand-name (str/lower-case p))
+                                  (not (contains? current-products p))))
+                           all-unique-products)
+        final-products (into (:products form-data) inferred-products)
         processed-data (assoc form-data
-                              :products updated-products
+                              :products (vec final-products)
                               :updated (utils/get-current-timestamp))]
     (if editing-stand
       {:success true
-       :stands (->> stands
-                 (map #(if (= % editing-stand) processed-data %))
-                 vec)}
+       :stands (mapv #(if (= % editing-stand) processed-data %) stands)}
       (if (some #(= (utils/stand-key processed-data) (utils/stand-key %)) stands)
         {:success false :error "This stand already exists!"}
         {:success true :stands (conj stands processed-data)}))))

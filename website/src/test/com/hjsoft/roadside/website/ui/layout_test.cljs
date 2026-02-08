@@ -21,7 +21,7 @@
                   ($ layout/notification-toast)))
           container (.-container res)
           toast (.querySelector container ".notification-toast")]
-      (is (= "" (.-innerText container)))))
+      (is (= "" (.-textContent container)))))
 
   (testing "renders notification message when present"
     (let [^js ctx state/app-context
@@ -34,7 +34,7 @@
           container (.-container res)
           toast (.querySelector container ".notification-toast.success")]
       (is (some? toast) "The toast element should exist")
-      (is (= (.-innerText toast) "Test Success Message")
+      (is (= (.-textContent toast) "Test Success Message")
         "success message should be seen"))))
 
 (deftest header-test
