@@ -22,12 +22,7 @@
 (defn use-app-orchestration
   [{:keys [app-state dispatch user-location]}]
   (let [{:keys [stands settings map-center is-synced]} app-state
-        {:keys [location get-location]} user-location
-        show-notification (fn [type message]
-                            (dispatch
-                              [:set-notification
-                               {:type type
-                                :message message}]))]
+        {:keys [location get-location]} user-location]
 
     ;; Persist to Local Storage
     (hooks/use-effect
@@ -43,19 +38,17 @@
     ;; Sync with Remote API
     (hooks/use-effect
      [stands is-synced settings]
-     (sync/save-remote-stands! app-state show-notification))
+     (sync/save-remote-stands! app-state dispatch))
 
     ;; Fetch from Remote API on settings change
     (hooks/use-effect
      [settings]
-     (sync/fetch-remote-stands! app-state dispatch show-notification))
+     (sync/fetch-remote-stands! app-state dispatch))
 
     ;; Initialize
     (hooks/use-effect
      :once
-     (get-location))
-
-    {:show-notification show-notification}))
+     (get-location))))
 
 (defnc app []
   (let [[app-state dispatch] (hooks/use-reducer
