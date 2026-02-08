@@ -67,13 +67,7 @@
       :open-edit-form (assoc state
                              :show-form true
                              :editing-stand payload
-                             ; TODO hmm? copy for no reason?
-                             :stand-form-data (assoc payload
-                                                     :town (:town payload)
-                                                     :state (:state payload)
-                                                     :address (:address payload)
-                                                     :notes (:notes payload)
-                                                     :shared? (:shared? payload)))
+                             :stand-form-data payload)
       :close-form (assoc state :show-form false :editing-stand nil)
       :set-editing-stand (update-state :editing-stand)
       :set-stand-form-data (update-state :stand-form-data)
