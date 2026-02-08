@@ -295,18 +295,24 @@
             {:label "Resource:"
              :value (:resource settings-form-data)
              :on-change #(dispatch [:set-settings-form-data
-                                    (fn [prev] (assoc prev :resource (.. % -target -value)))])})
+                                    (fn [prev]
+                                      (assoc prev
+                                        :resource (.. % -target -value)))])})
          ($ form-field
             {:label "User:"
              :value (:user settings-form-data)
              :on-change #(dispatch [:set-settings-form-data
-                                    (fn [prev] (assoc prev :user (.. % -target -value)))])})
+                                    (fn [prev]
+                                      (assoc prev
+                                        :user (.. % -target -value)))])})
          ($ form-field
             {:label "Password:"
              :type "password"
              :value (:password settings-form-data)
              :on-change #(dispatch [:set-settings-form-data
-                                    (fn [prev] (assoc prev :password (.. % -target -value)))])})
+                                    (fn [prev]
+                                      (assoc prev
+                                        :password (.. % -target -value)))])})
          (d/div
           {:class "settings-actions"}
           (d/button

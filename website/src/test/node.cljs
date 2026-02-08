@@ -1,10 +1,15 @@
 (ns node
   (:require ["global-jsdom" :as global-jsdom]
-            [cljs.test :as test]))
+            [cljs.test :as test]
+            [com.hjsoft.roadside.website.utils-test]
+            [com.hjsoft.roadside.website.state-test]
+            [com.hjsoft.roadside.website.ui.layout-test]))
 
 ;; Initialize JSDOM immediately so that browser globals are available
 ;; during namespace loading.
 (global-jsdom)
+
+(set! js/global.IS_REACT_ACT_ENVIRONMENT true)
 
 ;; Mock localStorage if it's not provided by the environment
 (when (cljs.core/undefined? js/localStorage)
