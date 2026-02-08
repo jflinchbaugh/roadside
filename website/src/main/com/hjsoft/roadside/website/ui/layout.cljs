@@ -1,7 +1,8 @@
 (ns com.hjsoft.roadside.website.ui.layout
   (:require [helix.core :refer [defnc]]
             [helix.hooks :as hooks]
-            [helix.dom :as d]))
+            [helix.dom :as d]
+            [com.hjsoft.roadside.website.state :as state]))
 
 (defnc header []
   (d/header
@@ -21,16 +22,17 @@
    {:id "fixed-header"}
    children))
 
-(defnc notification-toast
-  [{:keys [notification set-notification]}]
-  (hooks/use-effect
-   [notification]
-   (when notification
-     (let [timer (js/setTimeout
-                  #(set-notification nil)
-                  3000)]
-       (fn [] (js/clearTimeout timer)))))
-  (when notification
-    (d/div
-     {:class (str "notification-toast " (name (:type notification)))}
-     (:message notification))))
+(defnc notification-toast []
+  (let [{:keys [state dispatch]} (hooks/use-context state/app-context)
+        {:keys [notification]} state]
+    (hooks/use-effect
+     [notification]
+     (when notification
+       (let [timer (js/setTimeout
+                    #(dispatch [:set-notification nil])
+                    3000)]
+         (fn [] (js/clearTimeout timer)))))
+    (when notification
+      (d/div
+       {:class (str "notification-toast " (name (:type notification)))}
+       (:message notification)))))

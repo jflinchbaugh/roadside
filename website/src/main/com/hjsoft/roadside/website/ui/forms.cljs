@@ -8,46 +8,44 @@
             [clojure.string :as str]))
 
 (defn- add-product-to-form-data
-  [current-product set-form-data]
+  [current-product dispatch]
   (when (not= current-product "")
-    (set-form-data
-     (fn [prev]
-       (if (some #(= % current-product) (:products prev))
-         prev
-         (assoc
+    (dispatch
+     [:set-stand-form-data
+      (fn [prev]
+        (if (some #(= % current-product) (:products prev))
           prev
-          :products (conj (:products prev) current-product)))))))
+          (assoc
+           prev
+           :products (conj (:products prev) current-product))))])))
 
 (defnc location-input
   [{:keys
     [coordinate-input-ref
      user-location
-     form-data
-     set-form-data
      location-btn-ref
-     stands
-     map-home
      add-zoom-level]}]
-  (let [{:keys [location error is-locating get-location cancel-location]} user-location
+  (let [{:keys [dispatch state]} (hooks/use-context state/app-context)
+        {:keys [stand-form-data stands]} state
+        {:keys [location error is-locating get-location cancel-location]} user-location
         [coordinate-display set-coordinate-display] (hooks/use-state
-                                                     (:coordinate form-data))
+                                                     (:coordinate stand-form-data))
         map-ref (hooks/use-ref nil)]
     (hooks/use-effect
-     [(:coordinate form-data)]
-     (set-coordinate-display (:coordinate form-data)))
+     [(:coordinate stand-form-data)]
+     (set-coordinate-display (:coordinate stand-form-data)))
 
     (d/div
      {:class "form-group"}
      ($ leaflet-map
         {:div-id "map-form"
-         :center (or (utils/parse-coordinates (:coordinate form-data)) map-home)
+         :center (or (utils/parse-coordinates (:coordinate stand-form-data)) state/map-home)
          :zoom-level add-zoom-level
          :stands stands
          :show-crosshairs true
          :set-coordinate-form-data (fn [coord-str]
-                                     (set-form-data
-                                      (fn [prev]
-                                        (assoc prev :coordinate coord-str))))
+                                     (dispatch [:set-stand-form-data
+                                                (fn [prev] (assoc prev :coordinate coord-str))]))
          :map-ref map-ref
          :is-locating is-locating
          :on-cancel-location cancel-location
@@ -60,11 +58,8 @@
         :ref coordinate-input-ref
         :value coordinate-display
         :onChange #(set-coordinate-display (.. % -target -value))
-        :onBlur #(set-form-data
-                  (fn [prev]
-                    (assoc
-                     prev
-                     :coordinate coordinate-display)))
+        :onBlur #(dispatch [:set-stand-form-data
+                            (fn [prev] (assoc prev :coordinate coordinate-display))])
         :class "coordinate-input"})
       (d/button
        {:type "button"
@@ -73,21 +68,18 @@
         :onClick (fn []
                    (get-location
                     (fn [[lat lng]]
-                      (set-form-data
-                       (fn [prev]
-                         (assoc
-                          prev
-                          :coordinate (str lat ", " lng)))))))}
+                      (dispatch [:set-stand-form-data
+                                 (fn [prev] (assoc prev :coordinate (str lat ", " lng)))]))))}
        "\u2316"))
      (when error
        (d/p
         {:class "error-message"}
         error)))))
 
-(defnc product-input
-  [{:keys [form-data
-           set-form-data]}]
-  (let [[current-product set-current-product] (hooks/use-state "")]
+(defnc product-input []
+  (let [{:keys [dispatch state]} (hooks/use-context state/app-context)
+        {:keys [stand-form-data]} state
+        [current-product set-current-product] (hooks/use-state "")]
     (d/div
      {:class "product-section-wrapper"}
      (d/div
@@ -103,16 +95,17 @@
                (d/button
                 {:type "button"
                  :class "remove-tag"
-                 :onClick #(set-form-data
-                            (fn [prev]
-                              (assoc
-                               prev
-                               :products (->> prev
-                                              :products
-                                              (remove #{product})
-                                              vec))))}
+                 :onClick #(dispatch
+                            [:set-stand-form-data
+                             (fn [prev]
+                               (assoc
+                                prev
+                                :products (->> prev
+                                               :products
+                                               (remove #{product})
+                                               vec)))])}
                 "\u2715")))
-            (:products form-data)))
+            (:products stand-form-data)))
       (d/div
        {:class "product-input-group"}
        (d/input
@@ -123,98 +116,85 @@
          :onKeyDown (fn [e]
                       (when (= (.-key e) "Enter")
                         (.preventDefault e)
-                        (add-product-to-form-data
-                         current-product
-                         set-form-data)
+                        (add-product-to-form-data current-product dispatch)
                         (set-current-product "")))
          :enterkeyhint "enter"})
        (d/button
         {:type "button"
          :class "add-product-btn"
          :onClick (fn []
-                    (add-product-to-form-data
-                     current-product
-                     set-form-data)
+                    (add-product-to-form-data current-product dispatch)
                     (set-current-product ""))}
         "Add"))))))
 
 (defnc stand-form
-  [{:keys [form-data
-           set-form-data
-           editing-stand
-           set-editing-stand
-           show-form
-           set-show-form
-           user-location
-           user-map-center
-           stands
-           set-stands
-           map-home
+  [{:keys [user-location
            add-zoom-level]}]
-  (let [[current-product set-current-product] (hooks/use-state "")
+  (let [{:keys [dispatch state]} (hooks/use-context state/app-context)
+        {:keys [stand-form-data editing-stand show-form stands map-center]} state
         [show-address? set-show-address?] (hooks/use-state false)
         coordinate-input-ref (hooks/use-ref nil)
         location-btn-ref (hooks/use-ref nil)]
     (hooks/use-effect
-     [(:address form-data) (:town form-data) (:state form-data)]
-     (when (or (seq (:address form-data))
-               (seq (:town form-data))
-               (seq (:state form-data)))
+     [(:address stand-form-data) (:town stand-form-data) (:state stand-form-data)]
+     (when (or (seq (:address stand-form-data))
+               (seq (:town stand-form-data))
+               (seq (:state stand-form-data)))
        (set-show-address? true)))
 
     (hooks/use-effect
      [show-form]
      (if-not show-form
        (do
-         (set-editing-stand nil)
+         (dispatch [:set-editing-stand nil])
          (set-show-address? false)
-         (set-form-data
-          {:name ""
-           :coordinate (str
-                        (first map-home)
-                        ", "
-                        (second map-home))
-           :address ""
-           :town ""
-           :state ""
-           :products []
-           :expiration (utils/in-a-week)
-           :notes ""
-           :shared? true}))
+         (dispatch [:set-stand-form-data
+                    {:name ""
+                     :coordinate (str
+                                  (first state/map-home)
+                                  ", "
+                                  (second state/map-home))
+                     :address ""
+                     :town ""
+                     :state ""
+                     :products []
+                     :expiration (utils/in-a-week)
+                     :notes ""
+                     :shared? true}]))
        (do
          (.addEventListener
           js/document
           "keydown"
           (fn [e]
             (when (= (.-key e) "Escape")
-              (set-show-form false))))
+              (dispatch [:set-show-form false]))))
          (.focus @coordinate-input-ref)
          (when (nil? editing-stand)
-           (set-form-data
-            (fn [prev]
-              (assoc
-               prev
-               :coordinate (str
-                            (first (or user-map-center map-home))
-                            ", "
-                            (second (or user-map-center map-home))))))))))
+           (dispatch [:set-stand-form-data
+                      (fn [prev]
+                        (assoc
+                         prev
+                         :coordinate (str
+                                      (first (or map-center state/map-home))
+                                      ", "
+                                      (second (or map-center state/map-home)))))])))))
 
     (when show-form
       (d/div
        {:class "form-overlay"
-        :onClick #(set-show-form false)}
+        :onClick #(dispatch [:set-show-form false])}
        (d/form
         {:class "form-container"
          :onClick #(.stopPropagation %)
          :onSubmit (fn [e]
                      (.preventDefault e)
                      (let [new-stands (state/process-stand-form
-                                       form-data
+                                       stand-form-data
                                        stands
                                        editing-stand)]
                        (when (not= new-stands stands)
-                         (set-stands new-stands)
-                         (set-show-form false))))}
+                         (dispatch [:set-stands new-stands])
+                         (dispatch [:set-show-form false]))))}
         (d/div
          {:class "form-header-actions"}
          (d/h3 (if editing-stand "Edit Stand" "Add New Stand"))
@@ -222,7 +202,7 @@
                 (d/button
                  {:type "button"
                   :class "button icon-button"
-                  :on-click #(set-show-form false)
+                  :on-click #(dispatch [:set-show-form false])
                   :title "Cancel"}
                  "\u2715")
                 (d/button
@@ -235,34 +215,24 @@
          ($ location-input
             {:coordinate-input-ref coordinate-input-ref
              :user-location user-location
-             :form-data form-data
-             :set-form-data set-form-data
              :location-btn-ref location-btn-ref
-             :stands stands
-             :map-home map-home
              :add-zoom-level add-zoom-level})
-         ($ product-input
-            {:form-data form-data
-             :set-form-data set-form-data
-             :current-product current-product
-             :set-current-product set-current-product})
+         ($ product-input)
          (d/div
           {:class "form-group"}
           (d/label "Stand Name:")
           (d/input
            {:type "text"
-            :value (:name form-data)
-            :onChange #(set-form-data
-                        (fn [prev]
-                          (assoc prev :name (.. % -target -value))))}))
+            :value (:name stand-form-data)
+            :onChange #(dispatch [:set-stand-form-data
+                                  (fn [prev] (assoc prev :name (.. % -target -value)))])}))
          (d/div
           {:class "form-group"}
           (d/label "Notes:")
           (d/textarea
-           {:value (:notes form-data)
-            :onChange #(set-form-data
-                        (fn [prev]
-                          (assoc prev :notes (.. % -target -value))))
+           {:value (:notes stand-form-data)
+            :onChange #(dispatch [:set-stand-form-data
+                                  (fn [prev] (assoc prev :notes (.. % -target -value)))])
             :rows 4}))
          (d/div
           {:class "form-group"}
@@ -281,37 +251,33 @@
              (d/label "Address:")
              (d/input
               {:type "text"
-               :value (:address form-data)
-               :onChange #(set-form-data
-                           (fn [prev]
-                             (assoc prev :address (.. % -target -value))))}))
+               :value (:address stand-form-data)
+               :onChange #(dispatch [:set-stand-form-data
+                                     (fn [prev] (assoc prev :address (.. % -target -value)))])}))
             (d/div
              {:class "form-group"}
              (d/label "Town:")
              (d/input
               {:type "text"
-               :value (:town form-data)
-               :onChange #(set-form-data
-                           (fn [prev]
-                             (assoc prev :town (.. % -target -value))))}))
+               :value (:town stand-form-data)
+               :onChange #(dispatch [:set-stand-form-data
+                                     (fn [prev] (assoc prev :town (.. % -target -value)))])}))
             (d/div
              {:class "form-group"}
              (d/label "State:")
              (d/input
               {:type "text"
-               :value (:state form-data)
-               :onChange #(set-form-data
-                           (fn [prev]
-                             (assoc prev :state (.. % -target -value))))}))))
+               :value (:state stand-form-data)
+               :onChange #(dispatch [:set-stand-form-data
+                                     (fn [prev] (assoc prev :state (.. % -target -value)))])}))))
          (d/div
           {:class "form-group"}
           (d/label "Expiration Date:")
           (d/input
            {:type "date"
-            :value (:expiration form-data)
-            :onChange #(set-form-data
-                        (fn [prev]
-                          (assoc prev :expiration (.. % -target -value))))}))
+            :value (:expiration stand-form-data)
+            :onChange #(dispatch [:set-stand-form-data
+                                  (fn [prev] (assoc prev :expiration (.. % -target -value)))])}))
          (d/div
           {:class "form-group"}
           (d/label {:for "shared-checkbox"} "Shared?")
@@ -319,70 +285,65 @@
            {:id "shared-checkbox"
             :class "checkbox"
             :type "checkbox"
-            :checked (get form-data :shared? false)
-            :onChange #(set-form-data
-                        (fn [prev]
-                          (assoc prev :shared? (.. % -target -checked))))}))))))))
+            :checked (get stand-form-data :shared? false)
+            :onChange #(dispatch [:set-stand-form-data
+                                  (fn [prev] (assoc prev :shared? (.. % -target -checked)))])}))))))))
 
-(defnc settings-dialog
-  [{:keys [show-settings-dialog
-           set-show-settings-dialog
-           form-data
-           set-form-data
-           set-settings]}]
-  (when show-settings-dialog
-    (d/div
-     {:class "settings-overlay"
-      :onClick #(set-show-settings-dialog false)}
-     (d/div
-      {:class "settings-dialog"
-       :onClick #(.stopPropagation %)}
+(defnc settings-dialog []
+  (let [{:keys [dispatch state]} (hooks/use-context state/app-context)
+        {:keys [show-settings-dialog settings-form-data]} state]
+    (when show-settings-dialog
       (d/div
-       {:class "settings-header"}
-       (d/h3 "Settings")
-       (d/button
-        {:class "button icon-button"
-         :onClick #(set-show-settings-dialog false)
-         :title "Close"}
-        "\u2715"))
-      (d/div
-       {:class "settings-content"}
+       {:class "settings-overlay"
+        :onClick #(dispatch [:set-show-settings-dialog false])}
        (d/div
-        {:class "form-group"}
-        (d/label "Resource:")
-        (d/input
-         {:type "text"
-          :value (:resource form-data)
-          :onChange #(set-form-data
-                      (fn [prev]
-                        (assoc prev :resource (.. % -target -value))))}))
-       (d/div
-        {:class "form-group"}
-        (d/label "User:")
-        (d/input
-         {:type "text"
-          :value (:user form-data)
-          :onChange #(set-form-data
-                      (fn [prev] (assoc prev :user (.. % -target -value))))}))
-       (d/div
-        {:class "form-group"}
-        (d/label "Password:")
-        (d/input
-         {:type "password"
-          :value (:password form-data)
-          :onChange #(set-form-data
-                      (fn [prev] (assoc prev :password (.. % -target -value))))}))
-       (d/div
-        {:class "settings-actions"}
-        (d/button
-         {:type "button"
-          :class "button secondary"
-          :onClick #(set-show-settings-dialog false)}
-         "Cancel")
-        (d/button
-         {:type "submit"
-          :class "button primary"
-          :onClick #(do
-                      (set-settings form-data)
-                      (set-show-settings-dialog false))}
-         "Save")))))))
+        {:class "settings-dialog"
+         :onClick #(.stopPropagation %)}
+        (d/div
+         {:class "settings-header"}
+         (d/h3 "Settings")
+         (d/button
+          {:class "button icon-button"
+           :onClick #(dispatch [:set-show-settings-dialog false])
+           :title "Close"}
+          "\u2715"))
+        (d/div
+         {:class "settings-content"}
+         (d/div
+          {:class "form-group"}
+          (d/label "Resource:")
+          (d/input
+           {:type "text"
+            :value (:resource settings-form-data)
+            :onChange #(dispatch [:set-settings-form-data
+                                  (fn [prev] (assoc prev :resource (.. % -target -value)))])}))
+         (d/div
+          {:class "form-group"}
+          (d/label "User:")
+          (d/input
+           {:type "text"
+            :value (:user settings-form-data)
+            :onChange #(dispatch [:set-settings-form-data
+                                  (fn [prev] (assoc prev :user (.. % -target -value)))])}))
+         (d/div
+          {:class "form-group"}
+          (d/label "Password:")
+          (d/input
+           {:type "password"
+            :value (:password settings-form-data)
+            :onChange #(dispatch [:set-settings-form-data
+                                  (fn [prev] (assoc prev :password (.. % -target -value)))])}))
+         (d/div
+          {:class "settings-actions"}
+          (d/button
+           {:type "button"
+            :class "button secondary"
+            :onClick #(dispatch [:set-show-settings-dialog false])}
+           "Cancel")
+          (d/button
+           {:type "submit"
+            :class "button primary"
+            :onClick #(do
+                        (dispatch [:set-settings settings-form-data])
+                        (dispatch [:set-show-settings-dialog false]))}
+           "Save"))))))))

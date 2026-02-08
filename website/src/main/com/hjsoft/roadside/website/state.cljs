@@ -1,8 +1,11 @@
 (ns com.hjsoft.roadside.website.state
   (:require [com.hjsoft.roadside.website.storage :as storage]
-            [com.hjsoft.roadside.website.utils :as utils]))
+            [com.hjsoft.roadside.website.utils :as utils]
+            [helix.core :refer [create-context]]))
 
 (def map-home [40.0379 -76.3055])
+
+(def app-context (create-context))
 
 (def initial-app-state
   {:stands (or (storage/get-item "roadside-stands") [])

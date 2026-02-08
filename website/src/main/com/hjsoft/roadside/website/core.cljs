@@ -69,7 +69,7 @@
   (let [[app-state dispatch] (hooks/use-reducer state/app-reducer state/initial-app-state)
         {:keys [stands show-form editing-stand stand-form-data product-filter
                 selected-stand map-center show-settings-dialog
-                settings-form-data settings is-synced notification]} app-state
+                settings-form-data settings is-synced]} app-state
 
         user-location (use-user-location)
         {:keys [location error is-locating get-location cancel-location]} user-location
@@ -120,74 +120,48 @@
 
     (d/div
      {:class "app-container"}
-
-     ($ notification-toast {:notification notification
-                            :set-notification #(dispatch [:set-notification %])})
-     ($ fixed-header
-        ($ header)
-        ($ leaflet-map
-           {:div-id "map-container"
-            :center map-center
-            :stands filtered-stands
-            :zoom-level initial-zoom-level
-            :set-selected-stand #(dispatch [:set-selected-stand %])
-            :selected-stand selected-stand
-            :is-locating is-locating
-            :on-cancel-location cancel-location
-            :set-coordinate-form-data set-coordinate-form-data
-            :current-location-coords location}))
-     (d/div
-      {:class "content"}
-      (d/div
-       {:class "main-actions"}
-       (d/button
-        {:class "add-stand-btn"
-         :onClick #(dispatch [:set-show-form true])}
-        "Add Stand")
-       (d/div
-        {:class "map-actions-right"}
-        (when error
-          (d/p {:class "error-message"} error))
-        (d/button
-         {:type "button"
-          :class "location-btn"
-          :onClick get-location}
-         "\u2316")))
-      ($ product-list
-         {:stands stands
-          :set-product-filter #(dispatch [:set-product-filter %])
-          :product-filter product-filter})
-      ($ stand-form
-         {:form-data stand-form-data
-          :set-form-data #(dispatch [:set-stand-form-data %])
-          :show-form show-form
-          :set-show-form #(dispatch [:set-show-form %])
-          :user-location user-location
-          :user-map-center map-center
-          :editing-stand editing-stand
-          :set-editing-stand #(dispatch [:set-editing-stand %])
-          :stands stands
-          :set-stands #(dispatch [:set-stands %])
-          :map-home state/map-home
-          :add-zoom-level add-zoom-level})
-      ($ stands-list
-         {:stands filtered-stands
-          :set-stands #(dispatch [:set-stands %])
-          :set-editing-stand #(dispatch [:set-editing-stand %])
-          :set-form-data #(dispatch [:set-stand-form-data %])
-          :set-show-form #(dispatch [:set-show-form %])
-          :selected-stand selected-stand
-          :set-selected-stand #(dispatch [:set-selected-stand %])})
-      (d/button
-       {:class "settings-btn"
-        :onClick #(dispatch [:set-show-settings-dialog true])}
-       "\u2699")
-      ($ settings-dialog
-         {:show-settings-dialog show-settings-dialog
-          :set-show-settings-dialog #(dispatch [:set-show-settings-dialog %])
-          :form-data settings-form-data
-          :set-form-data #(dispatch [:set-settings-form-data %])
-          :set-settings #(dispatch [:set-settings %])})))))
+     ($ (.-Provider state/app-context) {:value {:state app-state :dispatch dispatch}}
+        ($ notification-toast)
+        ($ fixed-header
+           ($ header)
+           ($ leaflet-map
+              {:div-id "map-container"
+               :center map-center
+               :stands filtered-stands
+               :zoom-level initial-zoom-level
+               :set-selected-stand #(dispatch [:set-selected-stand %])
+               :selected-stand selected-stand
+               :is-locating is-locating
+               :on-cancel-location cancel-location
+               :set-coordinate-form-data set-coordinate-form-data
+               :current-location-coords location}))
+        (d/div
+         {:class "content"}
+         (d/div
+          {:class "main-actions"}
+          (d/button
+           {:class "add-stand-btn"
+            :onClick #(dispatch [:set-show-form true])}
+           "Add Stand")
+          (d/div
+           {:class "map-actions-right"}
+           (when error
+             (d/p {:class "error-message"} error))
+           (d/button
+            {:type "button"
+             :class "location-btn"
+             :onClick get-location}
+            "\u2316")))
+         ($ product-list {:stands stands})
+         ($ stand-form
+            {:user-location user-location
+             :add-zoom-level add-zoom-level})
+         ($ stands-list {:stands filtered-stands})
+         (d/button
+          {:class "settings-btn"
+           :onClick #(dispatch [:set-show-settings-dialog true])}
+          "\u2699")
+         ($ settings-dialog))))))
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]

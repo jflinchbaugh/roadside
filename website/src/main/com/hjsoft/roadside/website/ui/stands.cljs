@@ -3,18 +3,14 @@
             [helix.hooks :as hooks]
             [helix.dom :as d]
             [com.hjsoft.roadside.website.utils :as utils]
+            [com.hjsoft.roadside.website.state :as state]
             [clojure.string :as str]))
 
 (defnc stands-list
-  [{:keys
-    [stands
-     set-stands
-     set-editing-stand
-     set-form-data
-     set-show-form
-     selected-stand
-     set-selected-stand]}]
-  (let [stand-refs (hooks/use-ref {})]
+  [{:keys [stands]}]
+  (let [{:keys [state dispatch]} (hooks/use-context state/app-context)
+        {:keys [selected-stand]} state
+        stand-refs (hooks/use-ref {})]
     (hooks/use-effect
      [selected-stand]
      (when selected-stand
@@ -36,7 +32,7 @@
                     "stand-item"
                     (when (= (utils/stand-key stand) (utils/stand-key selected-stand))
                       " selected-stand"))
-            :onClick #(set-selected-stand stand)}
+            :onClick #(dispatch [:set-selected-stand stand])}
            (d/div
             {:class "stand-content"}
             (when (seq (:name stand))
@@ -91,32 +87,32 @@
                    "Go"))
             (d/button
              {:class "edit-stand-btn"
-              :onClick #(do (set-editing-stand stand)
-                            (set-form-data
-                             (assoc stand
-                                    :town (:town stand)
-                                    :state (:state stand)
-                                    :address (:address stand)
-                                    :notes (:notes stand)
-                                    :shared? (:shared? stand)))
-                            (set-show-form true))
+              :onClick #(do (dispatch [:set-editing-stand stand])
+                            (dispatch [:set-stand-form-data
+                                       (assoc stand
+                                              :town (:town stand)
+                                              :state (:state stand)
+                                              :address (:address stand)
+                                              :notes (:notes stand)
+                                              :shared? (:shared? stand))])
+                            (dispatch [:set-show-form true]))
               :title "Edit this stand"}
              "Edit")
             (d/button
              {:class "delete-stand-btn"
-              :onClick #(set-stands (fn [current-stands]
-                                      (->> current-stands
-                                           (remove #{stand})
-                                           vec)))
+              :onClick #(dispatch [:set-stands (fn [current-stands]
+                                                (->> current-stands
+                                                     (remove #{stand})
+                                                     vec))])
               :title "Delete this stand"}
              "Delete"))))
         stands)))))
 
 (defnc product-list
-  [{:keys [stands
-           set-product-filter
-           product-filter]}]
-  (let [all-products (flatten (map :products stands))
+  [{:keys [stands]}]
+  (let [{:keys [state dispatch]} (hooks/use-context state/app-context)
+        {:keys [product-filter]} state
+        all-products (flatten (map :products stands))
         unique-products (sort (distinct all-products))]
     (d/div
      {:class "product-list"}
@@ -132,12 +128,12 @@
                          (when (= product product-filter)
                            " product-tag-active"))
                  :onClick #(if (= product product-filter)
-                             (set-product-filter nil)
-                             (set-product-filter product))}
+                             (dispatch [:set-product-filter nil])
+                             (dispatch [:set-product-filter product]))}
                 product))
              unique-products)))
      (when product-filter
        (d/button
         {:class "clear-filter-btn"
-         :onClick #(set-product-filter nil)}
+         :onClick #(dispatch [:set-product-filter nil])}
         "Clear Filter")))))
