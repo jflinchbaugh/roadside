@@ -14,7 +14,7 @@
           _ (.appendChild (.-body js/document) container)
           root (.createRoot rdom container)
           test-notification {:type :success :message "Test Success Message"}]
-      
+
       (react/act
        (fn []
          (let [^js ctx state/app-context]
@@ -23,12 +23,12 @@
                        {:value {:state {:notification test-notification}
                                 :dispatch (fn [action] (js/console.log "Dispatch:" action))}}
                        ($ layout/notification-toast))))))
-      
+
       (let [html (.-innerHTML container)]
         (is (str/includes? html "Test Success Message") "Should contain the message")
         (is (str/includes? html "notification-toast") "Should have the toast class")
         (is (str/includes? html "success") "Should have the success class"))
-      
+
       ;; Cleanup
       (react/act (fn [] (.unmount root)))
       (.removeChild (.-body js/document) container))))
