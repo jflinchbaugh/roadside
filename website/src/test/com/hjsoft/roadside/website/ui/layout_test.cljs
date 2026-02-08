@@ -21,7 +21,7 @@
                   ($ layout/notification-toast)))
           container (.-container res)
           toast (.querySelector container ".notification-toast")]
-      (is (nil? toast) "Should not find the toast element")))
+      (is (= "" (.-innerText container)))))
 
   (testing "renders notification message when present"
     (let [^js ctx state/app-context
@@ -31,18 +31,15 @@
                   {:value {:state {:notification test-notification}
                            :dispatch (fn [_])}}
                   ($ layout/notification-toast)))
-          container (.-container res)]
-
-      (let [toast (tlr/getByText container "Test Success Message")]
-        (is (some? toast) "The toast element should exist")
-        (is (.contains (.-classList toast) "notification-toast")
-          "Should have base class")
-        (is (.contains (.-classList toast) "success")
-          "Should have success type class")))))
+          container (.-container res)
+          toast (.querySelector container ".notification-toast.success")]
+      (is (some? toast) "The toast element should exist")
+      (is (= (.-innerText toast) "Test Success Message")
+        "success message should be seen"))))
 
 (deftest header-test
   (testing "renders header with title"
     (let [res (tlr/render ($ layout/header))
-          get-by-text (.-getByText res)]
-      (let [title (get-by-text "Roadside Stands")]
-        (is (some? title) "Should render the main header title")))))
+          container (.-container res)
+          title (tlr/getByText container "Roadside Stands")]
+        (is (some? title) "Should render the main header title"))))
