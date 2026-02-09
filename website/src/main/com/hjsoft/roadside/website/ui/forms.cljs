@@ -55,9 +55,8 @@
      stand-form-data
      on-update
      original-coordinate]}]
-  (let [{:keys [state user-location]} (state/use-app)
-        {:keys [stands]} state
-        {:keys [get-location error]} user-location
+  (let [{:keys [stands]} (state/use-app-state)
+        {:keys [get-location error]} (state/use-user-location-state)
         [coordinate-display set-coordinate-display] (hooks/use-state
                                                      (:coordinate stand-form-data))
         map-ref (hooks/use-ref nil)]
@@ -154,16 +153,17 @@
         "Add"))))))
 
 (defnc stand-form []
-  (let [{:keys [dispatch state ui]} (state/use-app)
-        {:keys [editing-stand set-show-form]} ui
+  (let [app-state (state/use-app-state)
+        dispatch (state/use-dispatch)
+        {:keys [editing-stand set-show-form]} (state/use-ui)
         [stand-form-data local-dispatch] (hooks/use-reducer
                                           stand-form-reducer
                                           (or editing-stand
                                               (assoc state/default-stand-form-data
                                                      :coordinate (str
-                                                                  (first (:map-center state))
+                                                                  (first (:map-center app-state))
                                                                   ", "
-                                                                  (second (:map-center state)))
+                                                                  (second (:map-center app-state)))
                                                      :expiration (utils/in-a-week))))
         [show-address? set-show-address?] (hooks/use-state (or (seq (:address stand-form-data))
                                                                (seq (:town stand-form-data))
@@ -188,7 +188,7 @@
                    (.preventDefault e)
                    (let [{:keys [success stands error processed-data]} (stand-domain/process-stand-form
                                                                         stand-form-data
-                                                                        (:stands state)
+                                                                        (:stands app-state)
                                                                         editing-stand)]
                      (if success
                        (do
@@ -272,9 +272,10 @@
            :on-change #(local-dispatch [:update-field [:shared? (.. % -target -checked)]])}))))))
 
 (defnc settings-dialog []
-  (let [{:keys [dispatch state ui]} (state/use-app)
-        {:keys [settings]} state
-        {:keys [set-show-settings-dialog]} ui
+  (let [app-state (state/use-app-state)
+        dispatch (state/use-dispatch)
+        {:keys [set-show-settings-dialog]} (state/use-ui)
+        {:keys [settings]} app-state
         [form-data set-form-data] (hooks/use-state
                                    (or
                                     settings

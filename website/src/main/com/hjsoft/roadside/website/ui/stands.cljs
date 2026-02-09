@@ -84,9 +84,9 @@
 
 (defnc stands-list
   [{:keys [stands]}]
-  (let [{:keys [state dispatch ui]} (state/use-app)
-        {:keys [selected-stand]} state
-        {:keys [set-editing-stand set-show-form]} ui
+  (let [selected-stand (:selected-stand (state/use-app-state))
+        dispatch (state/use-dispatch)
+        {:keys [set-editing-stand set-show-form]} (state/use-ui)
         stand-refs (hooks/use-ref {})]
     (hooks/use-effect
      [selected-stand]
@@ -118,8 +118,8 @@
 
 (defnc product-list
   [{:keys [stands]}]
-  (let [{:keys [state dispatch]} (state/use-app)
-        {:keys [product-filter]} state
+  (let [{:keys [product-filter]} (state/use-app-state)
+        dispatch (state/use-dispatch)
         unique-products (hooks/use-memo
                          [stands]
                          (utils/get-all-unique-products stands))]

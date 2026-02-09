@@ -27,6 +27,11 @@
      :user-location user-location
      :ui ui}))
 
+(defn use-app-state [] (:state (use-app)))
+(defn use-dispatch [] (:dispatch (use-app)))
+(defn use-ui [] (:ui (use-app)))
+(defn use-user-location-state [] (:user-location (use-app)))
+
 (def initial-app-state
   {:stands (or (storage/get-item "roadside-stands") [])
    :product-filter nil
