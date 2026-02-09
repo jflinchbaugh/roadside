@@ -18,22 +18,22 @@
 
 (def initial-zoom-level 11)
 
-(defn use-local-persistence
-  [{:keys [stands settings map-center]}]
-  (hooks/use-effect
-   [stands settings map-center]
-   (sync/save-local-data! stands settings map-center)))
+(defn use-app-side-effects
+  [app-state dispatch user-location]
+  (let [{:keys [stands settings map-center is-synced]} app-state
+        {:keys [location get-location]} user-location]
 
-(defn use-location-sync
-  [dispatch {:keys [location]}]
-  (hooks/use-effect
-   [location]
-   (when location
-     (dispatch [:set-map-center location]))))
+    ;; Local persistence
+    (hooks/use-effect
+     [stands settings map-center]
+     (sync/save-local-data! stands settings map-center))
 
-(defn use-remote-sync
-  [app-state dispatch]
-  (let [{:keys [stands is-synced settings]} app-state]
+    ;; Location sync to map center
+    (hooks/use-effect
+     [location]
+     (when location
+       (dispatch [:set-map-center location])))
+
     ;; Sync with Remote API
     (hooks/use-effect
      [stands is-synced settings]
@@ -42,11 +42,10 @@
     ;; Fetch from Remote API on settings change
     (hooks/use-effect
      [settings]
-     (sync/fetch-remote-stands! app-state dispatch))))
+     (sync/fetch-remote-stands! app-state dispatch))
 
-(defn use-initial-location
-  [{:keys [get-location]}]
-  (hooks/use-effect :once (get-location)))
+    ;; Initial location fetch
+    (hooks/use-effect :once (get-location))))
 
 (defnc app []
   (let [[app-state dispatch] (hooks/use-reducer
@@ -60,10 +59,7 @@
 
         user-location (use-user-location)
 
-        _ (use-local-persistence app-state)
-        _ (use-location-sync dispatch user-location)
-        _ (use-remote-sync app-state dispatch)
-        _ (use-initial-location user-location)
+        _ (use-app-side-effects app-state dispatch user-location)
 
         filtered-stands (hooks/use-memo
                          [stands (:product-filter app-state)]
