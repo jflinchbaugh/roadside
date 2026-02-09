@@ -41,23 +41,27 @@
     (update state key payload)
     (assoc state key payload)))
 
+(def action-handlers
+  {:set-stands (fn [state payload]
+                 (assoc state
+                        :stands
+                        (let [data (if (fn? payload)
+                                     (payload (:stands state))
+                                     payload)]
+                          (if (coll? data) (vec data) []))))
+   :remove-stand (fn [state payload]
+                   (update state :stands (fn [stands]
+                                           (filterv #(not= % payload) stands))))
+   :set-notification #(set-value %1 :notification %2)
+   :set-is-synced #(set-value %1 :is-synced %2)
+   :set-selected-stand #(set-value %1 :selected-stand %2)
+   :set-product-filter #(set-value %1 :product-filter %2)
+   :set-settings #(set-value %1 :settings %2)
+   :set-map-center #(set-value %1 :map-center %2)})
+
 (defn app-reducer [state [action-type payload]]
-  (case action-type
-    :set-stands (assoc state
-                       :stands
-                       (let [data (if (fn? payload)
-                                    (payload (:stands state))
-                                    payload)]
-                         (if (coll? data) (vec data) [])))
-    :remove-stand (update state :stands (fn [stands]
-                                          (filterv #(not= % payload) stands)))
-    ;; Explicit handlers
-    :set-notification (set-value state :notification payload)
-    :set-is-synced (set-value state :is-synced payload)
-    :set-selected-stand (set-value state :selected-stand payload)
-    :set-product-filter (set-value state :product-filter payload)
-    :set-settings (set-value state :settings payload)
-    :set-map-center (set-value state :map-center payload)
+  (if-let [handler (get action-handlers action-type)]
+    (handler state payload)
     state))
 
 (defn select-filtered-stands
