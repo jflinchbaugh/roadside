@@ -153,8 +153,8 @@
         "Add"))))))
 
 (defnc stand-form []
-  (let [{:keys [dispatch state]} (state/use-app)
-        {:keys [editing-stand]} state
+  (let [{:keys [dispatch state ui]} (state/use-app)
+        {:keys [editing-stand set-show-form]} ui
         [stand-form-data local-dispatch] (hooks/use-reducer
                                           stand-form-reducer
                                           (or editing-stand
@@ -179,14 +179,14 @@
      :once
      (let [handle-keydown (fn [e]
                             (when (= (.-key e) "Escape")
-                              (dispatch [:close-form])))]
+                              (set-show-form false)))]
        (.addEventListener js/document "keydown" handle-keydown)
        (fn []
          (.removeEventListener js/document "keydown" handle-keydown))))
 
     (d/div
      {:class "form-overlay"
-      :onClick #(dispatch [:close-form])}
+      :onClick #(set-show-form false)}
      (d/form
       {:class "form-container"
        :onClick #(.stopPropagation %)
@@ -202,7 +202,7 @@
                          (dispatch [:set-selected-stand processed-data])
                          (when-let [coords (utils/parse-coordinates (:coordinate processed-data))]
                            (dispatch [:set-map-center coords]))
-                         (dispatch [:close-form]))
+                         (set-show-form false))
                        (dispatch [:set-notification {:type :error :message error}]))))}
       (d/div
        {:class "form-header-actions"}
@@ -211,7 +211,7 @@
               (d/button
                {:type "button"
                 :class "button icon-button"
-                :onClick #(dispatch [:close-form])
+                :onClick #(set-show-form false)
                 :title "Cancel"}
                "\u2715")
               (d/button
@@ -278,8 +278,9 @@
            :on-change #(local-dispatch [:update-field [:shared? (.. % -target -checked)]])}))))))
 
 (defnc settings-dialog []
-  (let [{:keys [dispatch state]} (state/use-app)
+  (let [{:keys [dispatch state ui]} (state/use-app)
         {:keys [settings]} state
+        {:keys [set-show-settings-dialog]} ui
         [form-data set-form-data] (hooks/use-state
                                    (or
                                     settings
@@ -289,14 +290,14 @@
      :once
      (let [handle-keydown (fn [e]
                             (when (= (.-key e) "Escape")
-                              (dispatch [:set-show-settings-dialog false])))]
+                              (set-show-settings-dialog false)))]
        (.addEventListener js/document "keydown" handle-keydown)
        (fn []
          (.removeEventListener js/document "keydown" handle-keydown))))
 
     (d/div
      {:class "settings-overlay"
-      :onClick #(dispatch [:set-show-settings-dialog false])}
+      :onClick #(set-show-settings-dialog false)}
      (d/div
       {:class "settings-dialog"
        :onClick #(.stopPropagation %)}
@@ -305,7 +306,7 @@
        (d/h3 "Settings")
        (d/button
         {:class "button icon-button"
-         :onClick #(dispatch [:set-show-settings-dialog false])
+         :onClick #(set-show-settings-dialog false)
          :title "Close"}
         "\u2715"))
       (d/div
@@ -328,14 +329,14 @@
         (d/button
          {:type "button"
           :class "button secondary"
-          :onClick #(dispatch [:set-show-settings-dialog false])}
+          :onClick #(set-show-settings-dialog false)}
          "Cancel")
         (d/button
          {:type "submit"
           :class "button primary"
           :onClick #(do
                       (dispatch [:set-settings form-data])
-                      (dispatch [:set-show-settings-dialog false]))}
+                      (set-show-settings-dialog false))}
          "Save")))
       (d/div
        {:class "build-date"}

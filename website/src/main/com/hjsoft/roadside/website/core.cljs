@@ -52,7 +52,11 @@
   (let [[app-state dispatch] (hooks/use-reducer
                               state/app-reducer
                               state/initial-app-state)
-        {:keys [stands map-center show-form show-settings-dialog]} app-state
+        {:keys [stands map-center]} app-state
+
+        [show-form set-show-form] (hooks/use-state false)
+        [editing-stand set-editing-stand] (hooks/use-state nil)
+        [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
 
         user-location (use-user-location)
 
@@ -77,7 +81,13 @@
      ($ (.-Provider state/app-context)
         {:value {:state app-state
                  :dispatch dispatch
-                 :user-location user-location}}
+                 :user-location user-location
+                 :ui {:show-form show-form
+                      :set-show-form set-show-form
+                      :editing-stand editing-stand
+                      :set-editing-stand set-editing-stand
+                      :show-settings-dialog show-settings-dialog
+                      :set-show-settings-dialog set-show-settings-dialog}}}
         (<>
          ($ notification-toast)
          ($ fixed-header
@@ -93,7 +103,9 @@
            {:class "main-actions"}
            (d/button
             {:class "add-stand-btn"
-             :onClick #(dispatch [:open-add-form])}
+             :onClick #(do
+                         (set-editing-stand nil)
+                         (set-show-form true))}
             "Add Stand")
            (d/div
             {:class "map-actions-right"}
@@ -109,7 +121,7 @@
           ($ stands-list {:stands filtered-stands})
           (d/button
            {:class "settings-btn"
-            :onClick #(dispatch [:set-show-settings-dialog true])}
+            :onClick #(set-show-settings-dialog true)}
            "\u2699")
           (when show-settings-dialog ($ settings-dialog))))))))
 

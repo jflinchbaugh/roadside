@@ -19,10 +19,6 @@
     (t/is (= {:map-center [1.0 2.0]}
              (sut/app-reducer {} [:set-map-center [1.0 2.0]]))))
 
-  (t/testing "set-show-settings-dialog"
-    (t/is (= {:show-settings-dialog true}
-             (sut/app-reducer {} [:set-show-settings-dialog true]))))
-
   (t/testing "set-settings"
     (t/is (= {:settings {:user "test"}}
              (sut/app-reducer {} [:set-settings {:user "test"}]))))

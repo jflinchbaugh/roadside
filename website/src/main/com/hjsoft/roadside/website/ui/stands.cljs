@@ -8,8 +8,9 @@
 
 (defnc stands-list
   [{:keys [stands]}]
-  (let [{:keys [state dispatch]} (state/use-app)
+  (let [{:keys [state dispatch ui]} (state/use-app)
         {:keys [selected-stand]} state
+        {:keys [set-editing-stand set-show-form]} ui
         stand-refs (hooks/use-ref {})]
     (hooks/use-effect
      [selected-stand]
@@ -88,7 +89,9 @@
                     "Go"))
              (d/button
               {:class "edit-stand-btn"
-               :onClick #(dispatch [:open-edit-form stand])
+               :onClick #(do
+                           (set-editing-stand stand)
+                           (set-show-form true))
                :title "Edit this stand"}
               "Edit")
              (d/button

@@ -21,19 +21,17 @@
 (def app-context (create-context))
 
 (defn use-app []
-  (let [{:keys [state dispatch user-location]} (hooks/use-context app-context)]
+  (let [{:keys [state dispatch user-location ui]} (hooks/use-context app-context)]
     {:state state
      :dispatch dispatch
-     :user-location user-location}))
+     :user-location user-location
+     :ui ui}))
 
 (def initial-app-state
   {:stands (or (storage/get-item "roadside-stands") [])
-   :show-form false
-   :editing-stand nil
    :product-filter nil
    :selected-stand nil
    :map-center (or (storage/get-item "roadside-map-center") map-home)
-   :show-settings-dialog false
    :settings (or (storage/get-item "roadside-settings") {})
    :is-synced false
    :notification nil})
@@ -51,13 +49,6 @@
                                     (payload (:stands state))
                                     payload)]
                          (if (coll? data) (vec data) [])))
-    :open-add-form (assoc state
-                          :show-form true
-                          :editing-stand nil)
-    :open-edit-form (assoc state
-                           :show-form true
-                           :editing-stand payload)
-    :close-form (assoc state :show-form false :editing-stand nil)
     :remove-stand (update state :stands (fn [stands]
                                           (filterv #(not= % payload) stands)))
     ;; Explicit handlers
@@ -65,7 +56,6 @@
     :set-is-synced (set-value state :is-synced payload)
     :set-selected-stand (set-value state :selected-stand payload)
     :set-product-filter (set-value state :product-filter payload)
-    :set-show-settings-dialog (set-value state :show-settings-dialog payload)
     :set-settings (set-value state :settings payload)
     :set-map-center (set-value state :map-center payload)
     state))
