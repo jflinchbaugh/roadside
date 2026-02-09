@@ -10,7 +10,7 @@
             [com.hjsoft.roadside.website.ui.hooks :refer [use-escape-key]]
             [clojure.string :as str]))
 
-(def add-zoom-level 16)
+(def add-zoom-level 14)
 
 (defnc form-field
   [{:keys [label type value on-change on-blur rows
@@ -71,7 +71,7 @@
          :center (or
                   (utils/parse-coordinates (:coordinate stand-form-data))
                   state/map-home)
-         :zoom-level 16
+         :zoom-level add-zoom-level
          :stands stands
          :show-crosshairs true
          :auto-pan? false
