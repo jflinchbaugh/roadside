@@ -200,6 +200,8 @@
                        (do
                          (dispatch [:set-stands stands])
                          (dispatch [:set-selected-stand processed-data])
+                         (when-let [coords (utils/parse-coordinates (:coordinate processed-data))]
+                           (dispatch [:set-map-center coords]))
                          (dispatch [:close-form]))
                        (dispatch [:set-notification {:type :error :message error}]))))}
       (d/div
