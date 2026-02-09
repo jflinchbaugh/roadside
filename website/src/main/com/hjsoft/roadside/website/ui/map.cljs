@@ -37,57 +37,25 @@
     (.addTo tl m)
     m))
 
-(defn use-leaflet-map
-  [{:keys [div-id center stands selected-stand zoom-level
-           set-coordinate-form-data map-ref auto-pan?]
-    :or {auto-pan? true}}]
-  (let [{:keys [state dispatch user-location]} (state/use-app)
-        {:keys [location is-locating]} user-location
-        stands (or stands (:stands state))
-        selected-stand (or selected-stand (:selected-stand state))
-        center (or center (:map-center state))
-        [stand-map set-stand-map] (hooks/use-state nil)
-        layer-group-ref (hooks/use-ref nil)
-        current-location-marker-ref (hooks/use-ref nil)]
+(defn- use-map-center
+  [stand-map center zoom-level]
+  (hooks/use-effect
+   [(first center) (second center) stand-map]
+   (when (and stand-map center)
+     (let [current-center (.getCenter ^js stand-map)
+           new-lat (first center)
+           new-lng (second center)]
+       (when (or (not= (.toFixed (.-lat current-center) 6) (.toFixed new-lat 6))
+                 (not= (.toFixed (.-lng current-center) 6) (.toFixed new-lng 6)))
+         (.setView
+          ^js stand-map
+          (clj->js center)
+          (.getZoom ^js stand-map)
+          (clj->js {:animate false})))))))
 
-    ;; Initialization
-    (hooks/use-effect
-     :once
-     (let [m (init-map div-id center zoom-level)]
-       (when set-coordinate-form-data
-         (.on
-          m
-          "moveend"
-          (fn []
-            (let [center (.getCenter m)]
-              (set-coordinate-form-data
-               (str (.-lat center) ", " (.-lng center)))))))
-       (when map-ref
-         (reset! map-ref m))
-       (set-stand-map m)
-       ;; Ensure map is correctly sized after modal animation/render
-       (js/setTimeout
-        (fn []
-          (.invalidateSize m)
-          (.setView m (clj->js center) zoom-level))
-        100)))
-
-    ;; Sync Center
-    (hooks/use-effect
-     [(first center) (second center) stand-map]
-     (when (and stand-map center)
-       (let [current-center (.getCenter ^js stand-map)
-             new-lat (first center)
-             new-lng (second center)]
-         (when (or (not= (.toFixed (.-lat current-center) 6) (.toFixed new-lat 6))
-                   (not= (.toFixed (.-lng current-center) 6) (.toFixed new-lng 6)))
-           (.setView
-            ^js stand-map
-            (clj->js center)
-            (.getZoom ^js stand-map)
-            (clj->js {:animate false}))))))
-
-    ;; Sync Stands & Selection
+(defn- use-map-markers
+  [stand-map stands selected-stand auto-pan? dispatch]
+  (let [layer-group-ref (hooks/use-ref nil)]
     (hooks/use-effect
      [stands selected-stand stand-map auto-pan?]
      (when stand-map
@@ -119,11 +87,13 @@
                (= (utils/stand-key selected-stand) (utils/stand-key s))))
             first
             second
-            (#(.openPopup ^js %)))))))
+            (#(.openPopup ^js %)))))))))
 
-    ;; Sync Current Location
+(defn- use-user-location-marker
+  [stand-map location]
+  (let [current-location-marker-ref (hooks/use-ref nil)]
     (hooks/use-effect
-     [location is-locating stand-map]
+     [location stand-map]
      (when stand-map
        (when @current-location-marker-ref
          (.removeLayer ^js stand-map @current-location-marker-ref))
@@ -132,10 +102,47 @@
            (.addTo ^js marker stand-map)
            (reset! current-location-marker-ref marker)))))))
 
+(defn use-leaflet-map
+  [{:keys [div-id center stands selected-stand zoom-level
+           set-coordinate-form-data map-ref auto-pan?]
+    :or {auto-pan? true}}]
+  (let [app-state (state/use-app-state)
+        dispatch (state/use-dispatch)
+        {:keys [location]} (state/use-user-location-state)
+        stands (or stands (:stands app-state))
+        selected-stand (or selected-stand (:selected-stand app-state))
+        center (or center (:map-center app-state))
+        [stand-map set-stand-map] (hooks/use-state nil)]
+
+    ;; Initialization
+    (hooks/use-effect
+     :once
+     (let [m (init-map div-id center zoom-level)]
+       (when set-coordinate-form-data
+         (.on
+          m
+          "moveend"
+          (fn []
+            (let [center (.getCenter m)]
+              (set-coordinate-form-data
+               (str (.-lat center) ", " (.-lng center)))))))
+       (when map-ref
+         (reset! map-ref m))
+       (set-stand-map m)
+       ;; Ensure map is correctly sized after modal animation/render
+       (js/setTimeout
+        (fn []
+          (.invalidateSize m)
+          (.setView m (clj->js center) zoom-level))
+        100)))
+
+    (use-map-center stand-map center zoom-level)
+    (use-map-markers stand-map stands selected-stand auto-pan? dispatch)
+    (use-user-location-marker stand-map location)))
+
 (defnc leaflet-map
   [{:keys [div-id show-crosshairs] :as props}]
-  (let [{:keys [user-location]} (state/use-app)
-        {:keys [is-locating cancel-location]} user-location]
+  (let [{:keys [is-locating cancel-location]} (state/use-user-location-state)]
     (use-leaflet-map props)
     (d/div {:id div-id
             :class "map-wrapper"}
