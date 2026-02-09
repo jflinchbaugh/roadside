@@ -16,7 +16,7 @@
      marker
      popup-content
      (clj->js {"autoPan" auto-pan?
-               "autoPanPadding" (L/point 10 10)}))
+               "autoPanPadding" (L/point 100 100)}))
     (.on marker "click" #(set-selected-stand stand))
     [stand marker]))
 
