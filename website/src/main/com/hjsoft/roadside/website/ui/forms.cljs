@@ -7,8 +7,7 @@
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.version :as version]
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
-            [com.hjsoft.roadside.website.ui.hooks :refer [use-escape-key]]
-            [clojure.string :as str]))
+            [com.hjsoft.roadside.website.ui.hooks :refer [use-escape-key]]))
 
 (def add-zoom-level 14)
 

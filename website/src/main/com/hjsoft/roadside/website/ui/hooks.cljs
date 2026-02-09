@@ -1,7 +1,6 @@
 (ns com.hjsoft.roadside.website.ui.hooks
   (:require [helix.hooks :as hooks]
-            [taoensso.telemere :as tel]
-            [com.hjsoft.roadside.website.utils :as utils]))
+            [taoensso.telemere :as tel]))
 
 (defn use-escape-key [on-escape]
   (hooks/use-effect

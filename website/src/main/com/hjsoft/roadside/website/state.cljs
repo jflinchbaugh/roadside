@@ -1,7 +1,5 @@
 (ns com.hjsoft.roadside.website.state
   (:require [com.hjsoft.roadside.website.storage :as storage]
-            [com.hjsoft.roadside.website.utils :as utils]
-            [clojure.string :as str]
             [helix.core :refer [create-context]]
             [helix.hooks :as hooks]))
 

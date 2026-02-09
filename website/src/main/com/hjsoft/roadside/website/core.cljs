@@ -3,18 +3,17 @@
             [helix.core :refer [defnc $ <>]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
-            [taoensso.telemere :as tel]
-            [com.hjsoft.roadside.website.api :as api]
-            [com.hjsoft.roadside.website.storage :as storage]
             [com.hjsoft.roadside.website.utils :as utils]
             [com.hjsoft.roadside.website.state :as state]
             [com.hjsoft.roadside.website.sync :as sync]
             [com.hjsoft.roadside.website.ui.hooks :refer [use-user-location]]
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
-            [com.hjsoft.roadside.website.ui.stands :refer [stands-list product-list]]
-            [com.hjsoft.roadside.website.ui.forms :refer [stand-form settings-dialog]]
-            [com.hjsoft.roadside.website.ui.layout :refer [header fixed-header notification-toast]]
-            [cljs.core.async :refer [go <!]]))
+            [com.hjsoft.roadside.website.ui.stands
+             :refer [stands-list product-list]]
+            [com.hjsoft.roadside.website.ui.forms
+             :refer [stand-form settings-dialog]]
+            [com.hjsoft.roadside.website.ui.layout
+             :refer [header fixed-header notification-toast]]))
 
 (def initial-zoom-level 11)
 
@@ -51,7 +50,7 @@
   (let [[app-state dispatch] (hooks/use-reducer
                               state/app-reducer
                               state/initial-app-state)
-        {:keys [stands map-center]} app-state
+        {:keys [stands]} app-state
 
         [show-form set-show-form] (hooks/use-state false)
         [editing-stand set-editing-stand] (hooks/use-state nil)

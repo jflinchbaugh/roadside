@@ -1,6 +1,5 @@
 (ns com.hjsoft.roadside.website.ui.map
-  (:require [clojure.string :as str]
-            [helix.core :refer [defnc]]
+  (:require [helix.core :refer [defnc]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
             ["leaflet" :as L]
@@ -38,7 +37,7 @@
     m))
 
 (defn- use-map-center
-  [stand-map center zoom-level]
+  [stand-map center]
   (hooks/use-effect
    [(first center) (second center) stand-map]
    (when (and stand-map center)
@@ -136,7 +135,7 @@
           (.setView m (clj->js center) zoom-level))
         100)))
 
-    (use-map-center stand-map center zoom-level)
+    (use-map-center stand-map center)
     (use-map-markers stand-map stands selected-stand auto-pan? dispatch)
     (use-user-location-marker stand-map location)))
 

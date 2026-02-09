@@ -3,8 +3,7 @@
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.roadside.website.ui.layout :as layout]
-            [com.hjsoft.roadside.website.state :as state]
-            [clojure.string :as str]))
+            [com.hjsoft.roadside.website.state :as state]))
 
 ;; Automatically unmount components after each test
 (use-fixtures :each
@@ -19,8 +18,7 @@
                   {:value {:state {:notification nil}
                            :dispatch (fn [_])}}
                   ($ layout/notification-toast)))
-          container (.-container res)
-          toast (.querySelector container ".notification-toast")]
+          container (.-container res)]
       (is (= "" (.-textContent container)))))
 
   (testing "renders notification message when present"
