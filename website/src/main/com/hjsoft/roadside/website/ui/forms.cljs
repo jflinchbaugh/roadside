@@ -7,6 +7,7 @@
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.version :as version]
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
+            [com.hjsoft.roadside.website.ui.hooks :refer [use-escape-key]]
             [clojure.string :as str]))
 
 (def add-zoom-level 16)
@@ -175,14 +176,7 @@
      (when-let [el @coordinate-input-ref]
        (.focus el)))
 
-    (hooks/use-effect
-     :once
-     (let [handle-keydown (fn [e]
-                            (when (= (.-key e) "Escape")
-                              (set-show-form false)))]
-       (.addEventListener js/document "keydown" handle-keydown)
-       (fn []
-         (.removeEventListener js/document "keydown" handle-keydown))))
+    (use-escape-key #(set-show-form false))
 
     (d/div
      {:class "form-overlay"
@@ -286,14 +280,7 @@
                                     settings
                                     {:resource "" :user "" :password ""}))]
 
-    (hooks/use-effect
-     :once
-     (let [handle-keydown (fn [e]
-                            (when (= (.-key e) "Escape")
-                              (set-show-settings-dialog false)))]
-       (.addEventListener js/document "keydown" handle-keydown)
-       (fn []
-         (.removeEventListener js/document "keydown" handle-keydown))))
+    (use-escape-key #(set-show-settings-dialog false))
 
     (d/div
      {:class "settings-overlay"

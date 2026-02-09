@@ -3,6 +3,16 @@
             [taoensso.telemere :as tel]
             [com.hjsoft.roadside.website.utils :as utils]))
 
+(defn use-escape-key [on-escape]
+  (hooks/use-effect
+   :once
+   (let [handle-keydown (fn [e]
+                          (when (= (.-key e) "Escape")
+                            (on-escape)))]
+     (.addEventListener js/document "keydown" handle-keydown)
+     (fn []
+       (.removeEventListener js/document "keydown" handle-keydown)))))
+
 (defn use-user-location []
   (let [[location set-location] (hooks/use-state nil)
         [error set-error] (hooks/use-state nil)
