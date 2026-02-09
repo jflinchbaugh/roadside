@@ -5,8 +5,6 @@
 ;; during namespace loading of other files.
 (global-jsdom)
 
-(set! js/global.IS_REACT_ACT_ENVIRONMENT true)
-
 ;; Mock localStorage if it's not provided by the environment
 (when (cljs.core/undefined? js/localStorage)
   (set! js/localStorage #js {:getItem (fn [_] nil)
