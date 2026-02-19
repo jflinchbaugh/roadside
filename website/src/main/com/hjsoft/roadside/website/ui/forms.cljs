@@ -13,7 +13,7 @@
 
 (defnc form-field
   [{:keys [label type value on-change on-blur rows
-           checked id class-name input-ref placeholder]
+           checked id class-name placeholder]
     :or {type "text"}}]
   (d/div
    {:class "form-group"}
@@ -24,7 +24,6 @@
       {:value value
        :onChange on-change
        :onBlur on-blur
-       :ref input-ref
        :rows (or rows 3)
        :placeholder placeholder})
      (d/input {:id id
@@ -33,7 +32,6 @@
                :type type
                :onChange on-change
                :onBlur on-blur
-               :ref input-ref
                :class class-name
                :placeholder placeholder}))))
 
