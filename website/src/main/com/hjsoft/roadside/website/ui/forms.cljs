@@ -113,7 +113,8 @@
         error)))))
 
 (defnc product-input [{:keys [stand-form-data on-update]}]
-  (let [[current-product set-current-product] (hooks/use-state "")]
+  (let [[current-product set-current-product] (hooks/use-state "")
+        product-input-ref (hooks/use-ref nil)]
     (d/div
      {:class "product-section-wrapper"}
      (d/div
@@ -136,6 +137,7 @@
        {:class "product-input-group"}
        (d/input
         {:type "text"
+         :ref product-input-ref
          :value current-product
          :placeholder "Add a product and press Enter"
          :onChange #(set-current-product (.. % -target -value))
@@ -152,7 +154,8 @@
          :onClick (fn []
                     (when (not= current-product "")
                       (on-update [:add-product current-product]))
-                    (set-current-product ""))}
+                    (set-current-product "")
+                    (when-let [el @product-input-ref] (.focus el)))}
         "Add"))))))
 
 (defnc stand-form []
