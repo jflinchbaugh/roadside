@@ -18,6 +18,7 @@
         cmds (b/java-command
               {:basis basis
                :main "clojure.main"
+               :jvm-opts ["--enable-preview"]
                :main-args (into ["-m" "cognitect.test-runner" "-d" "test"]
                             (mapcat (fn [[k v]] [(str k) (str v)]) opts))})]
     (b/process cmds)))
