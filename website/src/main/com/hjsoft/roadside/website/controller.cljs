@@ -1,4 +1,4 @@
-(ns com.hjsoft.roadside.website.sync
+(ns com.hjsoft.roadside.website.controller
   (:require [com.hjsoft.roadside.website.api :as api]
             [com.hjsoft.roadside.website.storage :as storage]
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]

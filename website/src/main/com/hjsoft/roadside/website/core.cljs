@@ -5,7 +5,7 @@
             [helix.dom :as d]
             [com.hjsoft.roadside.website.utils :as utils]
             [com.hjsoft.roadside.website.state :as state]
-            [com.hjsoft.roadside.website.sync :as sync]
+            [com.hjsoft.roadside.website.controller :as controller]
             [com.hjsoft.roadside.website.ui.hooks :refer [use-user-location]]
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
             [com.hjsoft.roadside.website.ui.stands
@@ -25,7 +25,7 @@
     ;; Local persistence
     (hooks/use-effect
      [stands settings map-center]
-     (sync/save-local-data! stands settings map-center))
+     (controller/save-local-data! stands settings map-center))
 
     ;; Location sync to map center
     (hooks/use-effect
@@ -36,7 +36,7 @@
     ;; Fetch from Remote API on settings change
     (hooks/use-effect
      [settings]
-     (sync/fetch-remote-stands! app-state dispatch))
+     (controller/fetch-remote-stands! app-state dispatch))
 
     ;; Initial location fetch
     (hooks/use-effect :once (get-location))))

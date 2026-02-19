@@ -8,7 +8,7 @@
             [com.hjsoft.roadside.website.version :as version]
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
             [com.hjsoft.roadside.website.ui.hooks :refer [use-escape-key]]
-            [com.hjsoft.roadside.website.sync :as sync]))
+            [com.hjsoft.roadside.website.controller :as controller]))
 
 (def add-zoom-level 14)
 
@@ -183,8 +183,8 @@
        :onSubmit (fn [e]
                    (.preventDefault e)
                    (let [success? (if editing-stand
-                                    (sync/update-stand! app-state dispatch stand-form-data editing-stand)
-                                    (sync/create-stand! app-state dispatch stand-form-data))]
+                                    (controller/update-stand! app-state dispatch stand-form-data editing-stand)
+                                    (controller/create-stand! app-state dispatch stand-form-data))]
                      (when success?
                        (set-show-form false))))}
       (d/div
