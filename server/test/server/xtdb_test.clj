@@ -1,24 +1,15 @@
 (ns server.xtdb-test
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [xtdb.api :as xt]
-            [clj-test-containers.core :as tc]))
-
-(def xtdb-container
-  (tc/create {:image-name "ghcr.io/xtdb/xtdb:2.1.0"
-              :exposed-ports [5432]
-              :wait-for {:strategy :log
-                         :message "XTDB started"}}))
+            [server.xtdb-container :as xtn]))
 
 (def ^:dynamic *node* nil)
 
 (defn with-xtdb-container [f]
-  (let [started-container (tc/start! xtdb-container)
-        port (get (:mapped-ports started-container) 5432)
-        host (:host started-container)
-        node (xt/client {:host host :port port})]
-    (binding [*node* node]
-      (f))
-    (tc/stop! started-container)))
+  (xtn/with-xtdb-client
+    (fn [n]
+      (binding [*node* n]
+        (f)))))
 
 (use-fixtures :once with-xtdb-container)
 

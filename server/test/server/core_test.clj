@@ -2,25 +2,16 @@
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [server.core :as core]
             [xtdb.api :as xt]
-            [clj-test-containers.core :as tc]
+            [server.xtdb-container :as xtn]
             [clojure.data.json :as json])
   (:import [java.io ByteArrayInputStream]))
 
-(def xtdb-container
-  (tc/create {:image-name "ghcr.io/xtdb/xtdb:2.1.0"
-              :exposed-ports [5432]
-              :wait-for {:strategy :log
-                         :message "XTDB started"}}))
-
 (defn with-xtdb-container [f]
-  (let [started-container (tc/start! xtdb-container)
-        port (get (:mapped-ports started-container) 5432)
-        host (:host started-container)
-        n (xt/client {:host host :port port})]
-    (reset! core/node n)
-    (f)
-    (reset! core/node nil)
-    (tc/stop! started-container)))
+  (xtn/with-xtdb-client
+    (fn [n]
+      (reset! core/node n)
+      (f)
+      (reset! core/node nil))))
 
 (use-fixtures :once with-xtdb-container)
 
