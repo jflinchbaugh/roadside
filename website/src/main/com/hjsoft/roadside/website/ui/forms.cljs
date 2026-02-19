@@ -49,16 +49,21 @@
 
 (defnc location-input
   [{:keys
-    [coordinate-input-ref
-     location-btn-ref
-     stand-form-data
+    [stand-form-data
      on-update
      original-coordinate]}]
   (let [{:keys [stands]} (state/use-app-state)
         {:keys [get-location error]} (state/use-user-location-state)
         [coordinate-display set-coordinate-display] (hooks/use-state
                                                      (:coordinate stand-form-data))
-        map-ref (hooks/use-ref nil)]
+        map-ref (hooks/use-ref nil)
+        coordinate-input-ref (hooks/use-ref nil)]
+
+    (hooks/use-effect
+     :once
+     (when-let [el @coordinate-input-ref]
+       (.focus el)))
+
     (hooks/use-effect
      [(:coordinate stand-form-data)]
      (set-coordinate-display (:coordinate stand-form-data)))
@@ -97,7 +102,6 @@
       (d/button
        {:type "button"
         :class "location-btn"
-        :ref location-btn-ref
         :onClick (fn []
                    (get-location
                     (fn [[lat lng]]
@@ -166,14 +170,7 @@
                                                      :expiration (utils/in-a-week))))
         [show-address? set-show-address?] (hooks/use-state (or (seq (:address stand-form-data))
                                                                (seq (:town stand-form-data))
-                                                               (seq (:state stand-form-data))))
-        coordinate-input-ref (hooks/use-ref nil)
-        location-btn-ref (hooks/use-ref nil)]
-
-    (hooks/use-effect
-     :once
-     (when-let [el @coordinate-input-ref]
-       (.focus el)))
+                                                               (seq (:state stand-form-data))))]
 
     (use-escape-key #(set-show-form false))
 
@@ -215,9 +212,7 @@
       (d/div
        {:class "form-content-wrapper"}
        ($ location-input
-          {:coordinate-input-ref coordinate-input-ref
-           :location-btn-ref location-btn-ref
-           :stand-form-data stand-form-data
+          {:stand-form-data stand-form-data
            :on-update local-dispatch
            :original-coordinate (:coordinate editing-stand)})
        ($ product-input
