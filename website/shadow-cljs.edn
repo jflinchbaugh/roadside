@@ -9,8 +9,7 @@
                 [cljs-http "0.1.49"]]
  :dev-http {3000 {:root "public"
                   :handler shadow.http.push-state/handle
-                  :proxy-url "http://localhost:8000/roadside/stands"
-                  :proxy-path "/api/stands"}}
+                  :proxy-url "http://localhost:8000/"}}
  :builds
  {
   :frontend
