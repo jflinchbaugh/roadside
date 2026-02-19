@@ -103,7 +103,7 @@
 
 (defn use-leaflet-map
   [{:keys [div-id center stands selected-stand zoom-level
-           set-coordinate-form-data map-ref auto-pan?]
+           set-coordinate-form-data auto-pan?]
     :or {auto-pan? true}}]
   (let [app-state (state/use-app-state)
         dispatch (state/use-dispatch)
@@ -125,8 +125,6 @@
             (let [center (.getCenter m)]
               (set-coordinate-form-data
                (str (.-lat center) ", " (.-lng center)))))))
-       (when map-ref
-         (reset! map-ref m))
        (set-stand-map m)
        ;; Ensure map is correctly sized after modal animation/render
        (js/setTimeout

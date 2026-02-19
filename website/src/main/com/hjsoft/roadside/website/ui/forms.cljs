@@ -1,4 +1,4 @@
-(ns com.hjsoft.roadside.website.ui.forms
+(reens com.hjsoft.roadside.website.ui.forms
   (:require [helix.core :refer [defnc $]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
@@ -56,7 +56,6 @@
         {:keys [get-location error]} (state/use-user-location-state)
         [coordinate-display set-coordinate-display] (hooks/use-state
                                                      (:coordinate stand-form-data))
-        map-ref (hooks/use-ref nil)
         coordinate-input-ref (hooks/use-ref nil)]
 
     (hooks/use-effect
@@ -80,8 +79,7 @@
          :show-crosshairs true
          :auto-pan? false
          :set-coordinate-form-data (fn [coord-str]
-                                     (on-update [:update-field [:coordinate coord-str]]))
-         :map-ref map-ref})
+                                     (on-update [:update-field [:coordinate coord-str]]))})
      (d/label "Coordinate:")
      (d/div
       {:class "coordinate-input-group"}
