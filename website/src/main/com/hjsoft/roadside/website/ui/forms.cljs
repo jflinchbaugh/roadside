@@ -1,5 +1,6 @@
 (ns com.hjsoft.roadside.website.ui.forms
-  (:require [helix.core :refer [defnc $]]
+  (:require [clojure.string :as str]
+            [helix.core :refer [defnc $]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
             [com.hjsoft.roadside.website.utils :as utils]
@@ -39,11 +40,18 @@
 (defn- stand-form-reducer [state [action-type payload]]
   (case action-type
     :update-field (assoc state (first payload) (second payload))
-    :add-product (if (some #(= % payload) (:products state))
-                   state
-                   (update state :products #(conj (or % []) payload)))
-    :remove-product (update state :products (fn [products]
-                                              (filterv #(not= % payload) products)))
+    :add-product (let [product (str/trim payload)]
+                   (if (some #(= % product) (:products state))
+                     state
+                     (update
+                      state
+                      :products
+                      #(conj (or % []) product))))
+    :remove-product (update
+                     state
+                     :products
+                     (fn [products]
+                       (filterv #(not= % payload) products)))
     state))
 
 (defnc location-input
@@ -167,20 +175,19 @@
                           stand-form-reducer
                           (or editing-stand
                               (assoc state/default-stand-form-data
-                                     :coordinate (str
-                                                  (first
-                                                   (:map-center app-state))
-                                                  ", "
-                                                  (second
-                                                   (:map-center app-state)))
+                                     :coordinate
+                                     (str
+                                      (first
+                                       (:map-center app-state))
+                                      ", "
+                                      (second
+                                       (:map-center app-state)))
                                      :expiration (utils/in-a-week))))
         [show-address?
-         set-show-address?] (hooks/use-state (or (seq (:address
-                                                       stand-form-data))
-                                                 (seq (:town
-                                                       stand-form-data))
-                                                 (seq (:state
-                                                       stand-form-data))))]
+         set-show-address?] (hooks/use-state
+                             (or (seq (:address stand-form-data))
+                                 (seq (:town stand-form-data))
+                                 (seq (:state stand-form-data))))]
 
     (ui-hooks/use-escape-key #(cancel-form!))
 
