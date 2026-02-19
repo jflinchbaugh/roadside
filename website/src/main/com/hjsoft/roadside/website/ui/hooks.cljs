@@ -9,10 +9,12 @@
         dispatch (state/use-dispatch)
         {:keys [set-show-form set-editing-stand]} (state/use-ui)]
     {:create-stand! (fn [form-data]
-                      (when (controller/create-stand! app-state dispatch form-data)
+                      (when (controller/create-stand!
+                             app-state dispatch form-data)
                         (set-show-form false)))
      :update-stand! (fn [form-data editing-stand]
-                      (when (controller/update-stand! app-state dispatch form-data editing-stand)
+                      (when (controller/update-stand!
+                             app-state dispatch form-data editing-stand)
                         (set-show-form false)))
      :delete-stand! (fn [stand]
                       (controller/delete-stand! app-state dispatch stand))
@@ -72,7 +74,8 @@
                               (reset! locating-ref false)
                               (set-is-locating false)
                               (set-error "Geolocation not supported.")
-                              (when (fn? on-error) (on-error "Geolocation not supported.")))))))
+                              (when (fn? on-error)
+                                (on-error "Geolocation not supported.")))))))
         cancel-location (hooks/use-callback
                          :once
                          (fn []
