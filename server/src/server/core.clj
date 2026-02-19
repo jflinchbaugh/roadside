@@ -7,8 +7,12 @@
             [ring.util.request :as rur]
             [buddy.auth.middleware :as buddy]
             [buddy.auth.backends :as backends]
+            [clojure.data.json :as json]
+            [tick.core :as t]
             [xtdb.api :as xt]
             [taoensso.telemere :as tel]))
+
+(defonce node (atom nil))
 
 (def ^:const realm "roadside")
 
@@ -17,21 +21,21 @@
 (defn api-response
   [code document]
   {:status code
-   :headers {"Content-Type" "text/plain"}
-   :body document})
+   :headers {"Content-Type" "application/json"}
+   :body (json/write-str document)})
 
 (defn not-found
   [& _]
   (api-response
    404
-   "Not Found"))
+   {:error "Not Found"}))
 
 (defn unauthorized
   [& _]
   {:status 401
-   :headers {"Content-Type" "text/plain"
+   :headers {"Content-Type" "application/json"
              "WWW-Authenticate" (format "Basic realm=%s" realm)}
-   :body "Unauthorized"})
+   :body (json/write-str {:error "Unauthorized"})})
 
 (defn ping-handler
   [_]
@@ -39,60 +43,57 @@
 
 (defn register-handler
   [req]
-  (let [id (get-in req [:params :id])
+  (let [id (or (get-in req [:params :id]) (str (java.util.UUID/randomUUID)))
         login (get-in req [:params :login])
         password (get-in req [:params :password])
-        resource (format "%s/api/document/%s" base-url id)]
-    ;; do stuff
-    ))
+        user {:xt/id id
+              :login login
+              :password password
+              :updated (str (t/now))}]
+    (xt/submit-tx @node [[:put-docs :users user]])
+    (.await_token @node)
+    (api-response 201 {:login login})))
 
 (defn get-stands-handler
-  [req]
-  (if-not (:identity req)
-    (not-found)
-    (let [stand (identity req)]
-      (api-response
-        200
-        stand))))
+  [_req]
+  (let [stands (vec (xt/q @node '(from :stands [*])))]
+    (api-response 200 stands)))
 
 (defn get-stand-handler
   [req]
-  (if-not (:identity req)
-    (not-found)
-    (let [stand (identity req)]
-      (api-response
-        200
-        stand))))
+  (let [id (get-in req [:path-params :id])
+        stand (first (xt/q @node (list '-> '(from :stands [*]) (list 'where (list '= 'xt/id id)))))]
+    (if stand
+      (api-response 200 stand)
+      (not-found))))
 
 (defn create-stand-handler
   [req]
-  (if-not (:identity req)
-    (not-found)
-    (let [request-body (rur/body-string req)
-          id (identity req)]
-      (api-response
-        200
-        request-body))))
+  (let [stand (json/read-str (rur/body-string req) :key-fn keyword)
+        stand (assoc stand :xt/id (or (:id stand) (:xt/id stand) (str (java.util.UUID/randomUUID)))
+                           :updated (str (t/now))
+                           :creator (:identity req))
+        stand (dissoc stand :id)]
+    (xt/submit-tx @node [[:put-docs :stands stand]])
+    (.await_token @node)
+    (api-response 201 stand)))
 
 (defn update-stand-handler
   [req]
-  (let [id nil
-        login (:identity req)]
-    (if-not true
-      (not-found)
-      (do
-        ;; update
-        (api-response 200 (format "'%s' deleted" id))))))
+  (let [id (get-in req [:path-params :id])
+        stand (json/read-str (rur/body-string req) :key-fn keyword)
+        stand (assoc stand :xt/id id :updated (str (t/now)))
+        stand (dissoc stand :id)]
+    (xt/submit-tx @node [[:put-docs :stands stand]])
+    (.await_token @node)
+    (api-response 200 stand)))
 
 (defn delete-stand-handler
   [req]
-  (let [id nil
-        login (:identity req)]
-    (if-not true
-      (not-found)
-      (do
-        ;; delete
-        (api-response 200 (format "'%s' deleted" id))))))
+  (let [id (get-in req [:path-params :id])]
+    (xt/submit-tx @node [[:delete-docs :stands id]])
+    (.await_token @node)
+    (api-response 200 {:message (format "'%s' deleted" id)})))
 
 (defn identity-required-wrapper
   [handler]
@@ -103,10 +104,13 @@
 
 (defn my-authfn
   [req authdata]
-  (let [login (:username authdata)
-        password (:password authdata)]
-    (when (= [login password] [login password])
-      login)))
+  (let [l (:username authdata)
+        p (:password authdata)
+        user (first (xt/q @node (list '-> '(from :users [login password])
+                                      (list 'where (list '= 'login l))
+                                      (list 'where (list '= 'password p)))))]
+    (when user
+      (:login user))))
 
 (def backend (backends/basic {:realm realm :authfn my-authfn}))
 
@@ -146,13 +150,16 @@
   []
   (when-not (nil? @server)
     (@server :timeout 100)
-    (reset! server nil)))
+    (reset! server nil))
+  (when-not (nil? @node)
+    (.close @node)
+    (reset! node nil)))
 
 (defn start-server!
   [port db-host]
   (if (nil? @server)
     (do
-      #_(connect-db db-host)
+      (reset! node (xt/client {:host db-host}))
       (reset! server (hks/run-server #'app {:port port}))
       (tel/log! :info "Server started."))
     "server already running"))
