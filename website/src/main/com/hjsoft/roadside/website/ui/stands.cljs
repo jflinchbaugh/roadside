@@ -5,7 +5,7 @@
             [com.hjsoft.roadside.website.utils :as utils]
             [com.hjsoft.roadside.website.state :as state]
             [clojure.string :as str]
-            [com.hjsoft.roadside.website.controller :as controller]))
+            [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]))
 
 (defnc stand-item
   [{:keys [stand selected? on-click on-edit on-delete item-ref]}]
@@ -89,6 +89,7 @@
         selected-stand (:selected-stand app-state)
         dispatch (state/use-dispatch)
         {:keys [set-editing-stand set-show-form]} (state/use-ui)
+        {:keys [delete-stand!]} (ui-hooks/use-actions)
         stand-refs (hooks/use-ref {})]
     (hooks/use-effect
      [selected-stand]
@@ -114,7 +115,7 @@
                  :on-edit #(do
                              (set-editing-stand %)
                              (set-show-form true))
-                 :on-delete #(controller/delete-stand! app-state dispatch %)
+                 :on-delete #(delete-stand! %)
                  :item-ref (fn [el] (swap! stand-refs assoc key el))})))
          stands))))))
 

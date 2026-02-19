@@ -7,7 +7,7 @@
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.version :as version]
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
-            [com.hjsoft.roadside.website.ui.hooks :refer [use-escape-key]]
+            [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]
             [com.hjsoft.roadside.website.controller :as controller]))
 
 (def add-zoom-level 14)
@@ -158,7 +158,8 @@
 (defnc stand-form []
   (let [app-state (state/use-app-state)
         dispatch (state/use-dispatch)
-        {:keys [editing-stand set-show-form]} (state/use-ui)
+        {:keys [editing-stand]} (state/use-ui)
+        {:keys [create-stand! update-stand! cancel-form!]} (ui-hooks/use-actions)
         [stand-form-data local-dispatch] (hooks/use-reducer
                                           stand-form-reducer
                                           (or editing-stand
@@ -172,21 +173,19 @@
                                                                (seq (:town stand-form-data))
                                                                (seq (:state stand-form-data))))]
 
-    (use-escape-key #(set-show-form false))
+    (ui-hooks/use-escape-key #(cancel-form!))
 
     (d/div
      {:class "form-overlay"
-      :onClick #(set-show-form false)}
+      :onClick #(cancel-form!)}
      (d/form
       {:class "form-container"
        :onClick #(.stopPropagation %)
        :onSubmit (fn [e]
                    (.preventDefault e)
-                   (let [success? (if editing-stand
-                                    (controller/update-stand! app-state dispatch stand-form-data editing-stand)
-                                    (controller/create-stand! app-state dispatch stand-form-data))]
-                     (when success?
-                       (set-show-form false))))}
+                   (if editing-stand
+                     (update-stand! stand-form-data editing-stand)
+                     (create-stand! stand-form-data)))}
       (d/div
        {:class "form-header-actions"}
        (d/h3 (if editing-stand "Edit Stand" "Add New Stand"))
@@ -194,7 +193,7 @@
               (d/button
                {:type "button"
                 :class "button icon-button"
-                :onClick #(set-show-form false)
+                :onClick #(cancel-form!)
                 :title "Cancel"}
                "\u2715")
               (d/button
@@ -268,7 +267,7 @@
                                     settings
                                     {:resource "" :user "" :password ""}))]
 
-    (use-escape-key #(set-show-settings-dialog false))
+    (ui-hooks/use-escape-key #(set-show-settings-dialog false))
 
     (d/div
      {:class "settings-overlay"

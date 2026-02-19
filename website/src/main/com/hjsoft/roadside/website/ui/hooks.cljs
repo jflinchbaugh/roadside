@@ -1,6 +1,24 @@
 (ns com.hjsoft.roadside.website.ui.hooks
   (:require [helix.hooks :as hooks]
-            [taoensso.telemere :as tel]))
+            [taoensso.telemere :as tel]
+            [com.hjsoft.roadside.website.state :as state]
+            [com.hjsoft.roadside.website.controller :as controller]))
+
+(defn use-actions []
+  (let [app-state (state/use-app-state)
+        dispatch (state/use-dispatch)
+        {:keys [set-show-form set-editing-stand]} (state/use-ui)]
+    {:create-stand! (fn [form-data]
+                      (when (controller/create-stand! app-state dispatch form-data)
+                        (set-show-form false)))
+     :update-stand! (fn [form-data editing-stand]
+                      (when (controller/update-stand! app-state dispatch form-data editing-stand)
+                        (set-show-form false)))
+     :delete-stand! (fn [stand]
+                      (controller/delete-stand! app-state dispatch stand))
+     :cancel-form! (fn []
+                     (set-show-form false)
+                     (set-editing-stand nil))}))
 
 (defn use-escape-key [on-escape]
   (hooks/use-effect
