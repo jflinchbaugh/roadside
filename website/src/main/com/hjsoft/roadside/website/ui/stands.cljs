@@ -114,9 +114,7 @@
                  :on-edit #(do
                              (set-editing-stand %)
                              (set-show-form true))
-                 :on-delete #(do
-                               (dispatch [:remove-stand %])
-                               (sync/sync-delete-stand! app-state dispatch (:id %)))
+                 :on-delete #(sync/delete-stand! app-state dispatch %)
                  :item-ref (fn [el] (swap! stand-refs assoc key el))})))
          stands))))))
 

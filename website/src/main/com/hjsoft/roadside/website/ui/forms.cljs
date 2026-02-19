@@ -182,21 +182,11 @@
        :onClick #(.stopPropagation %)
        :onSubmit (fn [e]
                    (.preventDefault e)
-                   (let [{:keys [success stands error processed-data]} (stand-domain/process-stand-form
-                                                                        stand-form-data
-                                                                        (:stands app-state)
-                                                                        editing-stand)]
-                     (if success
-                       (do
-                         (dispatch [:set-stands stands])
-                         (dispatch [:set-selected-stand processed-data])
-                         (when-let [coords (utils/parse-coordinates (:coordinate processed-data))]
-                           (dispatch [:set-map-center coords]))
-                         (if editing-stand
-                           (sync/sync-update-stand! app-state dispatch processed-data)
-                           (sync/sync-create-stand! app-state dispatch processed-data))
-                         (set-show-form false))
-                       (dispatch [:set-notification {:type :error :message error}]))))}
+                   (let [success? (if editing-stand
+                                    (sync/update-stand! app-state dispatch stand-form-data editing-stand)
+                                    (sync/create-stand! app-state dispatch stand-form-data))]
+                     (when success?
+                       (set-show-form false))))}
       (d/div
        {:class "form-header-actions"}
        (d/h3 (if editing-stand "Edit Stand" "Add New Stand"))

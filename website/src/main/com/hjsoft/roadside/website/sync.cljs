@@ -1,6 +1,8 @@
 (ns com.hjsoft.roadside.website.sync
   (:require [com.hjsoft.roadside.website.api :as api]
             [com.hjsoft.roadside.website.storage :as storage]
+            [com.hjsoft.roadside.website.domain.stand :as stand-domain]
+            [com.hjsoft.roadside.website.utils :as utils]
             [taoensso.telemere :as tel]
             [cljs.core.async :refer [go <!]]))
 
@@ -34,7 +36,7 @@
             (tel/log! :error {:msg "Failed to fetch stands" :error error})
             (notify! dispatch :error (str "Sync failed: " error))))))))
 
-(defn sync-create-stand!
+(defn- remote-create-stand!
   [{:keys [settings]} dispatch stand]
   (when (has-credentials? settings)
     (go
@@ -49,7 +51,7 @@
             (tel/log! :error {:msg "Failed to create stand" :error error})
             (notify! dispatch :error (str "Create failed: " error))))))))
 
-(defn sync-update-stand!
+(defn- remote-update-stand!
   [{:keys [settings]} dispatch stand]
   (when (has-credentials? settings)
     (go
@@ -64,7 +66,7 @@
             (tel/log! :error {:msg "Failed to update stand" :error error})
             (notify! dispatch :error (str "Update failed: " error))))))))
 
-(defn sync-delete-stand!
+(defn- remote-delete-stand!
   [{:keys [settings]} dispatch stand-id]
   (when (has-credentials? settings)
     (go
@@ -78,3 +80,43 @@
           (do
             (tel/log! :error {:msg "Failed to delete stand" :error error})
             (notify! dispatch :error (str "Delete failed: " error))))))))
+
+;; Controller Intent Functions
+
+(defn create-stand! [app-state dispatch form-data]
+  (let [{:keys [success stands error processed-data]} (stand-domain/process-stand-form
+                                                       form-data
+                                                       (:stands app-state)
+                                                       nil)]
+    (if success
+      (do
+        (dispatch [:set-stands stands])
+        (dispatch [:set-selected-stand processed-data])
+        (when-let [coords (utils/parse-coordinates (:coordinate processed-data))]
+          (dispatch [:set-map-center coords]))
+        (remote-create-stand! app-state dispatch processed-data)
+        true)
+      (do
+        (notify! dispatch :error error)
+        false))))
+
+(defn update-stand! [app-state dispatch form-data editing-stand]
+  (let [{:keys [success stands error processed-data]} (stand-domain/process-stand-form
+                                                       form-data
+                                                       (:stands app-state)
+                                                       editing-stand)]
+    (if success
+      (do
+        (dispatch [:set-stands stands])
+        (dispatch [:set-selected-stand processed-data])
+        (when-let [coords (utils/parse-coordinates (:coordinate processed-data))]
+          (dispatch [:set-map-center coords]))
+        (remote-update-stand! app-state dispatch processed-data)
+        true)
+      (do
+        (notify! dispatch :error error)
+        false))))
+
+(defn delete-stand! [app-state dispatch stand]
+  (dispatch [:remove-stand stand])
+  (remote-delete-stand! app-state dispatch (:id stand)))
