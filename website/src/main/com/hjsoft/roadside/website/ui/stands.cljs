@@ -56,6 +56,11 @@
        {:class "stand-updated"}
        (d/strong "Last Updated: ")
        (:updated stand)))
+    (when (seq (:creator stand))
+      (d/p
+       {:class "stand-creator"}
+       (d/strong "Created By: ")
+       (:creator stand)))
     (d/p
      {:class "stand-shared"}
      (d/strong "Shared: ")

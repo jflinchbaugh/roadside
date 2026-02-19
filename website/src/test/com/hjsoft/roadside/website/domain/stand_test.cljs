@@ -8,18 +8,21 @@
       (let [result (sut/process-stand-form
                     {:name "Better Apples" :coordinate "3,4" :products []}
                     stands
-                    nil)]
+                    nil
+                    "test-user")]
         (t/is (:success result))
         (t/is (some #(= "apples" %) (:products (:processed-data result)))
               "Automatically added Apples
                because it was in the name and exists
-               in other stands")))
+               in other stands")
+        (t/is (= "test-user" (:creator (:processed-data result))))))
 
     (t/testing "preventing duplicates"
       (let [result (sut/process-stand-form
                     {:id "1" :name "Apple Farm" :coordinate "1,2" :products ["apples"]}
                     stands
-                    nil)]
+                    nil
+                    "test-user")]
         (t/is (not (:success result)))
         (t/is (= "This stand already exists!" (:error result)))))
     (t/testing "editing stand replaces the old one"
@@ -29,7 +32,8 @@
                      :coordinate "3,4"
                      :products ["apples" "oranges"]}
                     stands
-                    (first stands))
+                    (first stands)
+                    "test-user")
             {:keys [success processed-data stands]} result]
         (t/is success)
 
@@ -38,9 +42,9 @@
                   :name "New Apple Farm"
                   :coordinate "3,4"
                   :products ["apples" "oranges"]}
-                 (dissoc processed-data :updated)))
+                 (dissoc processed-data :updated :creator)))
         (t/is (= [{:id "1"
                    :name "New Apple Farm"
                    :coordinate "3,4"
                    :products ["apples" "oranges"]}]
-                 (map (fn [s] (dissoc s :updated)) stands)))))))
+                 (map (fn [s] (dissoc s :updated :creator)) stands)))))))

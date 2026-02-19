@@ -84,10 +84,12 @@
 ;; Controller Intent Functions
 
 (defn create-stand! [app-state dispatch form-data]
-  (let [{:keys [success stands error processed-data]} (stand-domain/process-stand-form
+  (let [creator (get-in app-state [:settings :user])
+        {:keys [success stands error processed-data]} (stand-domain/process-stand-form
                                                        form-data
                                                        (:stands app-state)
-                                                       nil)]
+                                                       nil
+                                                       creator)]
     (if success
       (do
         (dispatch [:set-stands stands])
@@ -101,10 +103,12 @@
         false))))
 
 (defn update-stand! [app-state dispatch form-data editing-stand]
-  (let [{:keys [success stands error processed-data]} (stand-domain/process-stand-form
+  (let [creator (get-in app-state [:settings :user])
+        {:keys [success stands error processed-data]} (stand-domain/process-stand-form
                                                        form-data
                                                        (:stands app-state)
-                                                       editing-stand)]
+                                                       editing-stand
+                                                       creator)]
     (if success
       (do
         (dispatch [:set-stands stands])
