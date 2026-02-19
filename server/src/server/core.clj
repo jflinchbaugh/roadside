@@ -62,7 +62,13 @@
 (defn get-stand-handler
   [req]
   (let [id (get-in req [:path-params :id])
-        stand (first (xt/q @node (list '-> '(from :stands [*]) (list 'where (list '= 'xt/id id)))))]
+        stand (first
+               (xt/q @node
+                     ['(fn [id]
+                         (->
+                          (from :stands [*])
+                          (where (= xt/id id))))
+                      id]))]
     (if stand
       (api-response 200 stand)
       (not-found))))
@@ -71,8 +77,8 @@
   [req]
   (let [stand (json/read-str (rur/body-string req) :key-fn keyword)
         stand (assoc stand :xt/id (or (:id stand) (:xt/id stand) (str (java.util.UUID/randomUUID)))
-                           :updated (str (t/now))
-                           :creator (:identity req))
+                     :updated (str (t/now))
+                     :creator (:identity req))
         stand (dissoc stand :id)]
     (xt/submit-tx @node [[:put-docs :stands stand]])
     (.await_token @node)
@@ -104,11 +110,15 @@
 
 (defn my-authfn
   [req authdata]
-  (let [l (:username authdata)
-        p (:password authdata)
-        user (first (xt/q @node (list '-> '(from :users [login password])
-                                      (list 'where (list '= 'login l))
-                                      (list 'where (list '= 'password p)))))]
+  (let [login (:username authdata)
+        password (:password authdata)
+        user (first
+              (xt/q @node
+                    ['(fn [l p]
+                        (-> (from :users [login password])
+                            (where (= login l))
+                            (where (= password p))))
+                     login password]))]
     (when user
       (:login user))))
 

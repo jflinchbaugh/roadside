@@ -9,5 +9,7 @@
       (is (not (nil? node)))
       (xt/submit-tx node [[:put-docs :users {:xt/id "test-user" :name "Test User"}]])
       (.await_token node)
-      (let [result (xt/q node (list '-> '(from :users [*]) (list 'where '(= xt/id "test-user"))))]
+      (let [result (xt/q node '(->
+                                 (from :users [*])
+                                 (where (= xt/id "test-user"))))]
         (is (= "Test User" (:name (first result))))))))

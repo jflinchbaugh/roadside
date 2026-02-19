@@ -25,7 +25,12 @@
     (let [req {:params {:login "alice" :password "secret"}}
           response (core/register-handler req)]
       (is (= 201 (:status response)))
-      (let [user (first (xt/q @core/node (list '-> '(from :users [login]) (list 'where '(= login "alice")))))]
+      (let [user (first
+                   (xt/q
+                     @core/node
+                     '(->
+                        (from :users [login])
+                        (where (= login "alice")))))]
         (is (= "alice" (:login user)))))))
 
 (deftest stands-test
@@ -63,7 +68,13 @@
         (testing "Delete stand"
           (let [del-resp (core/delete-stand-handler {:path-params {:id id}})]
             (is (= 200 (:status del-resp)))
-            (let [del-check (xt/q @core/node (list '-> '(from :stands [xt/id]) (list 'where (list '= 'xt/id id))))]
+            (let [del-check (xt/q
+                              @core/node
+                              ['(fn [id]
+                                  (->
+                                    (from :stands [xt/id])
+                                    (where (= xt/id id))))
+                               id])]
               (is (= 0 (count del-check))))))))))
 
 (deftest auth-test
