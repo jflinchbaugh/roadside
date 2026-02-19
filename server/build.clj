@@ -1,4 +1,5 @@
 (ns build
+  (:refer-clojure :exclude [test])
   (:require [clojure.tools.build.api :as b]))
 
 (def lib 'com.hjsoft/server)
@@ -9,8 +10,17 @@
 ;; delay to defer side effects (artifact downloads)
 (def basis (delay (b/create-basis {:project "deps.edn"})))
 
-(defn clean []
+(defn clean [_]
   (b/delete {:path "target"}))
+
+(defn test [opts]
+  (let [basis (b/create-basis {:project "deps.edn" :aliases [:test]})
+        cmds (b/java-command
+              {:basis basis
+               :main "clojure.main"
+               :main-args (into ["-m" "cognitect.test-runner" "-d" "test"]
+                            (mapcat (fn [[k v]] [(str k) (str v)]) opts))})]
+    (b/process cmds)))
 
 (defn uber [_]
   (clean)
