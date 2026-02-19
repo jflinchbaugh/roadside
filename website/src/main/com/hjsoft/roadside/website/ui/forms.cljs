@@ -159,19 +159,28 @@
   (let [app-state (state/use-app-state)
         dispatch (state/use-dispatch)
         {:keys [editing-stand]} (state/use-ui)
-        {:keys [create-stand! update-stand! cancel-form!]} (ui-hooks/use-actions)
-        [stand-form-data local-dispatch] (hooks/use-reducer
-                                          stand-form-reducer
-                                          (or editing-stand
-                                              (assoc state/default-stand-form-data
-                                                     :coordinate (str
-                                                                  (first (:map-center app-state))
-                                                                  ", "
-                                                                  (second (:map-center app-state)))
-                                                     :expiration (utils/in-a-week))))
-        [show-address? set-show-address?] (hooks/use-state (or (seq (:address stand-form-data))
-                                                               (seq (:town stand-form-data))
-                                                               (seq (:state stand-form-data))))]
+        {:keys [create-stand!
+                update-stand!
+                cancel-form!]} (ui-hooks/use-actions)
+        [stand-form-data
+         local-dispatch] (hooks/use-reducer
+                          stand-form-reducer
+                          (or editing-stand
+                              (assoc state/default-stand-form-data
+                                     :coordinate (str
+                                                  (first
+                                                   (:map-center app-state))
+                                                  ", "
+                                                  (second
+                                                   (:map-center app-state)))
+                                     :expiration (utils/in-a-week))))
+        [show-address?
+         set-show-address?] (hooks/use-state (or (seq (:address
+                                                       stand-form-data))
+                                                 (seq (:town
+                                                       stand-form-data))
+                                                 (seq (:state
+                                                       stand-form-data))))]
 
     (ui-hooks/use-escape-key #(cancel-form!))
 
@@ -213,12 +222,14 @@
        ($ form-field
           {:label "Stand Name:"
            :value (:name stand-form-data)
-           :on-change #(local-dispatch [:update-field [:name (.. % -target -value)]])})
+           :on-change #(local-dispatch
+                        [:update-field [:name (.. % -target -value)]])})
        ($ form-field
           {:label "Notes:"
            :type "textarea"
            :value (:notes stand-form-data)
-           :on-change #(local-dispatch [:update-field [:notes (.. % -target -value)]])
+           :on-change #(local-dispatch
+                        [:update-field [:notes (.. % -target -value)]])
            :rows 4})
        (d/div
         {:class "form-group"}
@@ -235,27 +246,33 @@
           ($ form-field
              {:label "Address:"
               :value (:address stand-form-data)
-              :on-change #(local-dispatch [:update-field [:address (.. % -target -value)]])})
+              :on-change #(local-dispatch
+                           [:update-field [:address (.. % -target -value)]])})
           ($ form-field
              {:label "Town:"
               :value (:town stand-form-data)
-              :on-change #(local-dispatch [:update-field [:town (.. % -target -value)]])})
+              :on-change #(local-dispatch
+                           [:update-field [:town (.. % -target -value)]])})
           ($ form-field
              {:label "State:"
               :value (:state stand-form-data)
-              :on-change #(local-dispatch [:update-field [:state (.. % -target -value)]])})))
+              :on-change #(local-dispatch
+                           [:update-field [:state (.. % -target -value)]])})))
        ($ form-field
           {:label "Expiration Date:"
            :type "date"
            :value (:expiration stand-form-data)
-           :on-change #(local-dispatch [:update-field [:expiration (.. % -target -value)]])})
+           :on-change #(local-dispatch
+                        [:update-field [:expiration (.. % -target -value)]])})
        ($ form-field
           {:label "Shared?"
            :type "checkbox"
            :id "shared-checkbox"
            :class-name "checkbox"
            :checked (get stand-form-data :shared? false)
-           :on-change #(local-dispatch [:update-field [:shared? (.. % -target -checked)]])}))))))
+           :on-change #(local-dispatch
+                        [:update-field
+                         [:shared? (.. % -target -checked)]])}))))))
 
 (defnc settings-dialog []
   (let [app-state (state/use-app-state)
@@ -288,16 +305,19 @@
        ($ form-field
           {:label "Resource:"
            :value (:resource form-data)
-           :on-change #(set-form-data (assoc form-data :resource (.. % -target -value)))})
+           :on-change #(set-form-data
+                        (assoc form-data :resource (.. % -target -value)))})
        ($ form-field
           {:label "User:"
            :value (:user form-data)
-           :on-change #(set-form-data (assoc form-data :user (.. % -target -value)))})
+           :on-change #(set-form-data
+                        (assoc form-data :user (.. % -target -value)))})
        ($ form-field
           {:label "Password:"
            :type "password"
            :value (:password form-data)
-           :on-change #(set-form-data (assoc form-data :password (.. % -target -value)))})
+           :on-change #(set-form-data
+                        (assoc form-data :password (.. % -target -value)))})
        (d/div
         {:class "settings-actions"}
         (d/button
