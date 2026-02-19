@@ -20,7 +20,10 @@
 (def app-context (create-context))
 
 (defn use-app []
-  (let [{:keys [state dispatch user-location ui]} (hooks/use-context app-context)]
+  (let [{:keys [state
+                dispatch
+                user-location
+                ui]} (hooks/use-context app-context)]
     {:state state
      :dispatch dispatch
      :user-location user-location
@@ -58,10 +61,13 @@
                                      payload)]
                           (if (coll? data) (vec data) []))))
    :remove-stand (fn [state payload]
-                   (update state :stands (fn [stands]
-                                           (filterv #(not= (utils/stand-key %)
-                                                           (utils/stand-key payload))
-                                                    stands))))
+                   (update
+                    state
+                    :stands
+                    (fn [stands]
+                      (filterv #(not= (utils/stand-key %)
+                                      (utils/stand-key payload))
+                               stands))))
    :set-notification #(set-value %1 :notification %2)
    :set-is-synced #(set-value %1 :is-synced %2)
    :set-selected-stand #(set-value %1 :selected-stand %2)
