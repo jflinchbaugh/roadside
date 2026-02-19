@@ -19,7 +19,7 @@
 
 (defn use-app-side-effects
   [app-state dispatch user-location]
-  (let [{:keys [stands settings map-center is-synced]} app-state
+  (let [{:keys [stands settings map-center]} app-state
         {:keys [location get-location]} user-location]
 
     ;; Local persistence
@@ -32,11 +32,6 @@
      [location]
      (when location
        (dispatch [:set-map-center location])))
-
-    ;; Sync with Remote API
-    (hooks/use-effect
-     [stands is-synced settings]
-     (sync/save-remote-stands! app-state dispatch))
 
     ;; Fetch from Remote API on settings change
     (hooks/use-effect

@@ -7,7 +7,8 @@
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.version :as version]
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
-            [com.hjsoft.roadside.website.ui.hooks :refer [use-escape-key]]))
+            [com.hjsoft.roadside.website.ui.hooks :refer [use-escape-key]]
+            [com.hjsoft.roadside.website.sync :as sync]))
 
 (def add-zoom-level 14)
 
@@ -191,6 +192,9 @@
                          (dispatch [:set-selected-stand processed-data])
                          (when-let [coords (utils/parse-coordinates (:coordinate processed-data))]
                            (dispatch [:set-map-center coords]))
+                         (if editing-stand
+                           (sync/sync-update-stand! app-state dispatch processed-data)
+                           (sync/sync-create-stand! app-state dispatch processed-data))
                          (set-show-form false))
                        (dispatch [:set-notification {:type :error :message error}]))))}
       (d/div

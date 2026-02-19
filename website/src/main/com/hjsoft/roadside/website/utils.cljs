@@ -10,10 +10,15 @@
         week-later (+ (.getTime date) (* 7 24 60 60 1000))]
     (.substring (.toISOString (js/Date. week-later)) 0 10)))
 
+(defn random-uuid-str []
+  (str (cljs.core/random-uuid)))
+
 (defn stand-key
   [stand]
-  (let [{:keys [name coordinate address town state products]} stand]
-    (str name "|" coordinate "|" address "|" town "|" state "|" (str/join "," products))))
+  (if-let [id (:id stand)]
+    (str id)
+    (let [{:keys [name coordinate address town state products]} stand]
+      (str name "|" coordinate "|" address "|" town "|" state "|" (str/join "," products)))))
 
 (defn parse-coordinates
   [coords]

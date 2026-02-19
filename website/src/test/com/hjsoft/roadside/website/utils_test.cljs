@@ -19,11 +19,19 @@
               (int (/ (.getTime (js/Date.)) 1000 60 60 24))))
         "7 days into the future"))
 
+(t/deftest random-uuid-str-test
+  (t/is (string? (sut/random-uuid-str)))
+  (t/is (re-matches #"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                    (sut/random-uuid-str)))
+  (t/is (not= (sut/random-uuid-str) (sut/random-uuid-str))))
+
 (t/deftest stand-key
   (t/is (= "|||||" (sut/stand-key nil))
         "nil key")
   (t/is (= "|||||" (sut/stand-key {}))
         "empty key")
+  (t/is (= "my-uuid" (sut/stand-key {:id "my-uuid"}))
+        "id-based key")
   (t/is (= "name|[1 2]|address|town|state|prod,thing"
            (sut/stand-key {:name "name"
                            :coordinate [1.0 2.0]

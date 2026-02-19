@@ -15,13 +15,19 @@
                                   (not (contains? current-products p))))
                            all-unique-products)
         final-products (into (:products form-data) inferred-products)
-        processed-data (assoc form-data
+        processed-data (assoc (if (:id form-data)
+                                form-data
+                                (assoc form-data :id (utils/random-uuid-str)))
                               :products (vec final-products)
                               :updated (utils/get-current-timestamp))]
     (if editing-stand
       {:success true
        :processed-data processed-data
-       :stands (mapv #(if (= % editing-stand) processed-data %) stands)}
+       :stands (mapv (fn [s]
+                       (if (= (utils/stand-key s) (utils/stand-key editing-stand))
+                         processed-data
+                         s))
+                     stands)}
       (if (some #(= (utils/stand-key processed-data) (utils/stand-key %)) stands)
         {:success false :error "This stand already exists!"}
         {:success true

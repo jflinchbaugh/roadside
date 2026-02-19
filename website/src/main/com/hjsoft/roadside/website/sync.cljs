@@ -10,8 +10,9 @@
   (storage/set-item! "roadside-map-center" map-center))
 
 (defn- has-credentials? [settings]
-  (let [{:keys [resource user password]} settings]
-    (and (seq resource) (seq user) (seq password))))
+  (and (seq (:resource settings))
+       (seq (:user settings))
+       (seq (:password settings))))
 
 (defn- notify! [dispatch type message]
   (dispatch [:set-notification {:type type :message message}]))
@@ -19,33 +20,61 @@
 (defn fetch-remote-stands!
   [{:keys [settings]} dispatch]
   (when (has-credentials? settings)
-    (let [{:keys [resource user password]} settings]
-      (go
-        (let [{:keys [success data error]} (<! (api/fetch-stands
-                                                resource
-                                                user
-                                                password))]
-          (if success
-            (do
-              (dispatch [:set-stands data])
-              (dispatch [:set-is-synced true])
-              (notify! dispatch :success "Stands synced!"))
-            (do
-              (tel/log! :error {:msg "Failed to fetch stands" :error error})
-              (notify! dispatch :error (str "Sync failed: " error)))))))))
+    (go
+      (let [{:keys [success data error]} (<! (api/fetch-stands
+                                              (:resource settings)
+                                              (:user settings)
+                                              (:password settings)))]
+        (if success
+          (do
+            (dispatch [:set-stands data])
+            (dispatch [:set-is-synced true])
+            (notify! dispatch :success "Stands synced!"))
+          (do
+            (tel/log! :error {:msg "Failed to fetch stands" :error error})
+            (notify! dispatch :error (str "Sync failed: " error))))))))
 
-(defn save-remote-stands!
-  [{:keys [stands settings is-synced]} dispatch]
-  (when (and (has-credentials? settings) is-synced)
-    (let [{:keys [resource user password]} settings]
-      (go
-        (let [{:keys [success error]} (<! (api/save-stands
-                                           resource
-                                           user
-                                           password
-                                           stands))]
-          (if success
-            (notify! dispatch :success "Stands saved!")
-            (do
-              (tel/log! :error {:msg "Failed to save stands" :error error})
-              (notify! dispatch :error (str "Save failed: " error)))))))))
+(defn sync-create-stand!
+  [{:keys [settings]} dispatch stand]
+  (when (has-credentials? settings)
+    (go
+      (let [{:keys [success error]} (<! (api/create-stand
+                                         (:resource settings)
+                                         (:user settings)
+                                         (:password settings)
+                                         stand))]
+        (if success
+          (notify! dispatch :success "Stand added!")
+          (do
+            (tel/log! :error {:msg "Failed to create stand" :error error})
+            (notify! dispatch :error (str "Create failed: " error))))))))
+
+(defn sync-update-stand!
+  [{:keys [settings]} dispatch stand]
+  (when (has-credentials? settings)
+    (go
+      (let [{:keys [success error]} (<! (api/update-stand
+                                         (:resource settings)
+                                         (:user settings)
+                                         (:password settings)
+                                         stand))]
+        (if success
+          (notify! dispatch :success "Stand updated!")
+          (do
+            (tel/log! :error {:msg "Failed to update stand" :error error})
+            (notify! dispatch :error (str "Update failed: " error))))))))
+
+(defn sync-delete-stand!
+  [{:keys [settings]} dispatch stand-id]
+  (when (has-credentials? settings)
+    (go
+      (let [{:keys [success error]} (<! (api/delete-stand
+                                         (:resource settings)
+                                         (:user settings)
+                                         (:password settings)
+                                         stand-id))]
+        (if success
+          (notify! dispatch :success "Stand deleted!")
+          (do
+            (tel/log! :error {:msg "Failed to delete stand" :error error})
+            (notify! dispatch :error (str "Delete failed: " error))))))))

@@ -1,5 +1,6 @@
 (ns com.hjsoft.roadside.website.state
   (:require [com.hjsoft.roadside.website.storage :as storage]
+            [com.hjsoft.roadside.website.utils :as utils]
             [helix.core :refer [create-context]]
             [helix.hooks :as hooks]))
 
@@ -31,7 +32,11 @@
 (defn use-user-location-state [] (:user-location (use-app)))
 
 (def initial-app-state
-  {:stands (or (storage/get-item "roadside-stands") [])
+  {:stands (->> (or (storage/get-item "roadside-stands") [])
+                (mapv (fn [s]
+                        (if (:id s)
+                          s
+                          (assoc s :id (utils/random-uuid-str))))))
    :product-filter nil
    :selected-stand nil
    :map-center (or (storage/get-item "roadside-map-center") map-home)
@@ -54,7 +59,9 @@
                           (if (coll? data) (vec data) []))))
    :remove-stand (fn [state payload]
                    (update state :stands (fn [stands]
-                                           (filterv #(not= % payload) stands))))
+                                           (filterv #(not= (utils/stand-key %)
+                                                           (utils/stand-key payload))
+                                                    stands))))
    :set-notification #(set-value %1 :notification %2)
    :set-is-synced #(set-value %1 :is-synced %2)
    :set-selected-stand #(set-value %1 :selected-stand %2)

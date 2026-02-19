@@ -4,7 +4,8 @@
             [helix.dom :as d]
             [com.hjsoft.roadside.website.utils :as utils]
             [com.hjsoft.roadside.website.state :as state]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [com.hjsoft.roadside.website.sync :as sync]))
 
 (defnc stand-item
   [{:keys [stand selected? on-click on-edit on-delete item-ref]}]
@@ -84,7 +85,8 @@
 
 (defnc stands-list
   [{:keys [stands]}]
-  (let [selected-stand (:selected-stand (state/use-app-state))
+  (let [app-state (state/use-app-state)
+        selected-stand (:selected-stand app-state)
         dispatch (state/use-dispatch)
         {:keys [set-editing-stand set-show-form]} (state/use-ui)
         stand-refs (hooks/use-ref {})]
@@ -105,15 +107,17 @@
          (fn [stand]
            (let [key (utils/stand-key stand)]
              ($ stand-item
-              {:key key
-               :stand stand
-               :selected? (= key (utils/stand-key selected-stand))
-               :on-click #(dispatch [:set-selected-stand stand])
-               :on-edit #(do
-                           (set-editing-stand %)
-                           (set-show-form true))
-               :on-delete #(dispatch [:remove-stand %])
-               :item-ref (fn [el] (swap! stand-refs assoc key el))})))
+                {:key key
+                 :stand stand
+                 :selected? (= key (utils/stand-key selected-stand))
+                 :on-click #(dispatch [:set-selected-stand stand])
+                 :on-edit #(do
+                             (set-editing-stand %)
+                             (set-show-form true))
+                 :on-delete #(do
+                               (dispatch [:remove-stand %])
+                               (sync/sync-delete-stand! app-state dispatch (:id %)))
+                 :item-ref (fn [el] (swap! stand-refs assoc key el))})))
          stands))))))
 
 (defnc product-list

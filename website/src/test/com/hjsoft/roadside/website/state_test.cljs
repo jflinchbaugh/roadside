@@ -32,7 +32,12 @@
              (sut/app-reducer {} [:set-notification {:type :success :message "hi"}])))
     (t/is (= {:notification {:type :updated}}
              (sut/app-reducer {:notification {:type :original}}
-                              [:set-notification (fn [_] {:type :updated})])))))
+                              [:set-notification (fn [_] {:type :updated})]))))
+
+  (t/testing "remove-stand"
+    (t/is (= {:stands []}
+             (sut/app-reducer {:stands [{:id "1" :name "A"}]}
+                              [:remove-stand {:id "1" :name "A"}])))))
 
 (t/deftest select-filtered-stands-test
   (let [stands [{:name "B" :updated "2023-01-01T12:00:00Z" :products ["Apples"]}
