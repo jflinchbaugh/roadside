@@ -2,17 +2,27 @@
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [server.core :as core]
             [xtdb.api :as xt]
-            [xtdb.node :as xtn]
+            [clj-test-containers.core :as tc]
             [clojure.data.json :as json])
   (:import [java.io ByteArrayInputStream]))
 
-(defn with-node [f]
-  (with-open [n (xtn/start-node {})]
+(def xtdb-container
+  (tc/create {:image-name "ghcr.io/xtdb/xtdb:2.1.0"
+              :exposed-ports [5432]
+              :wait-for {:strategy :log
+                         :message "XTDB started"}}))
+
+(defn with-xtdb-container [f]
+  (let [started-container (tc/start! xtdb-container)
+        port (get (:mapped-ports started-container) 5432)
+        host (:host started-container)
+        n (xt/client {:host host :port port})]
     (reset! core/node n)
     (f)
-    (reset! core/node nil)))
+    (reset! core/node nil)
+    (tc/stop! started-container)))
 
-(use-fixtures :each with-node)
+(use-fixtures :once with-xtdb-container)
 
 (deftest ping-test
   (testing "Ping handler returns 200 pong"
@@ -26,11 +36,11 @@
           response (core/register-handler req)]
       (is (= 201 (:status response)))
       (let [user (first
-                   (xt/q
-                     @core/node
-                     '(->
-                        (from :users [login])
-                        (where (= login "alice")))))]
+                  (xt/q
+                   @core/node
+                   '(->
+                     (from :users [login])
+                     (where (= login "alice")))))]
         (is (= "alice" (:login user)))))))
 
 (deftest stands-test
@@ -69,17 +79,16 @@
           (let [del-resp (core/delete-stand-handler {:path-params {:id id}})]
             (is (= 200 (:status del-resp)))
             (let [del-check (xt/q
-                              @core/node
-                              ['(fn [id]
-                                  (->
-                                    (from :stands [xt/id])
-                                    (where (= xt/id id))))
-                               id])]
+                             @core/node
+                             ['(fn [id]
+                                 (->
+                                  (from :stands [xt/id])
+                                  (where (= xt/id id))))
+                              id])]
               (is (= 0 (count del-check))))))))))
 
 (deftest auth-test
   (testing "my-authfn"
     (xt/submit-tx @core/node [[:put-docs :users {:xt/id "u1" :login "bob" :password "pass"}]])
-    (.await_token @core/node)
     (is (= "bob" (core/my-authfn {} {:username "bob" :password "pass"})))
     (is (nil? (core/my-authfn {} {:username "bob" :password "wrong"})))))

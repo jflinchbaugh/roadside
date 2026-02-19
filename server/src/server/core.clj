@@ -51,7 +51,6 @@
               :password password
               :updated (str (t/now))}]
     (xt/submit-tx @node [[:put-docs :users user]])
-    (.await_token @node)
     (api-response 201 {:login login})))
 
 (defn get-stands-handler
@@ -81,7 +80,6 @@
                      :creator (:identity req))
         stand (dissoc stand :id)]
     (xt/submit-tx @node [[:put-docs :stands stand]])
-    (.await_token @node)
     (api-response 201 stand)))
 
 (defn update-stand-handler
@@ -91,14 +89,12 @@
         stand (assoc stand :xt/id id :updated (str (t/now)))
         stand (dissoc stand :id)]
     (xt/submit-tx @node [[:put-docs :stands stand]])
-    (.await_token @node)
     (api-response 200 stand)))
 
 (defn delete-stand-handler
   [req]
   (let [id (get-in req [:path-params :id])]
     (xt/submit-tx @node [[:delete-docs :stands id]])
-    (.await_token @node)
     (api-response 200 {:message (format "'%s' deleted" id)})))
 
 (defn identity-required-wrapper
@@ -161,9 +157,7 @@
   (when-not (nil? @server)
     (@server :timeout 100)
     (reset! server nil))
-  (when-not (nil? @node)
-    (.close @node)
-    (reset! node nil)))
+  (reset! node nil))
 
 (defn start-server!
   [port db-host]
