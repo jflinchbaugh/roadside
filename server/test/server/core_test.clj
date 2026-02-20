@@ -27,12 +27,25 @@
           response (core/register-handler req)]
       (is (= 201 (:status response)))
       (let [user (first
+                   (xt/q
+                     @core/node
+                     '(->
+                        (from :users [login password])
+                        (where (= login "alice")))))]
+        (is (= "alice" (:login user)))
+        (is (= "secret" (:password user))))))
+  (testing "Register handler with a duplicate"
+    (let [req {:params {:login "alice" :password "again"}}
+          response (core/register-handler req)]
+      (is (= 403 (:status response)))
+      (let [user (first
                   (xt/q
                    @core/node
                    '(->
-                     (from :users [login])
+                     (from :users [login password])
                      (where (= login "alice")))))]
-        (is (= "alice" (:login user)))))))
+        (is (= "alice" (:login user)))
+        (is (= "secret" (:password user)) "password not touched")))))
 
 (deftest stands-test
   (testing "Stands handlers"

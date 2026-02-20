@@ -17,6 +17,11 @@
 
  :aliases
  {:run {:main-opts ["-m" "server.core"]}
+  :dev {:extra-paths ["test"]
+        :extra-deps {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" :git/sha "dfb30dd"}
+                     clj-test-containers/clj-test-containers {:mvn/version "0.7.4"}}
+        :jvm-opts ["--add-opens=java.base/java.nio=ALL-UNNAMED"
+                   "--enable-native-access=ALL-UNNAMED"]}
   :test {:extra-paths ["test"]
          :extra-deps {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" :git/sha "dfb30dd"}
                       clj-test-containers/clj-test-containers {:mvn/version "0.7.4"}}

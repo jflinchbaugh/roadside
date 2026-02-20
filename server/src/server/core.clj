@@ -49,9 +49,19 @@
         user {:xt/id id
               :login login
               :password password
-              :updated (str (t/now))}]
-    (xt/submit-tx @node [[:put-docs :users user]])
-    (api-response 201 {:login login})))
+              :updated (str (t/now))}
+        existing-user (first
+                       (xt/q @node
+                             ['(fn [l]
+                                 (->
+                                  (from :users [login password])
+                                  (where (= login l))))
+                              login]))]
+    (if existing-user
+      (api-response 403 {:status "failed" :message "login not available"})
+      (do
+        (xt/submit-tx @node [[:put-docs :users user]])
+        (api-response 201 {:login login})))))
 
 (defn get-stands-handler
   [_req]
