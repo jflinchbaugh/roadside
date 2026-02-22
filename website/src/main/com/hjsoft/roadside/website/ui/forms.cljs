@@ -132,13 +132,13 @@
          :onKeyDown (fn [e]
                       (when (= (.-key e) "Enter")
                         (.preventDefault e)
-                        (on-update [:add-product current-product])))
+                        (on-update [:add-product])))
          :enterKeyHint "enter"})
        (d/button
         {:type "button"
          :class "add-product-btn"
          :onClick (fn []
-                    (on-update [:add-product current-product])
+                    (on-update [:add-product])
                     (when-let [el @product-input-ref] (.focus el)))}
         "Add"))))))
 

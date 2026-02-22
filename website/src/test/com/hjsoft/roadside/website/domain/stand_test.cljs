@@ -21,18 +21,23 @@
 (t/deftest stand-form-reducer-test
   (t/testing "update-field"
     (let [state {:name ""}
-          next-state (sut/stand-form-reducer state [:update-field [:name "New Name"]])]
+          next-state (sut/stand-form-reducer
+                       state
+                       [:update-field [:name "New Name"]])]
       (t/is (= "New Name" (:name next-state)))))
+
+  (t/testing "update-current-product"
+    (let [state {:current-product ""}
+          next-state (sut/stand-form-reducer
+                       state
+                       [:update-current-product "new product"])]
+      (t/is (= "new product" (:current-product next-state)))))
 
   (t/testing "add-product"
     (let [state {:products [] :current-product "  Apples  "}
-          ;; Test adding from current-product
-          state1 (sut/stand-form-reducer state [:add-product])
-          ;; Test adding explicitly
-          state2 (sut/stand-form-reducer state1 [:add-product "Corn"])]
+          state1 (sut/stand-form-reducer state [:add-product])]
       (t/is (= ["Apples"] (:products state1)))
-      (t/is (= "" (:current-product state1)))
-      (t/is (= ["Apples" "Corn"] (:products state2)))))
+      (t/is (= "" (:current-product state1)))))
 
   (t/testing "prevent duplicate products"
     (let [state {:products ["Apples"] :current-product "Apples"}
@@ -48,31 +53,29 @@
       (t/is (false? (:show-address? state2))))))
 
 (t/deftest prepare-submit-data-test
-  (t/testing "cleans up transient UI state and adds pending product"
-    (let [state {:name "My Stand"
-                 :products ["Corn"]
-                 :current-product "Apples"
-                 :show-address? true}
+  (t/testing "adds pending current product"
+    (let [state {:products ["Corn"]
+                 :current-product "Apples"}
           final (sut/prepare-submit-data state)]
       (t/is (= ["Corn" "Apples"] (:products final)))
-      (t/is (not (contains? final :current-product)))
-      (t/is (not (contains? final :show-address?)))
-      (t/is (= "My Stand" (:name final)))))
+      (t/is (= "" (:current-product final)))))
 
-  (t/testing "handles empty current-product"
-    (let [state {:name "My Stand"
-                 :products ["Corn"]
-                 :current-product ""
-                 :show-address? false}
+  (t/testing "empty current-product adds nothing to products"
+    (let [state {:products ["Corn"]
+                 :current-product ""}
           final (sut/prepare-submit-data state)]
-      (t/is (= ["Corn"] (:products final)))
-      (t/is (not (contains? final :current-product))))))
+      (t/is (= state final)))))
 
 (t/deftest process-stand-form-test
-  (let [stands [{:id "1" :name "Apple Farm" :products ["apples"] :coordinate "1,2"}]]
+  (let [stands [{:id "1"
+                 :name "Apple Farm"
+                 :products ["apples"]
+                 :coordinate "1,2"}]]
     (t/testing "adding a new stand with auto-product detection"
       (let [result (sut/process-stand-form
-                    {:name "Better Apples" :coordinate "3,4" :products []}
+                    {:name "Better Apples"
+                     :coordinate "3,4"
+                     :products []}
                     stands
                     nil
                     "test-user")]

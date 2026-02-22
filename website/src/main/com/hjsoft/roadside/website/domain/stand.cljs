@@ -18,7 +18,7 @@
   (case action-type
     :update-field (assoc state (first payload) (second payload))
     :update-current-product (assoc state :current-product payload)
-    :add-product (let [product (str/trim (or payload (:current-product state) ""))]
+    :add-product (let [product (str/trim (or (:current-product state) ""))]
                    (if (or (empty? product)
                            (some #(= % product) (:products state)))
                      (assoc state :current-product "")
@@ -34,10 +34,7 @@
     state))
 
 (defn prepare-submit-data [state]
-  (let [state-with-product (if (not-empty (:current-product state))
-                             (stand-form-reducer state [:add-product])
-                             state)]
-    (dissoc state-with-product :current-product :show-address?)))
+  (stand-form-reducer state [:add-product]))
 
 (defn process-stand-form
   "Processes the stand form data, automatically adding products based on name,
