@@ -3,7 +3,8 @@
             [cljs.test :as test]
             [com.hjsoft.roadside.website.utils-test]
             [com.hjsoft.roadside.website.state-test]
-            [com.hjsoft.roadside.website.ui.layout-test]))
+            [com.hjsoft.roadside.website.ui.layout-test]
+            [com.hjsoft.roadside.website.domain.stand-test]))
 
 (defn main []
   (test/run-all-tests #".*-test$"))

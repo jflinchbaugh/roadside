@@ -37,42 +37,6 @@
                :class class-name
                :placeholder placeholder}))))
 
-(defn- init-form-state [{:keys [editing-stand map-center]}]
-  (let [initial (or editing-stand
-                    (assoc state/default-stand-form-data
-                           :coordinate (str (first map-center) ", " (second map-center))
-                           :expiration (utils/in-a-week)))]
-    (assoc initial
-           :show-address? (boolean (or (seq (:address initial))
-                                       (seq (:town initial))
-                                       (seq (:state initial))))
-           :current-product "")))
-
-(defn- stand-form-reducer [state [action-type payload]]
-  (case action-type
-    :update-field (assoc state (first payload) (second payload))
-    :update-current-product (assoc state :current-product payload)
-    :add-product (let [product (str/trim (or payload (:current-product state) ""))]
-                   (if (or (empty? product)
-                           (some #(= % product) (:products state)))
-                     (assoc state :current-product "")
-                     (-> state
-                         (update :products #(conj (or % []) product))
-                         (assoc :current-product ""))))
-    :remove-product (update
-                     state
-                     :products
-                     (fn [products]
-                       (filterv #(not= % payload) products)))
-    :toggle-address (update state :show-address? not)
-    state))
-
-(defn- prepare-submit-data [state]
-  (let [state-with-product (if (not-empty (:current-product state))
-                             (stand-form-reducer state [:add-product])
-                             state)]
-    (dissoc state-with-product :current-product :show-address?)))
-
 (defnc location-input
   [{:keys
     [stand-form-data
@@ -187,10 +151,10 @@
                 cancel-form!]} (ui-hooks/use-actions)
         [stand-form-data
          local-dispatch] (hooks/use-reducer
-                          stand-form-reducer
+                          stand-domain/stand-form-reducer
                           {:editing-stand editing-stand
                            :map-center (:map-center app-state)}
-                          init-form-state)]
+                          stand-domain/init-form-state)]
 
     (ui-hooks/use-escape-key #(cancel-form!))
 
@@ -202,7 +166,7 @@
        :onClick #(.stopPropagation %)
        :onSubmit (fn [e]
                    (.preventDefault e)
-                   (let [final-data (prepare-submit-data stand-form-data)]
+                   (let [final-data (stand-domain/prepare-submit-data stand-form-data)]
                      (if editing-stand
                        (update-stand! final-data editing-stand)
                        (create-stand! final-data))))}
