@@ -40,13 +40,14 @@
 (defn- stand-form-reducer [state [action-type payload]]
   (case action-type
     :update-field (assoc state (first payload) (second payload))
-    :add-product (let [product (str/trim payload)]
-                   (if (some #(= % product) (:products state))
-                     state
-                     (update
-                      state
-                      :products
-                      #(conj (or % []) product))))
+    :update-current-product (assoc state :current-product payload)
+    :add-product (let [product (str/trim (or payload (:current-product state) ""))]
+                   (if (or (empty? product)
+                           (some #(= % product) (:products state)))
+                     (assoc state :current-product "")
+                     (-> state
+                         (update :products #(conj (or % []) product))
+                         (assoc :current-product ""))))
     :remove-product (update
                      state
                      :products
@@ -118,8 +119,8 @@
         error)))))
 
 (defnc product-input [{:keys [stand-form-data on-update]}]
-  (let [[current-product set-current-product] (hooks/use-state "")
-        product-input-ref (hooks/use-ref nil)]
+  (let [product-input-ref (hooks/use-ref nil)
+        current-product (:current-product stand-form-data "")]
     (d/div
      {:class "product-section-wrapper"}
      (d/div
@@ -145,21 +146,17 @@
          :ref product-input-ref
          :value current-product
          :placeholder "Add a product and press Enter"
-         :onChange #(set-current-product (.. % -target -value))
+         :onChange #(on-update [:update-current-product (.. % -target -value)])
          :onKeyDown (fn [e]
                       (when (= (.-key e) "Enter")
                         (.preventDefault e)
-                        (when (not= current-product "")
-                          (on-update [:add-product current-product]))
-                        (set-current-product "")))
+                        (on-update [:add-product current-product])))
          :enterKeyHint "enter"})
        (d/button
         {:type "button"
          :class "add-product-btn"
          :onClick (fn []
-                    (when (not= current-product "")
-                      (on-update [:add-product current-product]))
-                    (set-current-product "")
+                    (on-update [:add-product current-product])
                     (when-let [el @product-input-ref] (.focus el)))}
         "Add"))))))
 
@@ -199,9 +196,13 @@
        :onClick #(.stopPropagation %)
        :onSubmit (fn [e]
                    (.preventDefault e)
-                   (if editing-stand
-                     (update-stand! stand-form-data editing-stand)
-                     (create-stand! stand-form-data)))}
+                   (let [data-with-product (if (not-empty (:current-product stand-form-data))
+                                             (stand-form-reducer stand-form-data [:add-product])
+                                             stand-form-data)
+                         final-data (dissoc data-with-product :current-product)]
+                     (if editing-stand
+                       (update-stand! final-data editing-stand)
+                       (create-stand! final-data))))}
       (d/div
        {:class "form-header-actions"}
        (d/h3 (if editing-stand "Edit Stand" "Add New Stand"))
