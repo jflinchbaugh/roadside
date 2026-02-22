@@ -37,6 +37,17 @@
                :class class-name
                :placeholder placeholder}))))
 
+(defn- init-form-state [{:keys [editing-stand map-center]}]
+  (let [initial (or editing-stand
+                    (assoc state/default-stand-form-data
+                           :coordinate (str (first map-center) ", " (second map-center))
+                           :expiration (utils/in-a-week)))]
+    (assoc initial
+           :show-address? (boolean (or (seq (:address initial))
+                                       (seq (:town initial))
+                                       (seq (:state initial))))
+           :current-product "")))
+
 (defn- stand-form-reducer [state [action-type payload]]
   (case action-type
     :update-field (assoc state (first payload) (second payload))
@@ -53,7 +64,14 @@
                      :products
                      (fn [products]
                        (filterv #(not= % payload) products)))
+    :toggle-address (update state :show-address? not)
     state))
+
+(defn- prepare-submit-data [state]
+  (let [state-with-product (if (not-empty (:current-product state))
+                             (stand-form-reducer state [:add-product])
+                             state)]
+    (dissoc state-with-product :current-product :show-address?)))
 
 (defnc location-input
   [{:keys
@@ -170,21 +188,9 @@
         [stand-form-data
          local-dispatch] (hooks/use-reducer
                           stand-form-reducer
-                          (or editing-stand
-                              (assoc state/default-stand-form-data
-                                     :coordinate
-                                     (str
-                                      (first
-                                       (:map-center app-state))
-                                      ", "
-                                      (second
-                                       (:map-center app-state)))
-                                     :expiration (utils/in-a-week))))
-        [show-address?
-         set-show-address?] (hooks/use-state
-                             (or (seq (:address stand-form-data))
-                                 (seq (:town stand-form-data))
-                                 (seq (:state stand-form-data))))]
+                          {:editing-stand editing-stand
+                           :map-center (:map-center app-state)}
+                          init-form-state)]
 
     (ui-hooks/use-escape-key #(cancel-form!))
 
@@ -196,10 +202,7 @@
        :onClick #(.stopPropagation %)
        :onSubmit (fn [e]
                    (.preventDefault e)
-                   (let [data-with-product (if (not-empty (:current-product stand-form-data))
-                                             (stand-form-reducer stand-form-data [:add-product])
-                                             stand-form-data)
-                         final-data (dissoc data-with-product :current-product)]
+                   (let [final-data (prepare-submit-data stand-form-data)]
                      (if editing-stand
                        (update-stand! final-data editing-stand)
                        (create-stand! final-data))))}
@@ -244,11 +247,11 @@
         (d/button
          {:type "button"
           :class "toggle-address-btn"
-          :onClick #(set-show-address? (not show-address?))}
-         (if show-address?
+          :onClick #(local-dispatch [:toggle-address])}
+         (if (:show-address? stand-form-data)
            "Collapse Address \u25B4"
            "Expand Address \u25BE")))
-       (when show-address?
+       (when (:show-address? stand-form-data)
          (d/div
           {:class "address-fields-wrapper"}
           ($ form-field
