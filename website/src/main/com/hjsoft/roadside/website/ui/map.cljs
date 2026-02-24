@@ -4,6 +4,7 @@
             [helix.dom :as d]
             ["leaflet" :as L]
             [com.hjsoft.roadside.website.state :as state]
+            [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.utils :as utils]))
 
 (defn- make-marker
@@ -83,7 +84,7 @@
             locations
             (filter
              (fn [[s _]]
-               (= (utils/stand-key selected-stand) (utils/stand-key s))))
+               (= (stand-domain/stand-key selected-stand) (stand-domain/stand-key s))))
             first
             second
             (#(.openPopup ^js %)))))))))

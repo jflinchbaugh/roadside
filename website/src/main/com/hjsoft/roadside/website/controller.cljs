@@ -85,11 +85,14 @@
 
 (defn create-stand! [app-state dispatch form-data]
   (let [creator (get-in app-state [:settings :user])
-        {:keys [success stands error processed-data]} (stand-domain/process-stand-form
-                                                       form-data
-                                                       (:stands app-state)
-                                                       nil
-                                                       creator)]
+        {:keys [success
+                stands
+                error
+                processed-data]} (stand-domain/process-stand-form
+                                  form-data
+                                  (:stands app-state)
+                                  nil
+                                  creator)]
     (if success
       (do
         (dispatch [:set-stands stands])
@@ -104,11 +107,14 @@
 
 (defn update-stand! [app-state dispatch form-data editing-stand]
   (let [creator (get-in app-state [:settings :user])
-        {:keys [success stands error processed-data]} (stand-domain/process-stand-form
-                                                       form-data
-                                                       (:stands app-state)
-                                                       editing-stand
-                                                       creator)]
+        {:keys [success
+                stands
+                error
+                processed-data]} (stand-domain/process-stand-form
+                                  form-data
+                                  (:stands app-state)
+                                  editing-stand
+                                  creator)]
     (if success
       (do
         (dispatch [:set-stands stands])

@@ -166,7 +166,8 @@
        :onClick #(.stopPropagation %)
        :onSubmit (fn [e]
                    (.preventDefault e)
-                   (let [final-data (stand-domain/prepare-submit-data stand-form-data)]
+                   (let [final-data (stand-domain/prepare-submit-data
+                                      stand-form-data)]
                      (if editing-stand
                        (update-stand! final-data editing-stand)
                        (create-stand! final-data))))}

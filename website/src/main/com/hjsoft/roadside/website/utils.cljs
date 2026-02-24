@@ -13,13 +13,6 @@
 (defn random-uuid-str []
   (str (cljs.core/random-uuid)))
 
-(defn stand-key
-  [stand]
-  (if-let [id (:id stand)]
-    (str id)
-    (let [{:keys [name coordinate address town state products]} stand]
-      (str name "|" coordinate "|" address "|" town "|" state "|" (str/join "," products)))))
-
 (defn parse-coordinates
   [coords]
   (when (string? coords)

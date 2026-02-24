@@ -1,77 +1,107 @@
 (ns com.hjsoft.roadside.website.domain.stand-test
   (:require [com.hjsoft.roadside.website.domain.stand :as sut]
-            [cljs.test :as t]))
+            [cljs.test :as t :refer [deftest is testing]]))
 
-(t/deftest init-form-state-test
-  (t/testing "initializes with defaults when no editing-stand"
+(deftest stand-key-test
+  (testing "nil or empty stand"
+    (is (= "|||||" (sut/stand-key nil)))
+    (is (= "|||||" (sut/stand-key {}))))
+
+  (testing "id-based key"
+    (is (= "my-uuid" (sut/stand-key {:id "my-uuid"}))))
+
+  (testing "content-based key"
+    (is (= "name|[1 2]|address|town|state|prod,thing"
+           (sut/stand-key {:name "name"
+                           :coordinate [1.0 2.0]
+                           :address "address"
+                           :town "town"
+                           :state "state"
+                           :products ["prod" "thing"]})))))
+
+(deftest infer-products-test
+  (let [all-products ["Apples" "Corn" "Peaches"]]
+    (testing "detects products from name"
+      (is (= ["Apples"] (sut/infer-products "Fresh Apples" [] all-products)))
+      (is (= ["Corn" "Peaches"] (sut/infer-products "Corn and Peaches" [] all-products))))
+
+    (testing "doesn't duplicate existing products"
+      (is (= ["Apples"] (sut/infer-products "Fresh Apples" ["Apples"] all-products))))
+
+    (testing "handles nil or empty names"
+      (is (= [] (sut/infer-products nil [] all-products)))
+      (is (= [] (sut/infer-products "" [] all-products))))))
+
+(deftest init-form-state-test
+  (testing "initializes with defaults when no editing-stand"
     (let [map-center [40.5 -76.5]
           state (sut/init-form-state {:map-center map-center})]
-      (t/is (= "40.5, -76.5" (:coordinate state)))
-      (t/is (= "" (:name state)))
-      (t/is (false? (:show-address? state)))
-      (t/is (= "" (:current-product state)))))
+      (is (= "40.5, -76.5" (:coordinate state)))
+      (is (= "" (:name state)))
+      (is (false? (:show-address? state)))
+      (is (= "" (:current-product state)))))
 
-  (t/testing "initializes from editing-stand and detects show-address?"
+  (testing "initializes from editing-stand and detects show-address?"
     (let [editing {:name "Existing" :address "123 Main St"}
           state (sut/init-form-state {:editing-stand editing})]
-      (t/is (= "Existing" (:name state)))
-      (t/is (true? (:show-address? state)))
-      (t/is (= "" (:current-product state))))))
+      (is (= "Existing" (:name state)))
+      (is (true? (:show-address? state)))
+      (is (= "" (:current-product state))))))
 
-(t/deftest stand-form-reducer-test
-  (t/testing "update-field"
+(deftest stand-form-reducer-test
+  (testing "update-field"
     (let [state {:name ""}
           next-state (sut/stand-form-reducer
                        state
                        [:update-field [:name "New Name"]])]
-      (t/is (= "New Name" (:name next-state)))))
+      (is (= "New Name" (:name next-state)))))
 
-  (t/testing "update-current-product"
+  (testing "update-current-product"
     (let [state {:current-product ""}
           next-state (sut/stand-form-reducer
                        state
                        [:update-current-product "new product"])]
-      (t/is (= "new product" (:current-product next-state)))))
+      (is (= "new product" (:current-product next-state)))))
 
-  (t/testing "add-product"
+  (testing "add-product"
     (let [state {:products [] :current-product "  Apples  "}
           state1 (sut/stand-form-reducer state [:add-product])]
-      (t/is (= ["Apples"] (:products state1)))
-      (t/is (= "" (:current-product state1)))))
+      (is (= ["Apples"] (:products state1)))
+      (is (= "" (:current-product state1)))))
 
-  (t/testing "prevent duplicate products"
+  (testing "prevent duplicate products"
     (let [state {:products ["Apples"] :current-product "Apples"}
           next-state (sut/stand-form-reducer state [:add-product])]
-      (t/is (= ["Apples"] (:products next-state)))
-      (t/is (= "" (:current-product next-state)))))
+      (is (= ["Apples"] (:products next-state)))
+      (is (= "" (:current-product next-state)))))
 
-  (t/testing "toggle-address"
+  (testing "toggle-address"
     (let [state {:show-address? false}
           state1 (sut/stand-form-reducer state [:toggle-address])
           state2 (sut/stand-form-reducer state1 [:toggle-address])]
-      (t/is (true? (:show-address? state1)))
-      (t/is (false? (:show-address? state2))))))
+      (is (true? (:show-address? state1)))
+      (is (false? (:show-address? state2))))))
 
-(t/deftest prepare-submit-data-test
-  (t/testing "adds pending current product"
+(deftest prepare-submit-data-test
+  (testing "adds pending current product"
     (let [state {:products ["Corn"]
                  :current-product "Apples"}
           final (sut/prepare-submit-data state)]
-      (t/is (= ["Corn" "Apples"] (:products final)))
-      (t/is (= "" (:current-product final)))))
+      (is (= ["Corn" "Apples"] (:products final)))
+      (is (= "" (:current-product final)))))
 
-  (t/testing "empty current-product adds nothing to products"
+  (testing "empty current-product adds nothing to products"
     (let [state {:products ["Corn"]
                  :current-product ""}
           final (sut/prepare-submit-data state)]
-      (t/is (= state final)))))
+      (is (= state final)))))
 
-(t/deftest process-stand-form-test
+(deftest process-stand-form-test
   (let [stands [{:id "1"
                  :name "Apple Farm"
                  :products ["apples"]
                  :coordinate "1,2"}]]
-    (t/testing "adding a new stand with auto-product detection"
+    (testing "adding a new stand with auto-product detection"
       (let [result (sut/process-stand-form
                     {:name "Better Apples"
                      :coordinate "3,4"
@@ -79,22 +109,22 @@
                     stands
                     nil
                     "test-user")]
-        (t/is (:success result))
-        (t/is (some #(= "apples" %) (:products (:processed-data result)))
+        (is (:success result))
+        (is (some #(= "apples" %) (:products (:processed-data result)))
             "Automatically added Apples
                because it was in the name and exists
                in other stands")
-        (t/is (= "test-user" (:creator (:processed-data result))))))
+        (is (= "test-user" (:creator (:processed-data result))))))
 
-    (t/testing "preventing duplicates"
+    (testing "preventing duplicates"
       (let [result (sut/process-stand-form
                     {:id "1" :name "Apple Farm" :coordinate "1,2" :products ["apples"]}
                     stands
                     nil
                     "test-user")]
-        (t/is (not (:success result)))
-        (t/is (= "This stand already exists!" (:error result)))))
-    (t/testing "editing stand replaces the old one"
+        (is (not (:success result)))
+        (is (= "This stand already exists!" (:error result)))))
+    (testing "editing stand replaces the old one"
       (let [result (sut/process-stand-form
                     {:id "1"
                      :name "New Apple Farm"
@@ -104,15 +134,15 @@
                     (first stands)
                     "test-user")
             {:keys [success processed-data stands]} result]
-        (t/is success)
+        (is success)
 
-        (t/is (:updated processed-data))
-        (t/is (= {:id "1"
+        (is (:updated processed-data))
+        (is (= {:id "1"
                 :name "New Apple Farm"
                 :coordinate "3,4"
                 :products ["apples" "oranges"]}
                (dissoc processed-data :updated :creator)))
-        (t/is (= [{:id "1"
+        (is (= [{:id "1"
                    :name "New Apple Farm"
                    :coordinate "3,4"
                    :products ["apples" "oranges"]}]

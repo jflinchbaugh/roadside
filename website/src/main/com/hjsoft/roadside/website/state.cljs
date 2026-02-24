@@ -6,17 +6,6 @@
 
 (def map-home [40.0379 -76.3055])
 
-(def default-stand-form-data
-  {:name ""
-   :coordinate (str (first map-home) ", " (second map-home))
-   :address ""
-   :town ""
-   :state ""
-   :products []
-   :expiration ""
-   :notes ""
-   :shared? true})
-
 (def app-context (create-context))
 
 (defn use-app []
@@ -65,8 +54,7 @@
                     state
                     :stands
                     (fn [stands]
-                      (filterv #(not= (utils/stand-key %)
-                                      (utils/stand-key payload))
+                      (filterv #(not= (:id %) (:id payload))
                                stands))))
    :set-notification #(set-value %1 :notification %2)
    :set-is-synced #(set-value %1 :is-synced %2)

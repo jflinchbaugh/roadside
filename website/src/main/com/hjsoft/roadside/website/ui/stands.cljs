@@ -3,6 +3,7 @@
             [helix.hooks :as hooks]
             [helix.dom :as d]
             [com.hjsoft.roadside.website.utils :as utils]
+            [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.state :as state]
             [clojure.string :as str]
             [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]))
@@ -10,7 +11,7 @@
 (defnc stand-item
   [{:keys [stand selected? on-click on-edit on-delete item-ref]}]
   (d/div
-   {:key (utils/stand-key stand)
+   {:key (stand-domain/stand-key stand)
     :ref item-ref
     :class (str
             "stand-item"
@@ -99,7 +100,7 @@
     (hooks/use-effect
      [selected-stand]
      (when selected-stand
-       (when-let [stand-el (get @stand-refs (utils/stand-key selected-stand))]
+       (when-let [stand-el (get @stand-refs (stand-domain/stand-key selected-stand))]
          (.scrollIntoView
           stand-el
           (clj->js {:behavior "smooth" :block "nearest"})))))
@@ -111,11 +112,11 @@
        (d/div
         (map
          (fn [stand]
-           (let [key (utils/stand-key stand)]
+           (let [key (stand-domain/stand-key stand)]
              ($ stand-item
                 {:key key
                  :stand stand
-                 :selected? (= key (utils/stand-key selected-stand))
+                 :selected? (= key (stand-domain/stand-key selected-stand))
                  :on-click #(dispatch [:set-selected-stand stand])
                  :on-edit #(do
                              (set-editing-stand %)

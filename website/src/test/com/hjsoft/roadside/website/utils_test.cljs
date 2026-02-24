@@ -25,22 +25,6 @@
                     (sut/random-uuid-str)))
   (t/is (not= (sut/random-uuid-str) (sut/random-uuid-str))))
 
-(t/deftest stand-key
-  (t/is (= "|||||" (sut/stand-key nil))
-        "nil key")
-  (t/is (= "|||||" (sut/stand-key {}))
-        "empty key")
-  (t/is (= "my-uuid" (sut/stand-key {:id "my-uuid"}))
-        "id-based key")
-  (t/is (= "name|[1 2]|address|town|state|prod,thing"
-           (sut/stand-key {:name "name"
-                           :coordinate [1.0 2.0]
-                           :address "address"
-                           :town "town"
-                           :state "state"
-                           :products ["prod" "thing"]}))
-        "stand key built from fields"))
-
 (t/deftest get-all-unique-products
   (t/testing "empty product list for most errors"
     (t/are [stands]
