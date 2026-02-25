@@ -1,6 +1,5 @@
 (ns com.hjsoft.roadside.website.ui.forms
-  (:require [clojure.string :as str]
-            [helix.core :refer [defnc $]]
+  (:require [helix.core :refer [defnc $]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
             [com.hjsoft.roadside.website.utils :as utils]
@@ -8,8 +7,7 @@
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.version :as version]
             [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
-            [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]
-            [com.hjsoft.roadside.website.controller :as controller]))
+            [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]))
 
 (def add-zoom-level 14)
 
@@ -144,7 +142,6 @@
 
 (defnc stand-form []
   (let [app-state (state/use-app-state)
-        dispatch (state/use-dispatch)
         {:keys [editing-stand]} (state/use-ui)
         {:keys [create-stand!
                 update-stand!
