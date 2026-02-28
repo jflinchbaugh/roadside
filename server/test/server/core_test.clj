@@ -61,9 +61,10 @@
         (is (= "Morning Coffee" (:name created-stand)))
 
         (testing "Get all stands"
-          (let [get-resp (core/get-stands-handler {})]
+          (let [get-resp (core/get-stands-handler {})
+                stands (json/read-str (:body get-resp) :key-fn keyword)]
             (is (= 200 (:status get-resp)))
-            (is (= 1 (count (json/read-str (:body get-resp) :key-fn keyword))))))
+            (is (= 1 (count stands)))))
 
         (testing "Get single stand"
           (let [get-resp (core/get-stand-handler {:path-params {:id id}})]
