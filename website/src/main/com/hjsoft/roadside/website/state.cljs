@@ -23,6 +23,13 @@
 (defn use-ui [] (:ui (use-app)))
 (defn use-user-location-state [] (:user-location (use-app)))
 
+(defn- migrate-settings [settings]
+  (if (contains? settings :resource)
+    (-> settings
+        (assoc :api-url (:resource settings))
+        (dissoc :resource))
+    settings))
+
 (def initial-app-state
   {:stands (->> (or (storage/get-item "roadside-stands") [])
                 (mapv (fn [s]
@@ -32,7 +39,7 @@
    :product-filter nil
    :selected-stand nil
    :map-center (or (storage/get-item "roadside-map-center") map-home)
-   :settings (or (storage/get-item "roadside-settings") {})
+   :settings (migrate-settings (or (storage/get-item "roadside-settings") {}))
    :is-synced false
    :notification nil})
 

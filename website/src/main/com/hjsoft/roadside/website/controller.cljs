@@ -12,7 +12,7 @@
   (storage/set-item! "roadside-map-center" map-center))
 
 (defn- has-credentials? [settings]
-  (and (seq (:resource settings))
+  (and (seq (:api-url settings))
        (seq (:user settings))
        (seq (:password settings))))
 
@@ -24,7 +24,7 @@
   (when (has-credentials? settings)
     (go
       (let [{:keys [success data error]} (<! (api/fetch-stands
-                                              (:resource settings)
+                                              (:api-url settings)
                                               (:user settings)
                                               (:password settings)))]
         (if success
@@ -41,7 +41,7 @@
   (when (has-credentials? settings)
     (go
       (let [{:keys [success error]} (<! (api/create-stand
-                                         (:resource settings)
+                                         (:api-url settings)
                                          (:user settings)
                                          (:password settings)
                                          stand))]
@@ -56,7 +56,7 @@
   (when (has-credentials? settings)
     (go
       (let [{:keys [success error]} (<! (api/update-stand
-                                         (:resource settings)
+                                         (:api-url settings)
                                          (:user settings)
                                          (:password settings)
                                          stand))]
@@ -71,7 +71,7 @@
   (when (has-credentials? settings)
     (go
       (let [{:keys [success error]} (<! (api/delete-stand
-                                         (:resource settings)
+                                         (:api-url settings)
                                          (:user settings)
                                          (:password settings)
                                          stand-id))]
