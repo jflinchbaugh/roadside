@@ -1,32 +1,33 @@
-# event-logger-backend
+# roadside-server
 
 run the server:
 ```
 $ clj -M:run
 ```
 
-register a new event-logger with login and password:
+register a new roadside account with login and password:
 ```
-$ curl -s -v -d login=u -d password=p  -d id=z \
-  http://localhost:8080/storage/api/register
-```
-
-download the event-logger data:
-```
-$ curl -s -v -u u:p http://localhost:8080/storage/api/logger/z
+$ curl -s -v \
+  -d login=u -d password=p \
+  http://localhost:8080/roadside/api/register
 ```
 
-post new document data:
+Download the roadside stand data:
+```
+$ curl -s -v -u u:p http://localhost:8080/roadside/api/stands
+```
+
+Post new document data:
 ```
 $ curl -s -v -u u:p \
-  -H 'Content-Type: text/plain' \
+  -H 'Content-Type: application/json' \
   -d '{"categories": [{"thing": true,"whatever": 2}]}' \
   http://localhost:8080/storage/api/logger/z
 ```
 
-delete the event-logger:
+delete a stand:
 ```
-$ curl -s -v -u u:p -X delete http://localhost:8080/storage/api/logger/z
+$ curl -s -v -u u:p -X delete http://localhost:8080/roadside/api/stands/:id
 ```
 
 static content, like the stylesheet, is available as well:
@@ -39,30 +40,34 @@ build the container image:
 $ make
 ```
 
-start the containers: app + xtdb 2:
+start the containers: app + xtdb 2.1:
 ```
-$ podman kube play event-logger-backend.yaml
-```
-
-stop the containers: app + xtdb 2:
-```
-$ podman kube down event-logger-backend.yaml
+$ podman kube play roadside-server.yaml
 ```
 
-create a system service around the pods:
+stop the containers: app + xtdb 2.1:
 ```
-$ sudo cp event-logger-backend.service /usr/lib/systemd/system/event-logger-backend.service
+$ podman kube down roadside-server.yaml
+```
+
+Create a system service around the pods:
+```
+$ sudo cp roadside-server.service /usr/lib/systemd/system/roadside-server.service
 $ sudo systemctl daemon-reload
-$ sudo systemctl enable event-logger-backend
-$ sudo systemctl start event-logger-backend
-$ sudo systemctl stop event-logger-backend
+$ sudo systemctl enable roadside-server
+$ sudo systemctl start roadside-server
+$ sudo systemctl stop roadside-server
 ```
 
 Create a user Quadlet to run pods:
 ```
 $ loginctl enable-linger # so our services will start at boot and stay around
-$ cp event-logger-backend.kube event-logger-backend.yaml $HOME/.config/containers/systemd/
+$ cp roadside-server.kube roadside-server.yaml $HOME/.config/containers/systemd/
 $ systemctl --user daemon-reload
-$ systemctl --user start event-logger-backend
+$ systemctl --user start roadside-server
 ```
 
+Access the running XTDB server from the api server:
+```
+$ podman exec -it roadside-server-api psql -U xtdb -h xtdb
+```
