@@ -4,8 +4,17 @@
 
 (t/deftest app-reducer-test
   (t/testing "set-stands"
-    (t/is (= {:stands [{:id 1}]}
-             (sut/app-reducer {} [:set-stands [{:id 1}]]))))
+    (t/testing "initial set"
+      (t/is (= {:stands [{:id 1}]}
+               (sut/app-reducer {} [:set-stands [{:id 1}]]))))
+    (t/testing "merge new"
+      (let [initial-state {:stands [{:id 1}]}
+            result (sut/app-reducer initial-state [:set-stands [{:id 2}]])]
+        (t/is (= #{{:id 1} {:id 2}} (set (:stands result))))))
+    (t/testing "update existing"
+      (let [initial-state {:stands [{:id 1 :v 1}]}
+            result (sut/app-reducer initial-state [:set-stands [{:id 1 :v 2}]])]
+        (t/is (= #{{:id 1 :v 2}} (set (:stands result)))))))
 
   (t/testing "set-product-filter"
     (t/is (= {:product-filter "Apples"}

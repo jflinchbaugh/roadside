@@ -50,12 +50,14 @@
 
 (def action-handlers
   {:set-stands (fn [state payload]
-                 (assoc state
-                        :stands
-                        (let [data (if (fn? payload)
-                                     (payload (:stands state))
-                                     payload)]
-                          (if (coll? data) (vec data) []))))
+                 (let [data (if (fn? payload)
+                              (payload (:stands state))
+                              payload)
+                       new-data (if (coll? data) (vec data) [])
+                       existing-map (into {} (map (juxt :id identity) (:stands state)))
+                       new-map (into {} (map (juxt :id identity) new-data))
+                       merged-map (merge existing-map new-map)]
+                   (assoc state :stands (vec (vals merged-map)))))
    :remove-stand (fn [state payload]
                    (update
                     state
