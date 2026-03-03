@@ -13,12 +13,12 @@ spec:
     - name: api
       image: localhost/roadside-server:latest
       ports:
-        - containerPort: 8000
+        - containerPort: 7000
           hostIp: 127.0.0.1
-          hostPort: 8000
+          hostPort: 7000
       env:
         - name: port
-          value: 8000
+          value: 7000
         - name: dbhost
           value: xtdb
   volumes:
