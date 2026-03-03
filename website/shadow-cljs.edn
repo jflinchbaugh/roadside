@@ -8,8 +8,7 @@
                 [refactor-nrepl "3.11.0"]
                 [cljs-http "0.1.49"]]
  :dev-http {3000 {:root "public"
-                  :handler shadow.http.push-state/handle
-                  :proxy-url "http://localhost:7000/"}}
+                  :proxy-url "http://localhost:7000/roadside"}}
  :builds
  {
   :frontend
