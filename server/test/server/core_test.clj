@@ -80,6 +80,22 @@
             (is (= 200 (:status update-resp)))
             (is (= "Evening Coffee" (:name (json/read-str (:body update-resp) :key-fn keyword))))))
 
+        (testing "Update non-existent stand (upsert behavior)"
+          (let [non-existent-id "missing-id"
+                update-doc {:name "New Stand" :location "Unknown"}
+                update-body (json/write-str update-doc)
+                update-req {:path-params {:id non-existent-id}
+                            :body (ByteArrayInputStream. (.getBytes update-body))}
+                update-resp (core/update-stand-handler update-req)]
+            (is (= 200 (:status update-resp)))
+            (let [created (json/read-str (:body update-resp) :key-fn keyword)]
+              (is (= "New Stand" (:name created)))
+              (is (= non-existent-id (:id created)))
+              ;; Verify it's actually in the DB
+              (let [get-resp (core/get-stand-handler {:path-params {:id non-existent-id}})]
+                (is (= 200 (:status get-resp)))
+                (is (= "New Stand" (:name (json/read-str (:body get-resp) :key-fn keyword))))))))
+
         (testing "Delete stand"
           (let [del-resp (core/delete-stand-handler {:path-params {:id id}})]
             (is (= 200 (:status del-resp)))
