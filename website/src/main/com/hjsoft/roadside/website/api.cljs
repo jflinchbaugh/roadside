@@ -1,34 +1,29 @@
 (ns com.hjsoft.roadside.website.api
   (:require [cljs-http.client :as http]
-            [cljs.core.async :refer [go <!]]
-            [clojure.string :as str]))
+            [cljs.core.async :refer [go <!]]))
 
-(defn- stands-url [base-url]
-  (str base-url (if (str/ends-with? base-url "/") "" "/") "stands"))
+(def ^:private stands-url "api/stands")
 
-(defn fetch-stands [base-url user password]
-  (let [url (stands-url base-url)]
-    (go
-      (let [response (<! (http/get url
-                                   {:basic-auth {:username user :password password}}))]
-        (if (:success response)
-          {:success true :data (:body response)}
-          {:success false :error (str "HTTP Error: " url ", " (:status response))})))))
+(defn fetch-stands [user password]
+  (go
+    (let [response (<! (http/get stands-url
+                                 {:basic-auth {:username user :password password}}))]
+      (if (:success response)
+        {:success true :data (:body response)}
+        {:success false :error (str "HTTP Error: " stands-url ", " (:status response))}))))
 
-(defn create-stand [base-url user password stand]
-  (let [url (stands-url base-url)]
-    (go
-      (let [response (<! (http/post url
-                                    {:basic-auth {:username user :password password}
-                                     :json-params stand}))]
-        (if (:success response)
-          {:success true :data (:body response)}
-          {:success false :error (str "HTTP Error: " (:status response))})))))
+(defn create-stand [user password stand]
+  (go
+    (let [response (<! (http/post stands-url
+                                  {:basic-auth {:username user :password password}
+                                   :json-params stand}))]
+      (if (:success response)
+        {:success true :data (:body response)}
+        {:success false :error (str "HTTP Error: " (:status response))}))))
 
-(defn update-stand [base-url user password stand]
+(defn update-stand [user password stand]
   (let [id (:id stand)
-        url (stands-url base-url)
-        resource-url (str url "/" id)]
+        resource-url (str stands-url "/" id)]
     (go
       (let [response (<! (http/put resource-url
                                    {:basic-auth {:username user :password password}
@@ -37,9 +32,8 @@
           {:success true :data (:body response)}
           {:success false :error (str "HTTP Error: " (:status response))})))))
 
-(defn delete-stand [base-url user password stand-id]
-  (let [url (stands-url base-url)
-        resource-url (str url "/" stand-id)]
+(defn delete-stand [user password stand-id]
+  (let [resource-url (str stands-url "/" stand-id)]
     (go
       (let [response (<! (http/delete resource-url
                                       {:basic-auth {:username user :password password}}))]

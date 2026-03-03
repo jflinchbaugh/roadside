@@ -12,8 +12,7 @@
   (storage/set-item! "roadside-map-center" map-center))
 
 (defn- has-credentials? [settings]
-  (and (seq (:api-url settings))
-       (seq (:user settings))
+  (and (seq (:user settings))
        (seq (:password settings))))
 
 (defn- notify! [dispatch type message]
@@ -24,14 +23,13 @@
   (when (has-credentials? settings)
     (go
       (let [{:keys [success data error]} (<! (api/fetch-stands
-                                              (:api-url settings)
                                               (:user settings)
                                               (:password settings)))]
         (if success
           (do
             (dispatch [:set-stands data])
             (dispatch [:set-is-synced true])
-            (notify! dispatch :success "Stands synced!"))
+            (notify! dispatch :success "Stands refreshed"))
           (do
             (tel/log! :error {:msg "Failed to fetch stands" :error error})
             (notify! dispatch :error (str "Sync failed: " error))))))))
@@ -41,7 +39,6 @@
   (when (has-credentials? settings)
     (go
       (let [{:keys [success error]} (<! (api/create-stand
-                                         (:api-url settings)
                                          (:user settings)
                                          (:password settings)
                                          stand))]
@@ -56,7 +53,6 @@
   (when (has-credentials? settings)
     (go
       (let [{:keys [success error]} (<! (api/update-stand
-                                         (:api-url settings)
                                          (:user settings)
                                          (:password settings)
                                          stand))]
@@ -71,7 +67,6 @@
   (when (has-credentials? settings)
     (go
       (let [{:keys [success error]} (<! (api/delete-stand
-                                         (:api-url settings)
                                          (:user settings)
                                          (:password settings)
                                          stand-id))]

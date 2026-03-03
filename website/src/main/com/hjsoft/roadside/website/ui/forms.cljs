@@ -255,7 +255,7 @@
         [form-data set-form-data] (hooks/use-state
                                    (or
                                     settings
-                                    {:api-url "" :user "" :password ""}))]
+                                    {:user "" :password ""}))]
 
     (ui-hooks/use-escape-key #(set-show-settings-dialog false))
 
@@ -275,11 +275,6 @@
         "\u2715"))
       (d/div
        {:class "settings-content"}
-       ($ form-field
-          {:label "API Base URL:"
-           :value (:api-url form-data)
-           :on-change #(set-form-data
-                        (assoc form-data :api-url (.. % -target -value)))})
        ($ form-field
           {:label "User:"
            :value (:user form-data)
