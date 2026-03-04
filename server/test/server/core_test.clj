@@ -13,7 +13,7 @@
       (f)
       (reset! core/node nil))))
 
-(use-fixtures :once with-xtdb-container)
+(use-fixtures :each with-xtdb-container)
 
 (deftest ping-test
   (testing "Ping handler returns 200 pong"
@@ -75,7 +75,8 @@
           (let [update-doc (assoc created-stand :name "Evening Coffee")
                 update-body (json/write-str update-doc)
                 update-req {:path-params {:id id}
-                            :body (ByteArrayInputStream. (.getBytes update-body))}
+                            :body (ByteArrayInputStream. (.getBytes update-body))
+                            :identity "alice"}
                 update-resp (core/update-stand-handler update-req)]
             (is (= 200 (:status update-resp)))
             (is (= "Evening Coffee" (:name (json/read-str (:body update-resp) :key-fn keyword))))))
@@ -85,7 +86,8 @@
                 update-doc {:name "New Stand" :location "Unknown"}
                 update-body (json/write-str update-doc)
                 update-req {:path-params {:id non-existent-id}
-                            :body (ByteArrayInputStream. (.getBytes update-body))}
+                            :body (ByteArrayInputStream. (.getBytes update-body))
+                            :identity "alice"}
                 update-resp (core/update-stand-handler update-req)]
             (is (= 200 (:status update-resp)))
             (let [created (json/read-str (:body update-resp) :key-fn keyword)]
@@ -97,7 +99,7 @@
                 (is (= "New Stand" (:name (json/read-str (:body get-resp) :key-fn keyword))))))))
 
         (testing "Delete stand"
-          (let [del-resp (core/delete-stand-handler {:path-params {:id id}})]
+          (let [del-resp (core/delete-stand-handler {:path-params {:id id} :identity "alice"})]
             (is (= 200 (:status del-resp)))
             (let [del-check (xt/q
                              @core/node
@@ -107,6 +109,59 @@
                                   (where (= xt/id id))))
                               id])]
               (is (= 0 (count del-check))))))))))
+
+(deftest creator-test
+  (testing "Creator value behavior"
+    (let [stand-id "stand-1"
+          stand-doc {:id stand-id :name "Creator Test Stand" :creator "malicious-user"}
+          body (json/write-str stand-doc)
+          create-req {:body (ByteArrayInputStream. (.getBytes body))
+                      :identity "alice"}
+          create-resp (core/create-stand-handler create-req)]
+      (is (= 201 (:status create-resp)))
+      (let [created-stand (json/read-str (:body create-resp) :key-fn keyword)]
+        (is (= "alice" (:creator created-stand)) "Creator should be set from identity, ignoring client input")
+        (is (= stand-id (:id created-stand)))
+
+        (testing "Updating stand preserves creator"
+          (let [update-doc (assoc created-stand :name "Updated Name" :creator "malicious-user")
+                update-body (json/write-str update-doc)
+                update-req {:path-params {:id stand-id}
+                            :body (ByteArrayInputStream. (.getBytes update-body))
+                            :identity "alice"}
+                update-resp (core/update-stand-handler update-req)]
+            (is (= 200 (:status update-resp)))
+            (let [updated-stand (json/read-str (:body update-resp) :key-fn keyword)]
+              (is (= "alice" (:creator updated-stand)) "Creator should be preserved from existing record, ignoring client input and current identity"))))
+
+        (testing "Updating stand by non-owner is forbidden"
+          (let [update-doc (assoc created-stand :name "Malicious Update")
+                update-body (json/write-str update-doc)
+                update-req {:path-params {:id stand-id}
+                            :body (ByteArrayInputStream. (.getBytes update-body))
+                            :identity "bob"}
+                update-resp (core/update-stand-handler update-req)]
+            (is (= 403 (:status update-resp)))
+            (is (= "Forbidden: You do not own this stand" (:error (json/read-str (:body update-resp) :key-fn keyword))))))
+
+        (testing "Deleting stand by non-owner is forbidden"
+          (let [del-req {:path-params {:id stand-id}
+                         :identity "bob"}
+                del-resp (core/delete-stand-handler del-req)]
+            (is (= 403 (:status del-resp)))
+            (is (= "Forbidden: You do not own this stand" (:error (json/read-str (:body del-resp) :key-fn keyword))))))
+
+        (testing "Upserting new stand sets creator from current identity"
+          (let [upsert-id "stand-2"
+                upsert-doc {:name "Upsert Stand" :creator "malicious-user"}
+                upsert-body (json/write-str upsert-doc)
+                upsert-req {:path-params {:id upsert-id}
+                            :body (ByteArrayInputStream. (.getBytes upsert-body))
+                            :identity "charlie"}
+                upsert-resp (core/update-stand-handler upsert-req)]
+            (is (= 200 (:status upsert-resp)))
+            (let [upserted-stand (json/read-str (:body upsert-resp) :key-fn keyword)]
+              (is (= "charlie" (:creator upserted-stand)) "Creator should be set from identity for new record in update handler"))))))))
 
 (deftest auth-test
   (testing "my-authfn"

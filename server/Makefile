@@ -5,7 +5,7 @@ all: container
 test:
 	clj -T:build test
 
-uber:
+uber: test
 	clj -T:build uber
 
 .PHONY: container

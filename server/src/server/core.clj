@@ -84,7 +84,8 @@
 
 (defn create-stand-handler
   [req]
-  (let [stand (json/read-str (rur/body-string req) :key-fn keyword)
+  (let [stand (-> (json/read-str (rur/body-string req) :key-fn keyword)
+                  (dissoc :creator))
         stand (assoc stand :xt/id (or (:id stand) (:xt/id stand) (str (java.util.UUID/randomUUID)))
                      :updated (str (t/now))
                      :creator (:identity req))
@@ -95,17 +96,39 @@
 (defn update-stand-handler
   [req]
   (let [id (get-in req [:path-params :id])
-        stand (json/read-str (rur/body-string req) :key-fn keyword)
-        stand (assoc stand :xt/id id :updated (str (t/now)))
-        stand (dissoc stand :id)]
-    (xt/submit-tx @node [[:put-docs :stands stand]])
-    (api-response 200 stand)))
+        stand (-> (json/read-str (rur/body-string req) :key-fn keyword)
+                  (dissoc :creator))
+        existing-stand (first
+                        (xt/q @node
+                              ['(fn [id]
+                                  (->
+                                   (from :stands [*])
+                                   (where (= xt/id id))))
+                               id]))]
+    (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
+      (api-response 403 {:error "Forbidden: You do not own this stand"})
+      (let [stand (assoc stand :xt/id id
+                         :updated (str (t/now))
+                         :creator (or (:creator existing-stand) (:identity req)))
+            stand (dissoc stand :id)]
+        (xt/submit-tx @node [[:put-docs :stands stand]])
+        (api-response 200 stand)))))
 
 (defn delete-stand-handler
   [req]
-  (let [id (get-in req [:path-params :id])]
-    (xt/submit-tx @node [[:delete-docs :stands id]])
-    (api-response 200 {:message (format "'%s' deleted" id)})))
+  (let [id (get-in req [:path-params :id])
+        existing-stand (first
+                        (xt/q @node
+                              ['(fn [id]
+                                  (->
+                                   (from :stands [*])
+                                   (where (= xt/id id))))
+                               id]))]
+    (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
+      (api-response 403 {:error "Forbidden: You do not own this stand"})
+      (do
+        (xt/submit-tx @node [[:delete-docs :stands id]])
+        (api-response 200 {:message (format "'%s' deleted" id)})))))
 
 (defn identity-required-wrapper
   [handler]

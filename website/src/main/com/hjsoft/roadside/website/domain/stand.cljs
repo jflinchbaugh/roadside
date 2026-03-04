@@ -69,20 +69,28 @@
          (into (or current-products []))
          (vec))))
 
+(defn- ensure-id [stand]
+  (if (:id stand)
+    stand
+    (assoc stand :id (utils/random-uuid-str))))
+
+(defn- ensure-creator [stand creator]
+  (if (empty? (str (:creator stand)))
+    (assoc stand :creator creator)
+    stand))
+
 (defn- prepare-stand-data
-  "Ensures stand has an ID, creator, detected products, and updated timestamp."
+  "Ensures stand has an ID, detected products, and updated timestamp."
   [form-data stands creator]
   (let [all-unique-products (utils/get-all-unique-products stands)
         final-products (infer-products (:name form-data)
                                        (:products form-data)
                                        all-unique-products)]
-    (assoc (if (:id form-data)
-             form-data
-             (assoc form-data
-                    :id (utils/random-uuid-str)
-                    :creator creator))
-           :products final-products
-           :updated (utils/get-current-timestamp))))
+    (-> form-data
+        ensure-id
+        (ensure-creator creator)
+        (assoc :products final-products
+               :updated (utils/get-current-timestamp)))))
 
 (defn- update-stands-list
   "Updates or adds the stand in the list, returning {:success ...}."
