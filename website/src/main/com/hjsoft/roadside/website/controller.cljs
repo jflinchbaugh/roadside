@@ -15,8 +15,11 @@
   (and (seq (:user settings))
        (seq (:password settings))))
 
-(defn- notify! [dispatch type message]
-  (dispatch [:set-notification {:type type :message message}]))
+(defn- notify!
+  ([dispatch type message]
+   (notify! dispatch type message nil))
+  ([dispatch type message stand-id]
+   (dispatch [:set-notification {:type type :message message :stand-id stand-id}])))
 
 (defn fetch-remote-stands!
   [{:keys [settings]} dispatch]
@@ -43,10 +46,10 @@
                                          (:password settings)
                                          stand))]
         (if success
-          (notify! dispatch :success "Stand added!")
+          (notify! dispatch :success "Stand added!" (:id stand))
           (do
             (tel/log! :error {:msg "Failed to create stand" :error error})
-            (notify! dispatch :error (str "Create failed: " error))))))))
+            (notify! dispatch :error (str "Create failed: " error) (:id stand))))))))
 
 (defn- remote-update-stand!
   [{:keys [settings]} dispatch stand]
@@ -57,10 +60,10 @@
                                          (:password settings)
                                          stand))]
         (if success
-          (notify! dispatch :success "Stand updated!")
+          (notify! dispatch :success "Stand updated!" (:id stand))
           (do
             (tel/log! :error {:msg "Failed to update stand" :error error})
-            (notify! dispatch :error (str "Update failed: " error))))))))
+            (notify! dispatch :error (str "Update failed: " error) (:id stand))))))))
 
 (defn- remote-delete-stand!
   [{:keys [settings]} dispatch stand-id]
@@ -119,7 +122,7 @@
         (remote-update-stand! app-state dispatch processed-data)
         true)
       (do
-        (notify! dispatch :error error)
+        (notify! dispatch :error error (:id editing-stand))
         false))))
 
 (defn delete-stand! [app-state dispatch stand]

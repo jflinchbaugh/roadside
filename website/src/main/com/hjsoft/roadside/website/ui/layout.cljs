@@ -32,7 +32,22 @@
                     #(dispatch [:set-notification nil])
                     3000)]
          (fn [] (js/clearTimeout timer)))))
-    (when notification
+    (when (and notification (not (:stand-id notification)))
       (d/div
        {:class (str "notification-toast " (name (:type notification)))}
+       (:message notification)))))
+
+(defnc stand-notification-toast [{:keys [stand-id]}]
+  (let [{:keys [state dispatch]} (hooks/use-context state/app-context)
+        {:keys [notification]} state]
+    (hooks/use-effect
+     [notification]
+     (when (and notification (= (:stand-id notification) stand-id))
+       (let [timer (js/setTimeout
+                    #(dispatch [:set-notification nil])
+                    3000)]
+         (fn [] (js/clearTimeout timer)))))
+    (when (and notification (= (:stand-id notification) stand-id))
+      (d/div
+       {:class (str "stand-notification-toast " (name (:type notification)))}
        (:message notification)))))

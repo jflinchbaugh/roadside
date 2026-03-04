@@ -6,7 +6,8 @@
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.state :as state]
             [clojure.string :as str]
-            [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]))
+            [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]
+            [com.hjsoft.roadside.website.ui.layout :refer [stand-notification-toast]]))
 
 (defnc stand-item
   [{:keys [stand selected? on-click on-edit on-delete item-ref]}]
@@ -22,6 +23,7 @@
               "stand-item"
               (when selected? " selected-stand"))
       :onClick on-click}
+     ($ stand-notification-toast {:stand-id (:id stand)})
      (d/div
       {:class "stand-content"}
       (when (seq (:name stand))
