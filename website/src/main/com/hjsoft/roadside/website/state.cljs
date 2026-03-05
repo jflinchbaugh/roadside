@@ -34,7 +34,8 @@
    :map-center (or (storage/get-item "roadside-map-center") map-home)
    :settings (or (storage/get-item "roadside-settings") {})
    :is-synced false
-   :notification nil})
+   :notification nil
+   :show-expired? false})
 
 (defn set-value [state key payload]
   (if (fn? payload)
@@ -62,6 +63,7 @@
    :set-is-synced #(set-value %1 :is-synced %2)
    :set-selected-stand #(set-value %1 :selected-stand %2)
    :set-product-filter #(set-value %1 :product-filter %2)
+   :set-show-expired #(set-value %1 :show-expired? %2)
    :set-settings #(set-value %1 :settings %2)
    :set-map-center #(set-value %1 :map-center %2)})
 
@@ -71,8 +73,12 @@
     state))
 
 (defn select-filtered-stands
-  [{:keys [stands product-filter]}]
-  (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
+  [{:keys [stands product-filter show-expired?]}]
+  (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)
+        filtered-by-expiry (if show-expired?
+                             sorted-stands
+                             (filterv #(not (utils/past-expiration? (:expiration %)))
+                                      sorted-stands))]
     (if product-filter
-      (filterv #(some #{product-filter} (:products %)) sorted-stands)
-      (vec sorted-stands))))
+      (filterv #(some #{product-filter} (:products %)) filtered-by-expiry)
+      (vec filtered-by-expiry))))

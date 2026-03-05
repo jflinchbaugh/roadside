@@ -10,6 +10,12 @@
         week-later (+ (.getTime date) (* 7 24 60 60 1000))]
     (.substring (.toISOString (js/Date. week-later)) 0 10)))
 
+(defn past-expiration? [expiration-str]
+  (if (str/blank? expiration-str)
+    false
+    (let [today (.substring (.toISOString (js/Date.)) 0 10)]
+      (neg? (compare expiration-str today)))))
+
 (defn random-uuid-str []
   (str (cljs.core/random-uuid)))
 

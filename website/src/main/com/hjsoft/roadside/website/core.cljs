@@ -56,7 +56,7 @@
         _ (use-app-side-effects app-state dispatch user-location)
 
         filtered-stands (hooks/use-memo
-                         [stands (:product-filter app-state)]
+                         [stands (:product-filter app-state) (:show-expired? app-state)]
                          (state/select-filtered-stands app-state))
 
         set-coordinate-form-data (hooks/use-callback

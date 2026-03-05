@@ -15,13 +15,15 @@
         current-user (get-in app-state [:settings :user])
         creator (:creator stand)
         owner? (or (empty? (str creator))
-                   (= (str current-user) (str creator)))]
+                   (= (str current-user) (str creator)))
+        expired? (utils/past-expiration? (:expiration stand))]
     (d/div
      {:key (stand-domain/stand-key stand)
       :ref item-ref
       :class (str
               "stand-item"
-              (when selected? " selected-stand"))
+              (when selected? " selected-stand")
+              (when expired? " expired-stand"))
       :onClick on-click}
      ($ stand-notification-toast {:stand-id (:id stand)})
      (d/div
@@ -57,7 +59,7 @@
       (when (seq (:expiration stand))
         (d/p
          {:class "expiration-date"}
-         (d/strong "Expires: ")
+         (d/strong (if expired? "Expired: " "Expires: "))
          (:expiration stand)))
       (when (seq (:updated stand))
         (d/p
@@ -136,31 +138,40 @@
 
 (defnc product-list
   [{:keys [stands]}]
-  (let [{:keys [product-filter]} (state/use-app-state)
+  (let [{:keys [product-filter show-expired?]} (state/use-app-state)
         dispatch (state/use-dispatch)
         unique-products (hooks/use-memo
                          [stands]
                          (utils/get-all-unique-products stands))]
     (d/div
      {:class "product-list"}
-     (if (empty? unique-products)
-       (d/p "No products available yet.")
-       (d/div
-        {:class "products-tags"}
-        (map (fn [product]
-               (d/span
-                {:key product
-                 :class (str
-                         "product-tag"
-                         (when (= product product-filter)
-                           " product-tag-active"))
-                 :onClick #(if (= product product-filter)
-                             (dispatch [:set-product-filter nil])
-                             (dispatch [:set-product-filter product]))}
-                product))
-             unique-products)))
-     (when product-filter
-       (d/button
-        {:class "clear-filter-btn"
-         :onClick #(dispatch [:set-product-filter nil])}
-        "Clear Filter")))))
+     (d/div
+      {:class "product-list-content"}
+      (if (empty? unique-products)
+        (d/p "No products available yet.")
+        (d/div
+         {:class "products-tags"}
+         (map (fn [product]
+                (d/span
+                 {:key product
+                  :class (str
+                          "product-tag"
+                          (when (= product product-filter)
+                            " product-tag-active"))
+                  :onClick #(if (= product product-filter)
+                              (dispatch [:set-product-filter nil])
+                              (dispatch [:set-product-filter product]))}
+                 product))
+              unique-products)))
+      (d/div
+       {:class "filter-controls"}
+       (d/span
+        {:class (str "product-tag show-expired-toggle"
+                     (when show-expired? " product-tag-active"))
+         :onClick #(dispatch [:set-show-expired (not show-expired?)])}
+        "Show Expired")
+       (when product-filter
+         (d/button
+          {:class "clear-filter-btn"
+           :onClick #(dispatch [:set-product-filter nil])}
+          "Clear Filter")))))))
