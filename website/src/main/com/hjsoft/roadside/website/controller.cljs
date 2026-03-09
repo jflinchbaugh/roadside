@@ -86,11 +86,10 @@
         {:keys [success
                 stands
                 error
-                processed-data]} (stand-domain/process-stand-form
-                                  form-data
-                                  (:stands app-state)
-                                  nil
-                                  creator)]
+                processed-data]} (stand-domain/add-stand
+                                   form-data
+                                   (:stands app-state)
+                                   creator)]
     (if success
       (do
         (dispatch [:set-stands stands])
@@ -108,11 +107,11 @@
         {:keys [success
                 stands
                 error
-                processed-data]} (stand-domain/process-stand-form
-                                  form-data
-                                  (:stands app-state)
-                                  editing-stand
-                                  creator)]
+                processed-data]} (stand-domain/edit-stand
+                                   form-data
+                                   (:stands app-state)
+                                   editing-stand
+                                   creator)]
     (if success
       (do
         (dispatch [:set-stands stands])
@@ -124,7 +123,6 @@
       (do
         (notify! dispatch :error error (:id editing-stand))
         false))))
-
 (defn delete-stand! [app-state dispatch stand]
   (dispatch [:remove-stand stand])
   (remote-delete-stand! app-state dispatch (:id stand)))

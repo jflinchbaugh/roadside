@@ -96,18 +96,17 @@
           final (sut/prepare-submit-data state)]
       (is (= state final)))))
 
-(deftest process-stand-form-test
+(deftest add-and-edit-stand-test
   (let [stands [{:id "1"
                  :name "Apple Farm"
                  :products ["apples"]
                  :coordinate "1,2"}]]
     (testing "adding a new stand with auto-product detection"
-      (let [result (sut/process-stand-form
+      (let [result (sut/add-stand
                     {:name "Better Apples"
                      :coordinate "3,4"
                      :products []}
                     stands
-                    nil
                     "test-user")]
         (is (:success result))
         (is (some #(= "apples" %) (:products (:processed-data result)))
@@ -116,34 +115,41 @@
                in other stands")
         (is (= "test-user" (:creator (:processed-data result))))))
 
-    (testing "preventing duplicates"
-      (let [result (sut/process-stand-form
+    (testing "preventing duplicates in add-stand"
+      (let [result (sut/add-stand
                     {:id "1" :name "Apple Farm" :coordinate "1,2" :products ["apples"]}
                     stands
-                    nil
                     "test-user")]
         (is (not (:success result)))
         (is (= "This stand already exists!" (:error result)))))
-    (testing "editing stand replaces the old one"
-      (let [result (sut/process-stand-form
+
+    (testing "editing stand replaces the old one and DOES NOT auto-detect products"
+      (let [stands [{:id "1" :name "Original" :products ["apples"] :coordinate "1,2"}
+                    {:id "2" :name "Corn Stand" :products ["corn"] :coordinate "3,4"}]
+            result (sut/edit-stand
                     {:id "1"
-                     :name "New Apple Farm"
-                     :coordinate "3,4"
-                     :products ["apples" "oranges"]}
+                     :name "Original and corn"
+                     :products ["apples"]
+                     :coordinate "1,2"}
                     stands
                     (first stands)
                     "test-user")
             {:keys [success processed-data stands]} result]
         (is success)
-
         (is (:updated processed-data))
         (is (= {:id "1"
-                :name "New Apple Farm"
-                :coordinate "3,4"
-                :products ["apples" "oranges"]}
+                :name "Original and corn"
+                :coordinate "1,2"
+                :products ["apples"]}
                (dissoc processed-data :updated :creator)))
+        (is (not (some #(= "corn" %) (:products processed-data)))
+            "Should NOT have added corn even though it is in the name and exists elsewhere")
         (is (= [{:id "1"
-                   :name "New Apple Farm"
-                   :coordinate "3,4"
-                   :products ["apples" "oranges"]}]
-                 (map (fn [s] (dissoc s :updated :creator)) stands)))))))
+                 :name "Original and corn"
+                 :coordinate "1,2"
+                 :products ["apples"]}
+                {:id "2"
+                 :name "Corn Stand"
+                 :products ["corn"]
+                 :coordinate "3,4"}]
+               (map (fn [s] (dissoc s :updated :creator)) stands)))))))

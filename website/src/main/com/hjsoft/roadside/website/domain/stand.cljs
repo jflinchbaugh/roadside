@@ -79,38 +79,37 @@
     (assoc stand :creator creator)
     stand))
 
-(defn- prepare-stand-data
-  "Ensures stand has an ID, detected products, and updated timestamp."
+(defn- prepare-common-data
+  "Ensures stand has an ID, creator, and updated timestamp."
+  [form-data creator]
+  (-> form-data
+      ensure-id
+      (ensure-creator creator)
+      (assoc :updated (utils/get-current-timestamp))))
+
+(defn add-stand
+  "Processes a new stand, including product inference and duplicate check."
   [form-data stands creator]
   (let [all-unique-products (utils/get-all-unique-products stands)
         final-products (infer-products (:name form-data)
                                        (:products form-data)
-                                       all-unique-products)]
-    (-> form-data
-        ensure-id
-        (ensure-creator creator)
-        (assoc :products final-products
-               :updated (utils/get-current-timestamp)))))
-
-(defn- update-stands-list
-  "Updates or adds the stand in the list, returning {:success ...}."
-  [processed-data stands editing-stand]
-  (if editing-stand
-    {:success true
-     :processed-data processed-data
-     :stands (mapv (fn [s]
-                     (if (= (stand-key s) (stand-key editing-stand))
-                       processed-data
-                       s))
-                   stands)}
+                                       all-unique-products)
+        processed-data (assoc (prepare-common-data form-data creator)
+                              :products final-products)]
     (if (some #(= (stand-key processed-data) (stand-key %)) stands)
       {:success false :error "This stand already exists!"}
       {:success true
        :processed-data processed-data
        :stands (conj (vec stands) processed-data)})))
 
-(defn process-stand-form
-  "Processes the stand form data and returns a map with :success and the updated stands list."
+(defn edit-stand
+  "Processes an updated stand, replacing the old one in the list."
   [form-data stands editing-stand creator]
-  (let [processed-data (prepare-stand-data form-data stands creator)]
-    (update-stands-list processed-data stands editing-stand)))
+  (let [processed-data (prepare-common-data form-data creator)]
+    {:success true
+     :processed-data processed-data
+     :stands (mapv (fn [s]
+                     (if (= (stand-key s) (stand-key editing-stand))
+                       processed-data
+                       s))
+                   stands)}))
