@@ -87,29 +87,34 @@
       (ensure-creator creator)
       (assoc :updated (utils/get-current-timestamp))))
 
+(defn- finalize-stand
+  "Standardized result for stand operations.
+   Two arities:
+   - [stands processed-data] -> Add (with duplicate check)
+   - [stands editing-stand processed-data] -> Edit (replace matching)"
+  ([stands processed-data]
+   (if (some #(= (stand-key processed-data) (stand-key %)) stands)
+     {:success false :error "This stand already exists!"}
+     (finalize-stand stands nil processed-data)))
+  ([stands editing-stand processed-data]
+   {:success true
+    :processed-data processed-data
+    :stands (if editing-stand
+              (mapv #(if (= (stand-key %) (stand-key editing-stand)) processed-data %) stands)
+              (conj (vec stands) processed-data))}))
+
 (defn add-stand
   "Processes a new stand, including product inference and duplicate check."
   [form-data stands creator]
-  (let [all-unique-products (utils/get-all-unique-products stands)
-        final-products (infer-products (:name form-data)
-                                       (:products form-data)
-                                       all-unique-products)
-        processed-data (assoc (prepare-common-data form-data creator)
-                              :products final-products)]
-    (if (some #(= (stand-key processed-data) (stand-key %)) stands)
-      {:success false :error "This stand already exists!"}
-      {:success true
-       :processed-data processed-data
-       :stands (conj (vec stands) processed-data)})))
+  (let [all-unique-products (utils/get-all-unique-products stands)]
+    (-> form-data
+        (prepare-common-data creator)
+        (update :products #(infer-products (:name form-data) % all-unique-products))
+        (->> (finalize-stand stands)))))
 
 (defn edit-stand
   "Processes an updated stand, replacing the old one in the list."
   [form-data stands editing-stand creator]
-  (let [processed-data (prepare-common-data form-data creator)]
-    {:success true
-     :processed-data processed-data
-     :stands (mapv (fn [s]
-                     (if (= (stand-key s) (stand-key editing-stand))
-                       processed-data
-                       s))
-                   stands)}))
+  (-> form-data
+      (prepare-common-data creator)
+      (->> (finalize-stand stands editing-stand))))
