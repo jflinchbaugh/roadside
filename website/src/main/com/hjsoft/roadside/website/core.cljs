@@ -55,9 +55,15 @@
 
         _ (use-app-side-effects app-state dispatch user-location)
 
+        stands-by-expiry (hooks/use-memo
+                          [stands (:show-expired? app-state)]
+                          (state/select-stands-by-expiry app-state))
+
         filtered-stands (hooks/use-memo
-                         [stands (:product-filter app-state) (:show-expired? app-state)]
-                         (state/select-filtered-stands app-state))
+                         [stands-by-expiry (:product-filter app-state)]
+                         (if-let [pf (:product-filter app-state)]
+                           (filterv #(some #{pf} (:products %)) stands-by-expiry)
+                           stands-by-expiry))
 
         set-coordinate-form-data (hooks/use-callback
                                   [dispatch]
@@ -106,7 +112,7 @@
               :class "location-btn"
               :onClick #((:get-location user-location))}
              "\u2316")))
-          ($ product-list {:stands stands})
+          ($ product-list {:stands stands-by-expiry})
           (when show-form ($ stand-form))
           ($ stands-list {:stands filtered-stands})
           (d/button

@@ -72,13 +72,17 @@
     (handler state payload)
     state))
 
+(defn select-stands-by-expiry
+  [{:keys [stands show-expired?]}]
+  (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
+    (if show-expired?
+      sorted-stands
+      (filterv #(not (utils/past-expiration? (:expiration %)))
+               sorted-stands))))
+
 (defn select-filtered-stands
-  [{:keys [stands product-filter show-expired?]}]
-  (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)
-        filtered-by-expiry (if show-expired?
-                             sorted-stands
-                             (filterv #(not (utils/past-expiration? (:expiration %)))
-                                      sorted-stands))]
+  [{:keys [product-filter] :as state}]
+  (let [filtered-by-expiry (select-stands-by-expiry state)]
     (if product-filter
       (filterv #(some #{product-filter} (:products %)) filtered-by-expiry)
       (vec filtered-by-expiry))))
