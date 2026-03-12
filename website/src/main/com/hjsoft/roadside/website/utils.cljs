@@ -16,6 +16,19 @@
     (let [today (.substring (.toISOString (js/Date.)) 0 10)]
       (neg? (compare expiration-str today)))))
 
+(defn show-system-notification
+  "Displays a browser system notification if permissions are granted."
+  [title options]
+  (when (exists? js/Notification)
+    (case js/Notification.permission
+      "granted" (js/Notification. title (clj->js options))
+      "denied" nil
+      (.requestPermission
+       js/Notification
+       (fn [permission]
+         (when (= permission "granted")
+           (js/Notification. title (clj->js options))))))))
+
 (defn random-uuid-str []
   (str (cljs.core/random-uuid)))
 

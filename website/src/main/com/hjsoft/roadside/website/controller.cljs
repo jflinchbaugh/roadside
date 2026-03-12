@@ -4,6 +4,7 @@
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.utils :as utils]
             [taoensso.telemere :as tel]
+            [clojure.string :as str]
             [cljs.core.async :refer [go <!]]))
 
 (defn save-local-data! [stands settings map-center]
@@ -97,6 +98,12 @@
         (when-let [coords (utils/parse-coordinates (:coordinate processed-data))]
           (dispatch [:set-map-center coords]))
         (remote-create-stand! app-state dispatch processed-data)
+        (when (and (empty? (str/trim (or (:name processed-data) "")))
+                   (empty? (:products processed-data)))
+          (utils/show-system-notification
+           "Stand Added"
+           {:body "Remember to complete the recently added Roadside Stand."
+            :icon "images/apples.png"}))
         true)
       (do
         (notify! dispatch :error error)
