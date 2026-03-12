@@ -65,11 +65,18 @@
     "geo:1,2" " 1, 2 "
     ))
 
-(t/deftest show-system-notification-test
-  (reset! init/notification-calls [])
-  (sut/show-system-notification "Test Notification" {:body "This is a test"})
-  (let [calls @init/notification-calls]
-    (t/is (= 1 (count calls)) "One notification should be called")
-    (t/is (= "Test Notification" (:title (first calls))) "Title matches")
-    (t/is (= "This is a test" (get-in (first calls) [:options :body])) "Body matches")))
+(t/deftest stand-popup-html
+  (t/testing "empty stand"
+    (t/is (= "(no details)" (sut/stand-popup-html nil)))
+    (t/is (= "(no details)" (sut/stand-popup-html {}))))
 
+  (t/testing "simple stand"
+    (t/is (= "<b>My Stand</b><br>"
+             (sut/stand-popup-html {:name "My Stand"})))
+    (t/is (= "<b>My Stand</b><br>Apples, Oranges<br>"
+             (sut/stand-popup-html {:name "My Stand" :products ["Apples" "Oranges"]}))))
+
+  (t/testing "XSS sanitization"
+    (t/is (not (str/includes? (sut/stand-popup-html {:name "<script>alert(1)</script>"}) "<script>")))
+    (t/is (str/includes? (sut/stand-popup-html {:name "<script>alert(1)</script>"}) "&lt;script&gt;"))
+    (t/is (str/includes? (sut/stand-popup-html {:products ["<b>bold</b>"]}) "&lt;b&gt;bold&lt;/b&gt;"))))

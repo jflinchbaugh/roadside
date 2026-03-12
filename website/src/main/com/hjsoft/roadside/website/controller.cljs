@@ -98,15 +98,6 @@
         (when-let [coords (utils/parse-coordinates (:coordinate processed-data))]
           (dispatch [:set-map-center coords]))
         (remote-create-stand! app-state dispatch processed-data)
-        (try
-          (when (and (empty? (str/trim (or (:name processed-data) "")))
-                     (empty? (:products processed-data)))
-            (utils/show-system-notification
-             "Stand Added"
-             {:body "Remember to complete the recently added Roadside Stand."
-              :icon "images/apples.png"}))
-          (catch :default e
-            (tel/log! :error {:msg "Failed to show system notification" :error e})))
         true)
       (do
         (notify! dispatch :error error)
