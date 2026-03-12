@@ -2,6 +2,8 @@
   (:require [com.hjsoft.roadside.website.state :as sut]
             [cljs.test :as t]))
 
+(def ^:const one-day (* 24 60 60 1000))
+
 (t/deftest app-reducer-test
   (t/testing "set-stands"
     (t/testing "initial set"
@@ -50,8 +52,14 @@
 
 (t/deftest select-filtered-stands-test
   (let [today (.substring (.toISOString (js/Date.)) 0 10)
-        yesterday (.substring (.toISOString (js/Date. (- (js/Date.) (* 24 60 60 1000)))) 0 10)
-        tomorrow (.substring (.toISOString (js/Date. (+ (js/Date.) (* 24 60 60 1000)))) 0 10)
+        yesterday (.substring
+                   (.toISOString (js/Date.
+                                  (- (.getTime (js/Date.)) one-day)))
+                   0 10)
+        tomorrow (.substring
+                  (.toISOString (js/Date.
+                                 (+ (.getTime (js/Date.)) one-day)))
+                  0 10)
         stands [{:id "1" :name "B" :updated "2023-01-01T12:00:00Z" :products ["Apples"] :expiration tomorrow}
                 {:id "2" :name "A" :updated "2023-01-02T12:00:00Z" :products ["Corn"] :expiration tomorrow}
                 {:id "3" :name "C" :updated "2023-01-01T10:00:00Z" :products ["Apples"] :expiration tomorrow}
