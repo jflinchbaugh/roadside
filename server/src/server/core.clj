@@ -57,6 +57,22 @@
           (api-response 502 {:error (str "Nominatim error: " (or error status))})
           (api-response 200 (json/read-str body :key-fn keyword)))))))
 
+(defn reverse-geocode-handler
+  [req]
+  (let [lat (get-in req [:params :lat])
+        lon (get-in req [:params :lon])]
+    (if (or (clojure.string/blank? lat) (clojure.string/blank? lon))
+      (api-response 400 {:error "Missing lat or lon"})
+      (let [url "https://nominatim.openstreetmap.org/reverse"
+            query-params {:lat lat
+                          :lon lon
+                          :format "json"}
+            {:keys [status body error]} @(hkc/get url {:query-params query-params
+                                                       :headers {"User-Agent" "RoadsideStandsApp/1.0"}})]
+        (if (or error (not= status 200))
+          (api-response 502 {:error (str "Nominatim error: " (or error status))})
+          (api-response 200 (json/read-str body :key-fn keyword)))))))
+
 (defn register-handler
   [req]
   (let [id (or (get-in req [:params :id]) (str (java.util.UUID/randomUUID)))
@@ -176,7 +192,10 @@
   (-> [base-url
        ["/api"
         ["/ping" ping-handler]
-        ["/geocode" geocode-handler]
+        ["/geocode" {:middleware [authenticated-for-logger identity-required-wrapper]
+                     :get geocode-handler}]
+        ["/reverse-geocode" {:middleware [authenticated-for-logger identity-required-wrapper]
+                             :get reverse-geocode-handler}]
         ["/register" {:post register-handler}]
         ["/stands" {:middleware
                     [authenticated-for-logger identity-required-wrapper]

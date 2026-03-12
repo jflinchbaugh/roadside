@@ -176,29 +176,58 @@
       (let [mock-response {:status 200
                            :body (json/write-str [{:lat "40.0379" :lon "-76.3055"}])}]
         (with-redefs [hkc/get (fn [_ _] (atom mock-response))]
-          (let [req {:params {:q "Lancaster, PA"}}
+          (let [req {:params {:q "Lancaster, PA"}
+                     :identity "alice"}
                 resp (core/geocode-handler req)]
             (is (= 200 (:status resp)))
-            (is (= [{:lat "40.0379" :lon "-76.3055"}] 
+            (is (= [{:lat "40.0379" :lon "-76.3055"}]
                    (json/read-str (:body resp) :key-fn keyword)))))))
 
     (testing "Address not found"
       (let [mock-response {:status 200 :body "[]"}]
         (with-redefs [hkc/get (fn [_ _] (atom mock-response))]
-          (let [req {:params {:q "Middle of Nowhere"}}
+          (let [req {:params {:q "Middle of Nowhere"}
+                     :identity "alice"}
                 resp (core/geocode-handler req)]
             (is (= 200 (:status resp)))
             (is (= [] (json/read-str (:body resp))))))))
 
     (testing "Missing address parameter"
-      (let [resp (core/geocode-handler {:params {}})]
+      (let [resp (core/geocode-handler {:params {} :identity "alice"})]
         (is (= 400 (:status resp)))
         (is (= "Missing address" (:error (json/read-str (:body resp) :key-fn keyword))))))
 
     (testing "Nominatim error (500)"
       (let [mock-response {:status 500 :body "Internal Server Error"}]
         (with-redefs [hkc/get (fn [_ _] (atom mock-response))]
-          (let [req {:params {:q "Lancaster, PA"}}
+          (let [req {:params {:q "Lancaster, PA"}
+                     :identity "alice"}
                 resp (core/geocode-handler req)]
+            (is (= 502 (:status resp)))
+            (is (clojure.string/includes? (:body resp) "Nominatim error")))))))
+
+  (testing "Reverse geocode proxy handler"
+    (testing "Successful reverse geocoding"
+      (let [mock-response {:status 200
+                           :body (json/write-str {:address {:road "Main St" :city "Lancaster" :state "PA"}})}]
+        (with-redefs [hkc/get (fn [_ _] (atom mock-response))]
+          (let [req {:params {:lat "40.0379" :lon "-76.3055"}
+                     :identity "alice"}
+                resp (core/reverse-geocode-handler req)]
+            (is (= 200 (:status resp)))
+            (is (= {:road "Main St" :city "Lancaster" :state "PA"}
+                   (:address (json/read-str (:body resp) :key-fn keyword))))))))
+
+    (testing "Missing parameters"
+      (let [resp (core/reverse-geocode-handler {:params {:lat "40.0"} :identity "alice"})]
+        (is (= 400 (:status resp)))
+        (is (= "Missing lat or lon" (:error (json/read-str (:body resp) :key-fn keyword))))))
+
+    (testing "Nominatim error"
+      (let [mock-response {:status 404 :body "Not Found"}]
+        (with-redefs [hkc/get (fn [_ _] (atom mock-response))]
+          (let [req {:params {:lat "0" :lon "0"}
+                     :identity "alice"}
+                resp (core/reverse-geocode-handler req)]
             (is (= 502 (:status resp)))
             (is (clojure.string/includes? (:body resp) "Nominatim error"))))))))

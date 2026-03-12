@@ -41,14 +41,25 @@
           {:success true}
           {:success false :error (str "HTTP Error: " (:status response))})))))
 
-(defn geocode-address [address]
+(defn geocode-address [user password address]
   (go
     (let [url "api/geocode"
           params {:q address}
-          response (<! (http/get url {:query-params params}))]
+          response (<! (http/get url {:query-params params
+                                      :basic-auth {:username user :password password}}))]
       (if (and (:success response) (seq (:body response)))
         (let [result (first (:body response))]
           {:success true
            :lat (js/parseFloat (:lat result))
            :lng (js/parseFloat (:lon result))})
         {:success false :error (or (:status-text response) "Address not found")}))))
+
+(defn reverse-geocode [user password lat lng]
+  (go
+    (let [url "api/reverse-geocode"
+          params {:lat lat :lon lng}
+          response (<! (http/get url {:query-params params
+                                      :basic-auth {:username user :password password}}))]
+      (if (:success response)
+        {:success true :data (:body response)}
+        {:success false :error (or (:status-text response) "Location not found")}))))

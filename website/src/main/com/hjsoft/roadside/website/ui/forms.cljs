@@ -143,10 +143,14 @@
 
 (defnc stand-form []
   (let [app-state (state/use-app-state)
+        settings (:settings app-state)
+        authenticated? (and (seq (:user settings))
+                            (seq (:password settings)))
         {:keys [editing-stand]} (state/use-ui)
         {:keys [create-stand!
                 update-stand!
                 lookup-address!
+                reverse-lookup!
                 cancel-form!]} (ui-hooks/use-actions)
         [stand-form-data
          local-dispatch] (hooks/use-reducer
@@ -218,6 +222,17 @@
        (when (:show-address? stand-form-data)
          (d/div
           {:class "address-fields-wrapper"}
+          (when (and authenticated?
+                     (utils/parse-coordinates (:coordinate stand-form-data)))
+            (let [coords (utils/parse-coordinates (:coordinate stand-form-data))]
+              (d/button
+               {:type "button"
+                :class "button secondary reverse-lookup-btn"
+                :onClick #(reverse-lookup! local-dispatch
+                                           (first coords)
+                                           (second coords))
+                :title "Lookup address from map coordinates"}
+               "Find Address")))
           ($ form-field
              {:label "Address:"
               :value (:address stand-form-data)
@@ -233,11 +248,12 @@
               :value (:state stand-form-data)
               :on-change #(local-dispatch
                            [:update-field [:state (.. % -target -value)]])})
-          (d/button
-           {:type "button"
-            :class "button secondary lookup-btn"
-            :onClick #(lookup-address! local-dispatch stand-form-data)}
-           "Lookup Address")))
+          (when authenticated?
+            (d/button
+             {:type "button"
+              :class "button secondary lookup-btn"
+              :onClick #(lookup-address! local-dispatch stand-form-data)}
+             "Show Location"))))
        ($ form-field
           {:label "Expiration Date:"
            :type "date"

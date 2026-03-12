@@ -19,7 +19,9 @@
      :delete-stand! (fn [stand]
                       (controller/delete-stand! app-state dispatch stand))
      :lookup-address! (fn [on-update address-data]
-                        (controller/lookup-address! dispatch on-update address-data))
+                        (controller/lookup-address! app-state dispatch on-update address-data))
+     :reverse-lookup! (fn [on-update lat lng]
+                        (controller/reverse-lookup! app-state dispatch on-update lat lng))
      :cancel-form! (fn []
                      (set-show-form false)
                      (set-editing-stand nil))}))

@@ -137,18 +137,48 @@
   (dispatch [:remove-stand stand])
   (remote-delete-stand! app-state dispatch (:id stand)))
 
-(defn lookup-address! [dispatch on-update address-data]
-  (let [address (str/join ", " (remove empty? [(:address address-data)
+(defn lookup-address! [app-state dispatch on-update address-data]
+  (let [settings (:settings app-state)
+        user (:user settings)
+        password (:password settings)
+        address (str/join ", " (remove empty? [(:address address-data)
                                                (:town address-data)
                                                (:state address-data)]))]
-    (if (empty? address)
-      (notify! dispatch :error "Address is empty!")
+    (if (or (empty? user) (empty? password))
+      (notify! dispatch :error "Authentication required for address lookup!")
+      (if (empty? address)
+        (notify! dispatch :error "Address is empty!")
+        (go
+          (notify! dispatch :info "Looking up address...")
+          (let [{:keys [success lat lng error]} (<! (api/geocode-address user password address))]
+            (if success
+              (do
+                (on-update [:update-field [:coordinate (str lat ", " lng)]])
+                (dispatch [:set-map-center [lat lng]])
+                (notify! dispatch :success "Address found!"))
+              (notify! dispatch :error (str "Geocoding failed: " error)))))))))
+
+(defn reverse-lookup! [app-state dispatch on-update lat lng]
+  (let [settings (:settings app-state)
+        user (:user settings)
+        password (:password settings)]
+    (if (or (empty? user) (empty? password))
+      (notify! dispatch :error "Authentication required for address lookup!")
       (go
-        (notify! dispatch :info "Looking up address...")
-        (let [{:keys [success lat lng error]} (<! (api/geocode-address address))]
+        (notify! dispatch :info "Determining address...")
+        (let [{:keys [success data error]} (<! (api/reverse-geocode user password lat lng))]
           (if success
-            (do
-              (on-update [:update-field [:coordinate (str lat ", " lng)]])
-              (dispatch [:set-map-center [lat lng]])
-              (notify! dispatch :success "Address found!"))
-            (notify! dispatch :error (str "Geocoding failed: " error))))))))
+            (let [addr (:address data)
+                  road (:road addr)
+                  house-number (:house_number addr)
+                  town (or (:city addr) (:town addr) (:village addr) (:suburb addr))
+                  state (:state addr)
+                  full-address (str (when house-number (str house-number " ")) road)]
+              (when (seq full-address)
+                (on-update [:update-field [:address full-address]]))
+              (when town
+                (on-update [:update-field [:town town]]))
+              (when state
+                (on-update [:update-field [:state state]]))
+              (notify! dispatch :success "Address determined!"))
+            (notify! dispatch :error (str "Reverse geocoding failed: " error))))))))
