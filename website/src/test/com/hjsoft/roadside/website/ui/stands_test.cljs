@@ -50,3 +50,40 @@
           container (.-container res)]
       (is (some? (tlr/queryByText container "Edit")) "Edit button should be visible when both unset")
       (is (some? (tlr/queryByText container "Delete")) "Delete button should be visible when both unset"))))
+
+(deftest stand-item-incomplete-test
+  (testing "incomplete-stand class is applied when name and products are missing"
+    (let [state {:settings {:user "alice"}}
+          stand {:id "s1" :name "" :products [] :creator "alice"}
+          res (render-stand-item state stand)
+          container (.-container res)
+          item-div (.querySelector container ".stand-item")]
+      (is (.contains (.-classList item-div) "incomplete-stand")
+          "Should have incomplete-stand class")))
+
+  (testing "incomplete-stand class is NOT applied when name is present"
+    (let [state {:settings {:user "alice"}}
+          stand {:id "s1" :name "My Stand" :products [] :creator "alice"}
+          res (render-stand-item state stand)
+          container (.-container res)
+          item-div (.querySelector container ".stand-item")]
+      (is (not (.contains (.-classList item-div) "incomplete-stand"))
+          "Should NOT have incomplete-stand class")))
+
+  (testing "incomplete-stand class is NOT applied when products are present"
+    (let [state {:settings {:user "alice"}}
+          stand {:id "s1" :name "" :products ["Apples"] :creator "alice"}
+          res (render-stand-item state stand)
+          container (.-container res)
+          item-div (.querySelector container ".stand-item")]
+      (is (not (.contains (.-classList item-div) "incomplete-stand"))
+          "Should NOT have incomplete-stand class")))
+
+  (testing "incomplete-stand class is NOT applied when NOT owner"
+    (let [state {:settings {:user "bob"}}
+          stand {:id "s1" :name "" :products [] :creator "alice"}
+          res (render-stand-item state stand)
+          container (.-container res)
+          item-div (.querySelector container ".stand-item")]
+      (is (not (.contains (.-classList item-div) "incomplete-stand"))
+          "Should NOT have incomplete-stand class when not owner"))))
