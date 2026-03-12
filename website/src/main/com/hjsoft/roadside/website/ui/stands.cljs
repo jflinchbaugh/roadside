@@ -32,6 +32,10 @@
      ($ stand-notification-toast {:stand-id (:id stand)})
      (d/div
       {:class "stand-content"}
+      (when (and (not (seq (:name stand))) (not (seq (:products stand))))
+        (d/div
+          {:class "stand-incomplete"}
+          "(no details)"))
       (when (seq (:name stand))
         (d/div
          {:class "stand-header"}

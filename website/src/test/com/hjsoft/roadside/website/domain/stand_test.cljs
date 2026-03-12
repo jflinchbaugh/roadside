@@ -1,6 +1,6 @@
 (ns com.hjsoft.roadside.website.domain.stand-test
   (:require [com.hjsoft.roadside.website.domain.stand :as sut]
-            [cljs.test :as t :refer [deftest is testing]]))
+            [cljs.test :refer [deftest is testing]]))
 
 (deftest stand-key-test
   (testing "nil or empty stand"

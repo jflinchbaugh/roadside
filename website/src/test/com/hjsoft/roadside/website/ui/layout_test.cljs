@@ -1,5 +1,5 @@
 (ns com.hjsoft.roadside.website.ui.layout-test
-  (:require [cljs.test :as t :refer [deftest is testing use-fixtures]]
+  (:require [cljs.test :refer [deftest is testing use-fixtures]]
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.roadside.website.ui.layout :as layout]

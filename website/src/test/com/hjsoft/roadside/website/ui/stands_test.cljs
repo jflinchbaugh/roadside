@@ -1,5 +1,5 @@
 (ns com.hjsoft.roadside.website.ui.stands-test
-  (:require [cljs.test :as t :refer [deftest is testing use-fixtures]]
+  (:require [cljs.test :refer [deftest is testing use-fixtures]]
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.roadside.website.ui.stands :as stands]
@@ -48,8 +48,10 @@
           stand {:id "s1" :name "Initial Stand"}
           res (render-stand-item state stand)
           container (.-container res)]
-      (is (some? (tlr/queryByText container "Edit")) "Edit button should be visible when both unset")
-      (is (some? (tlr/queryByText container "Delete")) "Delete button should be visible when both unset"))))
+      (is (some? (tlr/queryByText container "Edit"))
+        "Edit button should be visible when both unset")
+      (is (some? (tlr/queryByText container "Delete"))
+        "Delete button should be visible when both unset"))))
 
 (deftest stand-item-incomplete-test
   (testing "incomplete-stand class is applied when name and products are missing"
@@ -59,7 +61,9 @@
           container (.-container res)
           item-div (.querySelector container ".stand-item")]
       (is (.contains (.-classList item-div) "incomplete-stand")
-          "Should have incomplete-stand class")))
+          "Should have incomplete-stand class")
+      (is (tlr/queryByText item-div "(no details)")
+        "the item shows (no details)")))
 
   (testing "incomplete-stand class is NOT applied when name is present"
     (let [state {:settings {:user "alice"}}
@@ -68,7 +72,8 @@
           container (.-container res)
           item-div (.querySelector container ".stand-item")]
       (is (not (.contains (.-classList item-div) "incomplete-stand"))
-          "Should NOT have incomplete-stand class")))
+          "Should NOT have incomplete-stand class")
+      (is (not (tlr/queryByText item-div "(no details)"))) ))
 
   (testing "incomplete-stand class is NOT applied when products are present"
     (let [state {:settings {:user "alice"}}
@@ -77,7 +82,8 @@
           container (.-container res)
           item-div (.querySelector container ".stand-item")]
       (is (not (.contains (.-classList item-div) "incomplete-stand"))
-          "Should NOT have incomplete-stand class")))
+          "Should NOT have incomplete-stand class")
+      (is (not (tlr/queryByText item-div "(no details)")))))
 
   (testing "incomplete-stand class is NOT applied when NOT owner"
     (let [state {:settings {:user "bob"}}
@@ -86,4 +92,6 @@
           container (.-container res)
           item-div (.querySelector container ".stand-item")]
       (is (not (.contains (.-classList item-div) "incomplete-stand"))
-          "Should NOT have incomplete-stand class when not owner"))))
+          "Should NOT have incomplete-stand class when not owner")
+      (is (tlr/queryByText item-div "(no details)")
+        "the item shows (no details)"))))
