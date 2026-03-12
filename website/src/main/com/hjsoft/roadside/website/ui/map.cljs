@@ -112,7 +112,12 @@
         stands (or stands (:stands app-state))
         selected-stand (or selected-stand (:selected-stand app-state))
         center (or center (:map-center app-state))
+        center-ref (hooks/use-ref center)
         [stand-map set-stand-map] (hooks/use-state nil)]
+
+    (hooks/use-effect
+     [center]
+     (reset! center-ref center))
 
     ;; Initialization
     (hooks/use-effect
@@ -131,7 +136,7 @@
        (js/setTimeout
         (fn []
           (.invalidateSize m)
-          (.setView m (clj->js center) zoom-level))
+          (.setView m (clj->js @center-ref) zoom-level))
         100)))
 
     (use-map-center stand-map center)
