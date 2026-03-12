@@ -40,7 +40,8 @@
     [stand-form-data
      on-update
      original-coordinate]}]
-  (let [{:keys [stands]} (state/use-app-state)
+  (let [app-state (state/use-app-state)
+        stands (state/select-stands-by-expiry app-state)
         {:keys [get-location error]} (state/use-user-location-state)
         [coordinate-display set-coordinate-display] (hooks/use-state
                                                      (:coordinate stand-form-data))
