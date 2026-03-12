@@ -49,16 +49,30 @@
                               [:remove-stand {:id "1" :name "A"}])))))
 
 (t/deftest select-filtered-stands-test
-  (let [stands [{:name "B" :updated "2023-01-01T12:00:00Z" :products ["Apples"]}
-                {:name "A" :updated "2023-01-02T12:00:00Z" :products ["Corn"]}
-                {:name "C" :updated "2023-01-01T10:00:00Z" :products ["Apples"]}]]
+  (let [today (.substring (.toISOString (js/Date.)) 0 10)
+        yesterday (.substring (.toISOString (js/Date. (- (js/Date.) (* 24 60 60 1000)))) 0 10)
+        tomorrow (.substring (.toISOString (js/Date. (+ (js/Date.) (* 24 60 60 1000)))) 0 10)
+        stands [{:id "1" :name "B" :updated "2023-01-01T12:00:00Z" :products ["Apples"] :expiration tomorrow}
+                {:id "2" :name "A" :updated "2023-01-02T12:00:00Z" :products ["Corn"] :expiration tomorrow}
+                {:id "3" :name "C" :updated "2023-01-01T10:00:00Z" :products ["Apples"] :expiration tomorrow}
+                {:id "4" :name "Expired Apples" :expiration yesterday :products ["Apples"] :updated "2023-01-03T00:00:00Z"}]]
     (t/testing "sorting by updated date (descending)"
-      (let [result (sut/select-filtered-stands {:stands stands})]
-        (t/is (= ["A" "B" "C"] (map :name result)))))
+      (let [result (sut/select-filtered-stands {:stands stands :show-expired? true})]
+        (t/is (= ["Expired Apples" "A" "B" "C"] (map :name result)))))
 
     (t/testing "filtering by product"
       (let [result (sut/select-filtered-stands {:stands stands :product-filter "Apples"})]
-        (t/is (= ["B" "C"] (map :name result)))))))
+        (t/is (= ["B" "C"] (map :name result))))
+
+      (t/testing "filtering by product combined with expiry"
+        (let [result-hidden (sut/select-filtered-stands {:stands stands
+                                                         :product-filter "Apples"
+                                                         :show-expired? false})
+              result-shown (sut/select-filtered-stands {:stands stands
+                                                        :product-filter "Apples"
+                                                        :show-expired? true})]
+          (t/is (= ["B" "C"] (map :name result-hidden)))
+          (t/is (= ["Expired Apples" "B" "C"] (map :name result-shown))))))))
 
 (t/deftest select-stands-by-expiry-test
   (let [active-stand {:name "Active" :expiration (com.hjsoft.roadside.website.utils/in-a-week)}
