@@ -40,3 +40,15 @@
         (if (:success response)
           {:success true}
           {:success false :error (str "HTTP Error: " (:status response))})))))
+
+(defn geocode-address [address]
+  (go
+    (let [url "api/geocode"
+          params {:q address}
+          response (<! (http/get url {:query-params params}))]
+      (if (and (:success response) (seq (:body response)))
+        (let [result (first (:body response))]
+          {:success true
+           :lat (js/parseFloat (:lat result))
+           :lng (js/parseFloat (:lon result))})
+        {:success false :error (or (:status-text response) "Address not found")}))))

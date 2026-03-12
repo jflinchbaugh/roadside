@@ -1,6 +1,7 @@
 (ns server.core
   (:gen-class)
   (:require [org.httpkit.server :as hks]
+            [org.httpkit.client :as hkc]
             [reitit.ring :as ring]
             [ring.middleware.defaults :as rmd]
             [ring.middleware.cors :as rmc]
@@ -40,6 +41,21 @@
 (defn ping-handler
   [_]
   (api-response 200 "pong"))
+
+(defn geocode-handler
+  [req]
+  (let [address (get-in req [:params :q])]
+    (if (clojure.string/blank? address)
+      (api-response 400 {:error "Missing address"})
+      (let [url "https://nominatim.openstreetmap.org/search"
+            query-params {:q address
+                          :format "json"
+                          :limit 1}
+            {:keys [status body error]} @(hkc/get url {:query-params query-params
+                                                       :headers {"User-Agent" "RoadsideStandsApp/1.0"}})]
+        (if (or error (not= status 200))
+          (api-response 502 {:error (str "Nominatim error: " (or error status))})
+          (api-response 200 (json/read-str body :key-fn keyword)))))))
 
 (defn register-handler
   [req]
@@ -160,6 +176,7 @@
   (-> [base-url
        ["/api"
         ["/ping" ping-handler]
+        ["/geocode" geocode-handler]
         ["/register" {:post register-handler}]
         ["/stands" {:middleware
                     [authenticated-for-logger identity-required-wrapper]

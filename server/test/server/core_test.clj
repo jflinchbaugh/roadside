@@ -3,6 +3,7 @@
             [server.core :as core]
             [xtdb.api :as xt]
             [server.xtdb-container :as xtn]
+            [org.httpkit.client :as hkc]
             [clojure.data.json :as json])
   (:import [java.io ByteArrayInputStream]))
 
@@ -168,3 +169,36 @@
     (xt/submit-tx @core/node [[:put-docs :users {:xt/id "u1" :login "bob" :password "pass"}]])
     (is (= "bob" (core/my-authfn {} {:username "bob" :password "pass"})))
     (is (nil? (core/my-authfn {} {:username "bob" :password "wrong"})))))
+
+(deftest geocode-proxy-test
+  (testing "Geocode proxy handler"
+    (testing "Successful geocoding"
+      (let [mock-response {:status 200
+                           :body (json/write-str [{:lat "40.0379" :lon "-76.3055"}])}]
+        (with-redefs [hkc/get (fn [_ _] (atom mock-response))]
+          (let [req {:params {:q "Lancaster, PA"}}
+                resp (core/geocode-handler req)]
+            (is (= 200 (:status resp)))
+            (is (= [{:lat "40.0379" :lon "-76.3055"}] 
+                   (json/read-str (:body resp) :key-fn keyword)))))))
+
+    (testing "Address not found"
+      (let [mock-response {:status 200 :body "[]"}]
+        (with-redefs [hkc/get (fn [_ _] (atom mock-response))]
+          (let [req {:params {:q "Middle of Nowhere"}}
+                resp (core/geocode-handler req)]
+            (is (= 200 (:status resp)))
+            (is (= [] (json/read-str (:body resp))))))))
+
+    (testing "Missing address parameter"
+      (let [resp (core/geocode-handler {:params {}})]
+        (is (= 400 (:status resp)))
+        (is (= "Missing address" (:error (json/read-str (:body resp) :key-fn keyword))))))
+
+    (testing "Nominatim error (500)"
+      (let [mock-response {:status 500 :body "Internal Server Error"}]
+        (with-redefs [hkc/get (fn [_ _] (atom mock-response))]
+          (let [req {:params {:q "Lancaster, PA"}}
+                resp (core/geocode-handler req)]
+            (is (= 502 (:status resp)))
+            (is (clojure.string/includes? (:body resp) "Nominatim error"))))))))

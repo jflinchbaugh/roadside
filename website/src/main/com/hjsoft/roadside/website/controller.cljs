@@ -136,3 +136,19 @@
 (defn delete-stand! [app-state dispatch stand]
   (dispatch [:remove-stand stand])
   (remote-delete-stand! app-state dispatch (:id stand)))
+
+(defn lookup-address! [dispatch on-update address-data]
+  (let [address (str/join ", " (remove empty? [(:address address-data)
+                                               (:town address-data)
+                                               (:state address-data)]))]
+    (if (empty? address)
+      (notify! dispatch :error "Address is empty!")
+      (go
+        (notify! dispatch :info "Looking up address...")
+        (let [{:keys [success lat lng error]} (<! (api/geocode-address address))]
+          (if success
+            (do
+              (on-update [:update-field [:coordinate (str lat ", " lng)]])
+              (dispatch [:set-map-center [lat lng]])
+              (notify! dispatch :success "Address found!"))
+            (notify! dispatch :error (str "Geocoding failed: " error))))))))

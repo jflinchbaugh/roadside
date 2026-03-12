@@ -146,6 +146,7 @@
         {:keys [editing-stand]} (state/use-ui)
         {:keys [create-stand!
                 update-stand!
+                lookup-address!
                 cancel-form!]} (ui-hooks/use-actions)
         [stand-form-data
          local-dispatch] (hooks/use-reducer
@@ -231,7 +232,12 @@
              {:label "State:"
               :value (:state stand-form-data)
               :on-change #(local-dispatch
-                           [:update-field [:state (.. % -target -value)]])})))
+                           [:update-field [:state (.. % -target -value)]])})
+          (d/button
+           {:type "button"
+            :class "button secondary lookup-btn"
+            :onClick #(lookup-address! local-dispatch stand-form-data)}
+           "Lookup Address")))
        ($ form-field
           {:label "Expiration Date:"
            :type "date"

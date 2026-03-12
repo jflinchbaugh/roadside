@@ -18,6 +18,8 @@
                         (set-show-form false)))
      :delete-stand! (fn [stand]
                       (controller/delete-stand! app-state dispatch stand))
+     :lookup-address! (fn [on-update address-data]
+                        (controller/lookup-address! dispatch on-update address-data))
      :cancel-form! (fn []
                      (set-show-form false)
                      (set-editing-stand nil))}))
