@@ -59,3 +59,17 @@
     (t/testing "filtering by product"
       (let [result (sut/select-filtered-stands {:stands stands :product-filter "Apples"})]
         (t/is (= ["B" "C"] (map :name result)))))))
+
+(t/deftest select-stands-by-expiry-test
+  (let [active-stand {:name "Active" :expiration (com.hjsoft.roadside.website.utils/in-a-week)}
+        expired-stand {:name "Expired" :expiration "2020-01-01"}
+        stands [active-stand expired-stand]]
+    (t/testing "hiding expired stands (default)"
+      (let [result (sut/select-stands-by-expiry {:stands stands :show-expired? false})]
+        (t/is (= 1 (count result)))
+        (t/is (= "Active" (:name (first result))))))
+
+    (t/testing "showing expired stands"
+      (let [result (sut/select-stands-by-expiry {:stands stands :show-expired? true})]
+        (t/is (= 2 (count result)))
+        (t/is (= #{"Active" "Expired"} (set (map :name result))))))))
