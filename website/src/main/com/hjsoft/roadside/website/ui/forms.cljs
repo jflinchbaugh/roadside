@@ -303,4 +303,6 @@
          "Save")))
       (d/div
        {:class "build-date"}
-       "Build: " version/build-date)))))
+       "Build: " version/build-date
+       (d/br)
+       (d/a {:href "mailto:john@hjsoft.com"} "john@hjsoft.com"))))))
