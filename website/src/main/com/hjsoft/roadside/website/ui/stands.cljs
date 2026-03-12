@@ -16,14 +16,18 @@
         creator (:creator stand)
         owner? (or (empty? (str creator))
                    (= (str current-user) (str creator)))
-        expired? (utils/past-expiration? (:expiration stand))]
+        expired? (utils/past-expiration? (:expiration stand))
+        incomplete? (and owner?
+                         (empty? (str/trim (or (:name stand) "")))
+                         (empty? (:products stand)))]
     (d/div
      {:key (stand-domain/stand-key stand)
       :ref item-ref
       :class (str
               "stand-item"
               (when selected? " selected-stand")
-              (when expired? " expired-stand"))
+              (when expired? " expired-stand")
+              (when incomplete? " incomplete-stand"))
       :onClick on-click}
      ($ stand-notification-toast {:stand-id (:id stand)})
      (d/div

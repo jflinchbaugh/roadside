@@ -548,6 +548,11 @@ body {
   border-style: dashed;
 }
 
+.stand-item.incomplete-stand {
+  background-color: #fff9e6;
+  border-color: #ffeeba;
+}
+
 .expired-label {
   color: #dc3545;
   font-size: 0.75rem;
