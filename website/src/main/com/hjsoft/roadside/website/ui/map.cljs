@@ -37,16 +37,20 @@
     (.addTo tl m)
     m))
 
+(defn coordinates-differ?
+  [current-center new-center]
+  (let [new-lat (first new-center)
+        new-lng (second new-center)]
+    (or (not= (.toFixed (.-lat current-center) 6) (.toFixed new-lat 6))
+        (not= (.toFixed (.-lng current-center) 6) (.toFixed new-lng 6)))))
+
 (defn- use-map-center
   [stand-map center]
   (hooks/use-effect
    [(first center) (second center) stand-map]
    (when (and stand-map center)
-     (let [current-center (.getCenter ^js stand-map)
-           new-lat (first center)
-           new-lng (second center)]
-       (when (or (not= (.toFixed (.-lat current-center) 6) (.toFixed new-lat 6))
-                 (not= (.toFixed (.-lng current-center) 6) (.toFixed new-lng 6)))
+     (let [current-center (.getCenter ^js stand-map)]
+       (when (coordinates-differ? current-center center)
          (.setView
           ^js stand-map
           (clj->js center)
