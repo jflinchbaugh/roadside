@@ -319,7 +319,7 @@ body {
   border: 1px solid #b3d9ff;
 }
 
-.product-tag:hover {
+.product-list .product-tag:hover {
   cursor: pointer; /* Indicate clickable */
 }
 
