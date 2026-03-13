@@ -335,10 +335,6 @@ body {
   color: white;
 }
 
-.stand-products {
-  margin-top: 0.5rem;
-}
-
 .stand-products strong {
   display: block;
   margin-bottom: 0.25rem;
@@ -346,11 +342,23 @@ body {
 }
 
 .expiration-date {
-  margin: 0.5rem 0 0 0;
+  margin: 0.25rem 0 0 0;
+}
+
+.stand-extra-info {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
+  font-size: 0.85rem;
   color: #888;
 }
 
-.expiration-date strong {
+.stand-extra-info p {
+  margin: 0.25rem 0 0 0;
+  color: #888;
+}
+
+.stand-extra-info strong {
   color: #666;
 }
 

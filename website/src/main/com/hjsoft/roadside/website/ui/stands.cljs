@@ -45,8 +45,6 @@
         (d/div
          {:class "stand-header"}
          (d/h4 (:name stand))))
-      (when (seq (:coordinate stand))
-        (d/p {:class "coordinate-text"} (:coordinate stand)))
       (when (seq (:address stand))
         (d/p (:address stand)))
       (let [town-state (remove empty? [(:town stand) (:state stand)])]
@@ -69,27 +67,33 @@
          {:class "stand-notes"}
          (d/strong "Notes: ")
          (:notes stand)))
-      (when (seq (:expiration stand))
-        (d/p
-         {:class "expiration-date"}
-         (d/strong (if expired? "Expired: " "Expires: "))
-         (:expiration stand)))
-      (when (seq (:updated stand))
-        (d/p
-         {:class "stand-updated"}
-         (d/strong "Last Updated: ")
-         (utils/format-timestamp (:updated stand))))
-      (when (seq (:creator stand))
-        (d/p
-         {:class "stand-creator"}
-         (d/strong "Created By: ")
-         (:creator stand)))
-      (d/p
-       {:class "stand-shared"}
-       (d/strong "Shared: ")
-       (if (:shared? stand) "Yes" "No")))
-     (d/div
+      (when selected?
+        (d/div
+          {:class "stand-extra-info"}
+         (when (seq (:coordinate stand))
+           (d/p {:class "coordinate-text"} (:coordinate stand)))
+         (when (seq (:expiration stand))
+           (d/p
+            {:class "expiration-date"}
+            (d/strong (if expired? "Expired: " "Expires: "))
+            (:expiration stand)))
+         (when (seq (:updated stand))
+           (d/p
+            {:class "stand-updated"}
+            (d/strong "Last Updated: ")
+            (utils/format-timestamp (:updated stand))))
+         (when (seq (:creator stand))
+           (d/p
+            {:class "stand-creator"}
+            (d/strong "Created By: ")
+            (:creator stand)))
+         (d/p
+          {:class "stand-shared"}
+          (d/strong "Shared: ")
+          (if (:shared? stand) "Yes" "No")))))
+      (d/div
       {:class "stand-actions"}
+
       (when-let [map-link (utils/make-map-link (:coordinate stand))]
         (d/a {:href map-link
               :target "_blank"
