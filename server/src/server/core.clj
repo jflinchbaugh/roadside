@@ -62,7 +62,7 @@
   [req]
   (let [lat (get-in req [:params :lat])
         lon (get-in req [:params :lon])]
-    (if (or (clojure.string/blank? lat) (clojure.string/blank? lon))
+    (if (or (str/blank? lat) (str/blank? lon))
       (api-response 400 {:error "Missing lat or lon"})
       (let [url "https://nominatim.openstreetmap.org/reverse"
             query-params {:lat lat
@@ -84,6 +84,18 @@
                          (str/blank? email) (conj "email")
                          (str/blank? login) (conj "login")
                          (str/blank? password) (conj "password"))
+        invalid-fields (cond-> []
+                         (and (not (str/blank? email))
+                              (not (re-matches #".+@.+\..+" email)))
+                         (conj "invalid email format")
+
+                         (and (not (str/blank? login))
+                              (not (re-matches #"^[a-zA-Z0-9_]{3,20}$" login)))
+                         (conj "login must be 3-20 alphanumeric characters")
+
+                         (and (not (str/blank? password))
+                              (< (count password) 8))
+                         (conj "password must be at least 8 characters"))
         user {:xt/id id
               :login login
               :password password
@@ -99,13 +111,15 @@
     (cond
       (seq missing-fields)
       (api-response 400 {:status "failed"
-                         :message (str (str/join ", " missing-fields)
-                                       (if (> (count missing-fields) 1)
-                                         " are required"
-                                         " is required"))})
+                         :errors (mapv #(str % " is required")
+                                       missing-fields)})
+
+      (seq invalid-fields)
+      (api-response 400 {:status "failed"
+                         :errors invalid-fields})
 
       existing-user
-      (api-response 403 {:status "failed" :message "login not available"})
+      (api-response 403 {:status "failed" :errors ["login not available"]})
 
       :else
       (do

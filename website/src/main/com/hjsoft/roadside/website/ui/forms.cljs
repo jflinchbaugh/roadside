@@ -280,6 +280,7 @@
         {:keys [set-show-settings-dialog]} (state/use-ui)
         {:keys [settings]} app-state
         [registering? set-registering] (hooks/use-state false)
+        [register-error set-register-error] (hooks/use-state nil)
         form-data (merge {:user "" :password "" :email ""} settings)
         [form-data set-form-data] (hooks/use-state form-data)
         can-register? (and (not (str/blank? (:user form-data)))
@@ -298,11 +299,10 @@
                                   (dispatch [:set-notification
                                              {:type :success
                                               :message "Registered successfully!"}])
+                                  (set-register-error nil)
                                   (dispatch [:set-settings (dissoc form-data :email)])
                                   (set-show-settings-dialog false))
-                                (dispatch [:set-notification
-                                           {:type :error
-                                            :message (:error res)}])))))]
+                                (set-register-error (:error res))))))]
 
     (ui-hooks/use-escape-key #(set-show-settings-dialog false))
 
@@ -322,28 +322,40 @@
         "\u2715"))
       (d/div
        {:class "settings-content"}
+       (when (and registering? (seq register-error))
+         (d/div
+          {:class "error-message"}
+          (d/ul
+           (for [err register-error]
+             (d/li {:key err} err)))))
        ($ form-field
           {:label "User:"
            :value (:user form-data)
-           :on-change #(set-form-data
-                        (assoc form-data :user (.. % -target -value)))})
+           :on-change #(do
+                         (set-register-error nil)
+                         (set-form-data
+                          (assoc form-data :user (.. % -target -value))))})
        ($ form-field
           {:label "Password:"
            :type "password"
            :value (:password form-data)
-           :on-change #(set-form-data
-                        (assoc form-data :password (.. % -target -value)))})
+           :on-change #(do
+                         (set-register-error nil)
+                         (set-form-data
+                          (assoc form-data :password (.. % -target -value))))})
        (when registering?
          ($ form-field
             {:label "Email:"
              :value (:email form-data)
-             :on-change #(set-form-data
-                          (assoc form-data :email (.. % -target -value)))}))
+             :on-change #(do
+                           (set-register-error nil)
+                           (set-form-data
+                            (assoc form-data :email (.. % -target -value))))}))
        (d/div
         {:class "register-toggle"}
         (if registering?
-          (d/a {:href "#" :onClick #(set-registering false)} "Already have an account? Sign in")
-          (d/a {:href "#" :onClick #(set-registering true)} "Don't have an account? Register")))
+          (d/a {:href "#" :onClick #(do (set-registering false) (set-register-error nil))} "Already have an account? Sign in")
+          (d/a {:href "#" :onClick #(do (set-registering true) (set-register-error nil))} "Don't have an account? Register")))
        (d/div
         {:class "settings-actions"}
         (d/button

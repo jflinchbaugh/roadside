@@ -75,7 +75,7 @@
         {:success true :data (:body response)}
         {:success false :error (let [body (:body response)]
                                  (if (map? body)
-                                   (:message body)
-                                   (or (:status-text response)
-                                       (str "Error: " (:status response)))))}))))
+                                   (or (:errors body) [(:message body)])
+                                   [(or (:status-text response)
+                                        (str "Error: " (:status response)))]))}))))
 

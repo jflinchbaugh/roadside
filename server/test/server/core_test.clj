@@ -4,6 +4,7 @@
             [xtdb.api :as xt]
             [server.xtdb-container :as xtn]
             [org.httpkit.client :as hkc]
+            [clojure.string :as str]
             [clojure.data.json :as json])
   (:import [java.io ByteArrayInputStream]))
 
@@ -24,7 +25,7 @@
 
 (deftest register-test
   (testing "Register handler saves user to DB"
-    (let [req {:params {:login "alice" :password "secret" :email "alice@example.com"}}
+    (let [req {:params {:login "alice" :password "secret-password" :email "alice@example.com"}}
           response (core/register-handler req)]
       (is (= 201 (:status response)))
       (let [user (first
@@ -34,32 +35,42 @@
                         (from :users [login password email])
                         (where (= login "alice")))))]
         (is (= "alice" (:login user)))
-        (is (= "secret" (:password user)))
+        (is (= "secret-password" (:password user)))
         (is (= "alice@example.com" (:email user))))))
   (testing "Register handler requires email"
-    (let [req {:params {:login "bob" :password "pass"}}
+    (let [req {:params {:login "bob" :password "secret-pass"}}
           response (core/register-handler req)]
       (is (= 400 (:status response)))
-      (is (= "email is required" (:message (json/read-str (:body response) :key-fn keyword))))))
+      (is (= ["email is required"] (:errors (json/read-str (:body response) :key-fn keyword))))))
   (testing "Register handler requires login"
-    (let [req {:params {:email "bob@example.com" :password "pass"}}
+    (let [req {:params {:email "bob@example.com" :password "secret-pass"}}
           response (core/register-handler req)]
       (is (= 400 (:status response)))
-      (is (= "login is required" (:message (json/read-str (:body response) :key-fn keyword))))))
+      (is (= ["login is required"] (:errors (json/read-str (:body response) :key-fn keyword))))))
   (testing "Register handler requires password"
     (let [req {:params {:login "bob" :email "bob@example.com"}}
           response (core/register-handler req)]
       (is (= 400 (:status response)))
-      (is (= "password is required" (:message (json/read-str (:body response) :key-fn keyword))))))
+      (is (= ["password is required"] (:errors (json/read-str (:body response) :key-fn keyword))))))
   (testing "Register handler requires all fields"
     (let [req {:params {}}
           response (core/register-handler req)]
       (is (= 400 (:status response)))
-      (is (= "email, login, password are required" (:message (json/read-str (:body response) :key-fn keyword))))))
+      (is (= ["email is required" "login is required" "password is required"]
+             (:errors (json/read-str (:body response) :key-fn keyword))))))
+  (testing "Register handler with invalid inputs"
+    (let [req {:params {:login "a" :password "short" :email "not-an-email"}}
+          response (core/register-handler req)]
+      (is (= 400 (:status response)))
+      (let [errors (:errors (json/read-str (:body response) :key-fn keyword))]
+        (is (some #{"invalid email format"} errors))
+        (is (some #{"login must be 3-20 alphanumeric characters"} errors))
+        (is (some #{"password must be at least 8 characters"} errors)))))
   (testing "Register handler with a duplicate"
-    (let [req {:params {:login "alice" :password "again" :email "alice2@example.com"}}
+    (let [req {:params {:login "alice" :password "again-secret" :email "alice2@example.com"}}
           response (core/register-handler req)]
       (is (= 403 (:status response)))
+      (is (= ["login not available"] (:errors (json/read-str (:body response) :key-fn keyword))))
       (let [user (first
                   (xt/q
                    @core/node
@@ -67,7 +78,7 @@
                      (from :users [login password])
                      (where (= login "alice")))))]
         (is (= "alice" (:login user)))
-        (is (= "secret" (:password user)) "password not touched")))))
+        (is (= "secret-password" (:password user)) "password not touched")))))
 
 (deftest stands-test
   (testing "Stands handlers"
@@ -225,7 +236,7 @@
                      :identity "alice"}
                 resp (core/geocode-handler req)]
             (is (= 502 (:status resp)))
-            (is (clojure.string/includes? (:body resp) "Nominatim error")))))))
+            (is (str/includes? (:body resp) "Nominatim error")))))))
 
   (testing "Reverse geocode proxy handler"
     (testing "Successful reverse geocoding"
@@ -251,4 +262,4 @@
                      :identity "alice"}
                 resp (core/reverse-geocode-handler req)]
             (is (= 502 (:status resp)))
-            (is (clojure.string/includes? (:body resp) "Nominatim error"))))))))
+            (is (str/includes? (:body resp) "Nominatim error"))))))))
