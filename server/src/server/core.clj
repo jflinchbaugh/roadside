@@ -78,9 +78,11 @@
   (let [id (or (get-in req [:params :id]) (str (java.util.UUID/randomUUID)))
         login (get-in req [:params :login])
         password (get-in req [:params :password])
+        email (get-in req [:params :email])
         user {:xt/id id
               :login login
               :password password
+              :email email
               :updated (str (t/now))}
         existing-user (first
                        (xt/q @node
@@ -94,7 +96,6 @@
       (do
         (xt/submit-tx @node [[:put-docs :users user]])
         (api-response 201 {:login login})))))
-
 (defn get-stands-handler
   [_req]
   (let [stands (vec (xt/q @node '(from :stands [*])))]

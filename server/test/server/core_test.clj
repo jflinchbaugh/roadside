@@ -24,17 +24,18 @@
 
 (deftest register-test
   (testing "Register handler saves user to DB"
-    (let [req {:params {:login "alice" :password "secret"}}
+    (let [req {:params {:login "alice" :password "secret" :email "alice@example.com"}}
           response (core/register-handler req)]
       (is (= 201 (:status response)))
       (let [user (first
                    (xt/q
                      @core/node
                      '(->
-                        (from :users [login password])
+                        (from :users [login password email])
                         (where (= login "alice")))))]
         (is (= "alice" (:login user)))
-        (is (= "secret" (:password user))))))
+        (is (= "secret" (:password user)))
+        (is (= "alice@example.com" (:email user))))))
   (testing "Register handler with a duplicate"
     (let [req {:params {:login "alice" :password "again"}}
           response (core/register-handler req)]
