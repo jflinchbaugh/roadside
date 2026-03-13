@@ -8,7 +8,7 @@
 (use-fixtures :each
   {:after tlr/cleanup})
 
-(defn render-stand-item [state stand]
+(defn render-stand-item [state stand & [props]]
   (let [^js ctx state/app-context]
     (tlr/render
      ($ (.-Provider ctx)
@@ -16,7 +16,12 @@
                  :dispatch (fn [_])
                  :ui {:set-editing-stand (fn [_])
                       :set-show-form (fn [_])}}}
-        ($ stands/stand-item {:stand stand})))))
+        ($ stands/stand-item
+           {:stand stand
+            :on-delete (:on-delete props)
+            :selected? (:selected? props)
+            :on-edit (:on-edit props)
+            :on-click (:on-click props)})))))
 
 (deftest stand-item-ownership-test
   (testing "Edit and Delete buttons are visible when user is owner"
@@ -51,7 +56,28 @@
       (is (some? (tlr/queryByText container "Edit"))
         "Edit button should be visible when both unset")
       (is (some? (tlr/queryByText container "Delete"))
-        "Delete button should be visible when both unset"))))
+        "Delete button should be visible when both unset")))
+
+  (testing "Delete button changes to 'Really?' when clicked"
+    (let [state {:settings {:user "alice"}}
+          stand {:id "s1" :name "Alice's Stand" :creator "alice"}
+          res (render-stand-item state stand)
+          container (.-container res)
+          delete-btn (tlr/queryByText container "Delete")]
+      (is (some? delete-btn) "Delete button should be initially visible")
+      (tlr/fireEvent.click delete-btn)
+      (is (nil? (tlr/queryByText container "Delete")) "Delete button should be hidden after click")
+      (is (some? (tlr/queryByText container "Really?")) "Really? button should be visible after click")))
+
+  (testing "Clicking 'Really?' calls on-delete"
+    (let [state {:settings {:user "alice"}}
+          stand {:id "s1" :name "Alice's Stand" :creator "alice"}
+          deleted-stand (atom nil)
+          res (render-stand-item state stand {:on-delete #(reset! deleted-stand %)})
+          container (.-container res)]
+      (tlr/fireEvent.click (tlr/queryByText container "Delete"))
+      (tlr/fireEvent.click (tlr/queryByText container "Really?"))
+      (is (= stand @deleted-stand) "on-delete should be called with the stand"))))
 
 (deftest stand-item-incomplete-test
   (testing "incomplete-stand class is applied when name and products are missing"

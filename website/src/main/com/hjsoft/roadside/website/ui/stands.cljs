@@ -11,7 +11,8 @@
 
 (defnc stand-item
   [{:keys [stand selected? on-click on-edit on-delete item-ref]}]
-  (let [app-state (state/use-app-state)
+  (let [[confirming? set-confirming] (hooks/use-state false)
+        app-state (state/use-app-state)
         current-user (get-in app-state [:settings :user])
         creator (:creator stand)
         owner? (or (empty? (str creator))
@@ -20,6 +21,10 @@
         incomplete? (and owner?
                          (empty? (str/trim (or (:name stand) "")))
                          (empty? (:products stand)))]
+    (hooks/use-effect
+     [selected?]
+     (when-not selected?
+       (set-confirming false)))
     (d/div
      {:key (stand-domain/stand-key stand)
       :ref item-ref
@@ -96,17 +101,26 @@
          {:class "edit-stand-btn"
           :onClick (fn [e]
                      (.stopPropagation e)
+                     (set-confirming false)
                      (on-edit stand))
           :title "Edit this stand"}
          "Edit"))
       (when owner?
-        (d/button
-         {:class "delete-stand-btn"
-          :onClick (fn [e]
-                     (.stopPropagation e)
-                     (on-delete stand))
-          :title "Delete this stand"}
-         "Delete"))))))
+        (if confirming?
+          (d/button
+           {:class "delete-stand-btn"
+            :onClick (fn [e]
+                       (.stopPropagation e)
+                       (on-delete stand))
+            :title "Really delete this stand?"}
+           "Really?")
+          (d/button
+           {:class "delete-stand-btn"
+            :onClick (fn [e]
+                       (.stopPropagation e)
+                       (set-confirming true))
+            :title "Delete this stand"}
+           "Delete")))))))
 
 (defnc stands-list
   [{:keys [stands]}]
