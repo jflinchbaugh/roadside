@@ -1,9 +1,18 @@
 (ns com.hjsoft.roadside.website.utils
   (:require [clojure.string :as str]
-            [goog.string]))
+            [goog.string]
+            [goog.i18n.DateTimeFormat]))
 
 (defn get-current-timestamp []
   (.toISOString (js/Date.)))
+
+(defn format-timestamp [iso-str]
+  (when (seq iso-str)
+    (let [date (js/Date. iso-str)]
+      (if (js/isNaN (.getTime date))
+        iso-str
+        (let [formatter (goog.i18n.DateTimeFormat. "yyyy-MM-dd HH:mm")]
+          (.format formatter date))))))
 
 (defn in-a-week []
   (let [date (js/Date.)

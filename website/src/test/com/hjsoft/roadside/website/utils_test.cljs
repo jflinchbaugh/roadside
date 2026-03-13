@@ -7,6 +7,22 @@
   (is (js/Date. (sut/get-current-timestamp))
         "current timestamp string is well-formed as a date"))
 
+(deftest format-timestamp-test
+  (testing "formats ISO strings to local date/time"
+    (let [;; Create a date in the LOCAL timezone with seconds
+          local-date (js/Date. 2023 0 1 12 34 56)
+          ;; Convert it to UTC ISO string
+          iso-utc (.toISOString local-date)
+          ;; The formatter should convert it back to local time and truncate seconds
+          expected "2023-01-01 12:34"]
+      (is (= expected (sut/format-timestamp iso-utc))
+          "Converts UTC ISO string back to local time and truncates seconds")))
+  (testing "handles nil or empty string"
+    (is (nil? (sut/format-timestamp nil)))
+    (is (nil? (sut/format-timestamp ""))))
+  (testing "handles invalid date strings by returning them"
+    (is (= "not-a-date" (sut/format-timestamp "not-a-date")))))
+
 (deftest in-a-week
   (is (re-matches #"\d{4}-\d{2}-\d{2}" (sut/in-a-week))
         "iso date format")

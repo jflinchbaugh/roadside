@@ -78,7 +78,7 @@
         (d/p
          {:class "stand-updated"}
          (d/strong "Last Updated: ")
-         (:updated stand)))
+         (utils/format-timestamp (:updated stand))))
       (when (seq (:creator stand))
         (d/p
          {:class "stand-creator"}
