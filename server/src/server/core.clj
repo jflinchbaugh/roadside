@@ -9,6 +9,7 @@
             [buddy.auth.middleware :as buddy]
             [buddy.auth.backends :as backends]
             [clojure.data.json :as json]
+            [clojure.string :as str]
             [tick.core :as t]
             [xtdb.api :as xt]
             [taoensso.telemere :as tel]))
@@ -45,7 +46,7 @@
 (defn geocode-handler
   [req]
   (let [address (get-in req [:params :q])]
-    (if (clojure.string/blank? address)
+    (if (str/blank? address)
       (api-response 400 {:error "Missing address"})
       (let [url "https://nominatim.openstreetmap.org/search"
             query-params {:q address
@@ -79,6 +80,10 @@
         login (get-in req [:params :login])
         password (get-in req [:params :password])
         email (get-in req [:params :email])
+        missing-fields (cond-> []
+                         (str/blank? email) (conj "email")
+                         (str/blank? login) (conj "login")
+                         (str/blank? password) (conj "password"))
         user {:xt/id id
               :login login
               :password password
@@ -91,11 +96,22 @@
                                   (from :users [login password])
                                   (where (= login l))))
                               login]))]
-    (if existing-user
+    (cond
+      (seq missing-fields)
+      (api-response 400 {:status "failed"
+                         :message (str (str/join ", " missing-fields)
+                                       (if (> (count missing-fields) 1)
+                                         " are required"
+                                         " is required"))})
+
+      existing-user
       (api-response 403 {:status "failed" :message "login not available"})
+
+      :else
       (do
         (xt/submit-tx @node [[:put-docs :users user]])
         (api-response 201 {:login login})))))
+
 (defn get-stands-handler
   [_req]
   (let [stands (vec (xt/q @node '(from :stands [*])))]

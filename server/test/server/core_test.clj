@@ -36,8 +36,28 @@
         (is (= "alice" (:login user)))
         (is (= "secret" (:password user)))
         (is (= "alice@example.com" (:email user))))))
+  (testing "Register handler requires email"
+    (let [req {:params {:login "bob" :password "pass"}}
+          response (core/register-handler req)]
+      (is (= 400 (:status response)))
+      (is (= "email is required" (:message (json/read-str (:body response) :key-fn keyword))))))
+  (testing "Register handler requires login"
+    (let [req {:params {:email "bob@example.com" :password "pass"}}
+          response (core/register-handler req)]
+      (is (= 400 (:status response)))
+      (is (= "login is required" (:message (json/read-str (:body response) :key-fn keyword))))))
+  (testing "Register handler requires password"
+    (let [req {:params {:login "bob" :email "bob@example.com"}}
+          response (core/register-handler req)]
+      (is (= 400 (:status response)))
+      (is (= "password is required" (:message (json/read-str (:body response) :key-fn keyword))))))
+  (testing "Register handler requires all fields"
+    (let [req {:params {}}
+          response (core/register-handler req)]
+      (is (= 400 (:status response)))
+      (is (= "email, login, password are required" (:message (json/read-str (:body response) :key-fn keyword))))))
   (testing "Register handler with a duplicate"
-    (let [req {:params {:login "alice" :password "again"}}
+    (let [req {:params {:login "alice" :password "again" :email "alice2@example.com"}}
           response (core/register-handler req)]
       (is (= 403 (:status response)))
       (let [user (first

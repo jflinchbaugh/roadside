@@ -63,3 +63,16 @@
       (if (:success response)
         {:success true :data (:body response)}
         {:success false :error (or (:status-text response) "Location not found")}))))
+
+(defn register-user [user password email]
+  (go
+    (let [url "api/register"
+          params {:login user
+                  :password password
+                  :email email}
+          response (<! (http/post url {:query-params params}))]
+      (if (= 201 (:status response))
+        {:success true :data (:body response)}
+        {:success false :error (or (get-in response [:body :message])
+                                   (str "Error: " (:status response)))}))))
+

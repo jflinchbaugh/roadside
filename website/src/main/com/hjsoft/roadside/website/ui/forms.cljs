@@ -6,15 +6,19 @@
             [com.hjsoft.roadside.website.state :as state]
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.version :as version]
-            [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
-            [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]))
+            [com.hjsoft.roadside.website.ui.map :refer [leaflet-map] ]
+            [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]
+            [com.hjsoft.roadside.website.api :as api]
+            [cljs.core.async :refer [go <!]]
+            [clojure.string :as str]))
 
 (def add-zoom-level 14)
 
 (defnc form-field
   [{:keys [label type value on-change on-blur rows
            checked id class-name placeholder]
-    :or {type "text"}}]
+    :or {type "text"
+         value ""}}]
   (d/div
    {:class "form-group"}
    (when label
@@ -275,10 +279,27 @@
         dispatch (state/use-dispatch)
         {:keys [set-show-settings-dialog]} (state/use-ui)
         {:keys [settings]} app-state
-        [form-data set-form-data] (hooks/use-state
-                                   (or
-                                    settings
-                                    {:user "" :password ""}))]
+        [registering? set-registering] (hooks/use-state false)
+        form-data (merge {:user "" :password "" :email ""} settings)
+        [form-data set-form-data] (hooks/use-state form-data)
+        can-register? (and (not (str/blank? (:user form-data)))
+                           (not (str/blank? (:password form-data)))
+                           (not (str/blank? (:email form-data))))
+        can-save? (and (not (str/blank? (:user form-data)))
+                       (not (str/blank? (:password form-data))))
+        handle-register (fn []
+                          (when can-register?
+                            (go
+                              (let [res (<! (api/register-user
+                                             (:user form-data)
+                                             (:password form-data)
+                                             (:email form-data)))]
+                                (if (:success res)
+                                  (do
+                                    (dispatch [:notify {:type :success :message "Registered successfully!"}])
+                                    (dispatch [:set-settings (dissoc form-data :email)])
+                                    (set-show-settings-dialog false))
+                                  (dispatch [:notify {:type :error :message (str "Registration failed: " (:error res))}]))))))]
 
     (ui-hooks/use-escape-key #(set-show-settings-dialog false))
 
@@ -309,6 +330,17 @@
            :value (:password form-data)
            :on-change #(set-form-data
                         (assoc form-data :password (.. % -target -value)))})
+       (when registering?
+         ($ form-field
+            {:label "Email:"
+             :value (:email form-data)
+             :on-change #(set-form-data
+                          (assoc form-data :email (.. % -target -value)))}))
+       (d/div
+        {:class "register-toggle"}
+        (if registering?
+          (d/a {:href "#" :onClick #(set-registering false)} "Already have an account? Sign in")
+          (d/a {:href "#" :onClick #(set-registering true)} "Don't have an account? Register")))
        (d/div
         {:class "settings-actions"}
         (d/button
@@ -316,13 +348,21 @@
           :class "button secondary"
           :onClick #(set-show-settings-dialog false)}
          "Cancel")
-        (d/button
-         {:type "submit"
-          :class "button primary"
-          :onClick #(do
-                      (dispatch [:set-settings form-data])
-                      (set-show-settings-dialog false))}
-         "Save")))
+        (if registering?
+          (d/button
+           {:type "button"
+            :class "button primary"
+            :disabled (not can-register?)
+            :onClick handle-register}
+           "Register")
+          (d/button
+           {:type "submit"
+            :class "button primary"
+            :disabled (not can-save?)
+            :onClick #(do
+                        (dispatch [:set-settings (dissoc form-data :email)])
+                        (set-show-settings-dialog false))}
+           "Save"))))
       (d/div
        {:class "build-date"}
        "Build: " version/build-date
