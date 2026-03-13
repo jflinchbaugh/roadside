@@ -39,8 +39,8 @@
       {:class "stand-content"}
       (when (and (not (seq (:name stand))) (not (seq (:products stand))))
         (d/div
-          {:class "stand-incomplete"}
-          "(no details)"))
+         {:class "stand-incomplete"}
+         "(no details)"))
       (when (seq (:name stand))
         (d/div
          {:class "stand-header"}
@@ -69,7 +69,7 @@
          (:notes stand)))
       (when selected?
         (d/div
-          {:class "stand-extra-info"}
+         {:class "stand-extra-info"}
          (when (seq (:coordinate stand))
            (d/p {:class "coordinate-text"} (:coordinate stand)))
          (when (seq (:expiration stand))
@@ -91,7 +91,7 @@
           {:class "stand-shared"}
           (d/strong "Shared: ")
           (if (:shared? stand) "Yes" "No")))))
-      (d/div
+     (d/div
       {:class "stand-actions"}
 
       (when-let [map-link (utils/make-map-link (:coordinate stand))]
