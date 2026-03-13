@@ -70,9 +70,12 @@
           params {:login user
                   :password password
                   :email email}
-          response (<! (http/post url {:query-params params}))]
+          response (<! (http/post url {:form-params params}))]
       (if (= 201 (:status response))
         {:success true :data (:body response)}
-        {:success false :error (or (get-in response [:body :message])
-                                   (str "Error: " (:status response)))}))))
+        {:success false :error (let [body (:body response)]
+                                 (if (map? body)
+                                   (:message body)
+                                   (or (:status-text response)
+                                       (str "Error: " (:status response)))))}))))
 

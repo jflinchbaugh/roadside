@@ -288,18 +288,21 @@
         can-save? (and (not (str/blank? (:user form-data)))
                        (not (str/blank? (:password form-data))))
         handle-register (fn []
-                          (when can-register?
-                            (go
-                              (let [res (<! (api/register-user
-                                             (:user form-data)
-                                             (:password form-data)
-                                             (:email form-data)))]
-                                (if (:success res)
-                                  (do
-                                    (dispatch [:notify {:type :success :message "Registered successfully!"}])
-                                    (dispatch [:set-settings (dissoc form-data :email)])
-                                    (set-show-settings-dialog false))
-                                  (dispatch [:notify {:type :error :message (str "Registration failed: " (:error res))}]))))))]
+                          (go
+                            (let [res (<! (api/register-user
+                                           (:user form-data)
+                                           (:password form-data)
+                                           (:email form-data)))]
+                              (if (:success res)
+                                (do
+                                  (dispatch [:set-notification
+                                             {:type :success
+                                              :message "Registered successfully!"}])
+                                  (dispatch [:set-settings (dissoc form-data :email)])
+                                  (set-show-settings-dialog false))
+                                (dispatch [:set-notification
+                                           {:type :error
+                                            :message (:error res)}])))))]
 
     (ui-hooks/use-escape-key #(set-show-settings-dialog false))
 
@@ -352,7 +355,6 @@
           (d/button
            {:type "button"
             :class "button primary"
-            :disabled (not can-register?)
             :onClick handle-register}
            "Register")
           (d/button
