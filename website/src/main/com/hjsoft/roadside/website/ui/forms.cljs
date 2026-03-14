@@ -6,7 +6,7 @@
             [com.hjsoft.roadside.website.state :as state]
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.version :as version]
-            [com.hjsoft.roadside.website.ui.map :refer [leaflet-map] ]
+            [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
             [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]
             [com.hjsoft.roadside.website.api :as api]
             [cljs.core.async :refer [go <!]]
@@ -47,8 +47,9 @@
   (let [app-state (state/use-app-state)
         stands (state/select-stands-by-expiry app-state)
         {:keys [get-location error]} (state/use-user-location-state)
-        [coordinate-display set-coordinate-display] (hooks/use-state
-                                                     (:coordinate stand-form-data))
+        [coordinate-display
+         set-coordinate-display] (hooks/use-state
+                                  (:coordinate stand-form-data))
         coordinate-input-ref (hooks/use-ref nil)]
 
     (hooks/use-effect
@@ -72,7 +73,9 @@
          :show-crosshairs true
          :auto-pan? false
          :set-coordinate-form-data (fn [coord-str]
-                                     (on-update [:update-field [:coordinate coord-str]]))})
+                                     (on-update
+                                      [:update-field
+                                       [:coordinate coord-str]]))})
      (d/label "Coordinate:")
      (d/div
       {:class "coordinate-input-group"}
@@ -87,16 +90,17 @@
         (d/button
          {:type "button"
           :class "reset-location-btn"
-          :onClick #(on-update [:update-field [:coordinate original-coordinate]])
+          :onClick #(on-update
+                     [:update-field [:coordinate original-coordinate]])
           :title "Reset to original location"}
          "\u21BA"))
       (d/button
        {:type "button"
         :class "location-btn"
-        :onClick (fn []
-                   (get-location
-                    (fn [[lat lng]]
-                      (on-update [:update-field [:coordinate (str lat ", " lng)]]))))}
+        :onClick #(get-location
+                   (fn [[lat lng]]
+                     (on-update
+                      [:update-field [:coordinate (str lat ", " lng)]])))}
        "\u2316"))
      (when error
        (d/p
@@ -174,7 +178,7 @@
        :onSubmit (fn [e]
                    (.preventDefault e)
                    (let [final-data (stand-domain/prepare-submit-data
-                                      stand-form-data)]
+                                     stand-form-data)]
                      (if editing-stand
                        (update-stand! final-data editing-stand)
                        (create-stand! final-data))))}
@@ -283,9 +287,6 @@
         [register-error set-register-error] (hooks/use-state nil)
         form-data (merge {:user "" :password "" :email ""} settings)
         [form-data set-form-data] (hooks/use-state form-data)
-        can-register? (and (not (str/blank? (:user form-data)))
-                           (not (str/blank? (:password form-data)))
-                           (not (str/blank? (:email form-data))))
         can-save? (and (not (str/blank? (:user form-data)))
                        (not (str/blank? (:password form-data))))
         handle-register (fn []
@@ -354,8 +355,16 @@
        (d/div
         {:class "register-toggle"}
         (if registering?
-          (d/a {:href "#" :onClick #(do (set-registering false) (set-register-error nil))} "Already have an account? Sign in")
-          (d/a {:href "#" :onClick #(do (set-registering true) (set-register-error nil))} "Don't have an account? Register")))
+          (d/a {:href "#"
+                :onClick #(do
+                            (set-registering false)
+                            (set-register-error nil))}
+               "Already have an account? Sign in")
+          (d/a {:href "#"
+                :onClick #(do
+                            (set-registering true)
+                            (set-register-error nil))}
+               "Don't have an account? Register")))
        (d/div
         {:class "settings-actions"}
         (d/button
