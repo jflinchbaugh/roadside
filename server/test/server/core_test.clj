@@ -202,6 +202,26 @@
             (let [upserted-stand (json/read-str (:body upsert-resp) :key-fn keyword)]
               (is (= "charlie" (:creator upserted-stand)) "Creator should be set from identity for new record in update handler"))))))))
 
+(deftest upsert-test
+  (testing "Updating a non-existent stand creates it (upsert)"
+    (let [id "upsert-id"
+          stand-doc {:name "Upserted Stand" :location "Upsert Lane"}
+          body (json/write-str stand-doc)
+          req {:path-params {:id id}
+               :body (ByteArrayInputStream. (.getBytes body))
+               :identity "alice"}
+          resp (core/update-stand-handler req)]
+      (is (= 200 (:status resp)))
+      (let [created (json/read-str (:body resp) :key-fn keyword)]
+        (is (= id (:id created)))
+        (is (= "Upserted Stand" (:name created)))
+        (is (= "alice" (:creator created)))
+
+        ;; Verify it persists in DB
+        (let [get-resp (core/get-stand-handler {:path-params {:id id}})]
+          (is (= 200 (:status get-resp)))
+          (is (= "Upserted Stand" (:name (json/read-str (:body get-resp) :key-fn keyword)))))))))
+
 (deftest auth-test
   (testing "my-authfn"
     (xt/submit-tx @core/node [[:put-docs :users {:xt/id "u1" :login "bob" :password (hashers/derive "pass")}]])
