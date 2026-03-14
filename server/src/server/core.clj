@@ -203,15 +203,15 @@
 
 (defn my-authfn
   [_req authdata]
-  (let [login (:username authdata)
+  (let [username (:username authdata)
         password (:password authdata)
         user (first
               (xt/q @node
                     ['(fn [u]
                         (-> (from :users [login password])
                             (where (= login u))))
-                     login]))]
-    (when (and user (hashers/check password (:password user)))
+                     username]))]
+    (when (and user (:valid (hashers/verify password (:password user))))
       (:login user))))
 
 (def backend (backends/basic {:realm realm :authfn my-authfn}))

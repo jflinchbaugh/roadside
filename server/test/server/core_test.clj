@@ -26,7 +26,9 @@
 
 (deftest register-test
   (testing "Register handler saves user to DB"
-    (let [req {:params {:login "alice" :password "secret-password" :email "alice@example.com"}}
+    (let [req {:params {:login "alice"
+                        :password "secret-password"
+                        :email "alice@example.com"}}
           response (core/register-handler req)]
       (is (= 201 (:status response)))
       (let [user (first
@@ -36,23 +38,26 @@
                         (from :users [login password email])
                         (where (= login "alice")))))]
         (is (= "alice" (:login user)))
-        (is (hashers/check "secret-password" (:password user)))
+        (is (:valid (hashers/verify "secret-password" (:password user))))
         (is (= "alice@example.com" (:email user))))))
   (testing "Register handler requires email"
     (let [req {:params {:login "bob" :password "secret-pass"}}
           response (core/register-handler req)]
       (is (= 400 (:status response)))
-      (is (= ["email is required"] (:errors (json/read-str (:body response) :key-fn keyword))))))
+      (is (= ["email is required"]
+            (:errors (json/read-str (:body response) :key-fn keyword))))))
   (testing "Register handler requires login"
     (let [req {:params {:email "bob@example.com" :password "secret-pass"}}
           response (core/register-handler req)]
       (is (= 400 (:status response)))
-      (is (= ["login is required"] (:errors (json/read-str (:body response) :key-fn keyword))))))
+      (is (= ["login is required"]
+            (:errors (json/read-str (:body response) :key-fn keyword))))))
   (testing "Register handler requires password"
     (let [req {:params {:login "bob" :email "bob@example.com"}}
           response (core/register-handler req)]
       (is (= 400 (:status response)))
-      (is (= ["password is required"] (:errors (json/read-str (:body response) :key-fn keyword))))))
+      (is (= ["password is required"]
+            (:errors (json/read-str (:body response) :key-fn keyword))))))
   (testing "Register handler requires all fields"
     (let [req {:params {}}
           response (core/register-handler req)]
@@ -68,7 +73,9 @@
         (is (some #{"login must be 3-20 alphanumeric characters"} errors))
         (is (some #{"password must be at least 8 characters"} errors)))))
   (testing "Register handler with a duplicate"
-    (let [req {:params {:login "alice" :password "again-secret" :email "alice2@example.com"}}
+    (let [req {:params {:login "alice"
+                        :password "again-secret"
+                        :email "alice2@example.com"}}
           response (core/register-handler req)]
       (is (= 403 (:status response)))
       (is (= ["login not available"] (:errors (json/read-str (:body response) :key-fn keyword))))
@@ -79,11 +86,11 @@
                      (from :users [login password])
                      (where (= login "alice")))))]
         (is (= "alice" (:login user)))
-        (is (hashers/check "secret-password" (:password user)) "password not touched")))))
+        (is (:valid (hashers/verify "secret-password" (:password user))) "password not touched")))))
 
 (deftest stands-test
   (testing "Stands handlers"
-    (let [stand-doc {:name "Morning Coffee" :location "Main St"}
+    (let [stand-doc {:name "Morning Coffee" :location "Main St" :coordinate "40.0379, -76.3055"}
           body (json/write-str stand-doc)
           create-req {:body (ByteArrayInputStream. (.getBytes body))
                       :identity "alice"}
