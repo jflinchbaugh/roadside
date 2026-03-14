@@ -1,6 +1,7 @@
 (ns server.core-test
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [server.core :as core]
+            [buddy.hashers :as hashers]
             [xtdb.api :as xt]
             [server.xtdb-container :as xtn]
             [org.httpkit.client :as hkc]
@@ -35,7 +36,7 @@
                         (from :users [login password email])
                         (where (= login "alice")))))]
         (is (= "alice" (:login user)))
-        (is (= "secret-password" (:password user)))
+        (is (hashers/check "secret-password" (:password user)))
         (is (= "alice@example.com" (:email user))))))
   (testing "Register handler requires email"
     (let [req {:params {:login "bob" :password "secret-pass"}}
@@ -78,7 +79,7 @@
                      (from :users [login password])
                      (where (= login "alice")))))]
         (is (= "alice" (:login user)))
-        (is (= "secret-password" (:password user)) "password not touched")))))
+        (is (hashers/check "secret-password" (:password user)) "password not touched")))))
 
 (deftest stands-test
   (testing "Stands handlers"
@@ -198,7 +199,7 @@
 
 (deftest auth-test
   (testing "my-authfn"
-    (xt/submit-tx @core/node [[:put-docs :users {:xt/id "u1" :login "bob" :password "pass"}]])
+    (xt/submit-tx @core/node [[:put-docs :users {:xt/id "u1" :login "bob" :password (hashers/derive "pass")}]])
     (is (= "bob" (core/my-authfn {} {:username "bob" :password "pass"})))
     (is (nil? (core/my-authfn {} {:username "bob" :password "wrong"})))))
 

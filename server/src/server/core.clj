@@ -8,6 +8,7 @@
             [ring.util.request :as rur]
             [buddy.auth.middleware :as buddy]
             [buddy.auth.backends :as backends]
+            [buddy.hashers :as hashers]
             [clojure.data.json :as json]
             [clojure.string :as str]
             [tick.core :as t]
@@ -98,14 +99,14 @@
                          (conj "password must be at least 8 characters"))
         user {:xt/id id
               :login login
-              :password password
+              :password (hashers/derive password)
               :email email
               :updated (str (t/now))}
         existing-user (first
                        (xt/q @node
                              ['(fn [l]
                                  (->
-                                  (from :users [login password])
+                                  (from :users [login])
                                   (where (= login l))))
                               login]))]
     (cond
@@ -201,17 +202,16 @@
       (handler req))))
 
 (defn my-authfn
-  [req authdata]
+  [_req authdata]
   (let [login (:username authdata)
         password (:password authdata)
         user (first
               (xt/q @node
-                    ['(fn [l p]
+                    ['(fn [l]
                         (-> (from :users [login password])
-                            (where (= login l))
-                            (where (= password p))))
-                     login password]))]
-    (when user
+                            (where (= login l))))
+                     login]))]
+    (when (and user (hashers/check password (:password user)))
       (:login user))))
 
 (def backend (backends/basic {:realm realm :authfn my-authfn}))
@@ -285,3 +285,4 @@
     (xt/q node '(from :roadside [*])))
 
   nil)
+
