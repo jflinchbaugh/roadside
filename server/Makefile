@@ -9,8 +9,7 @@ test: target/.test-passed
 uber: target/.uberjar-built
 
 target/.test-passed: $(SRC_FILES) $(TEST_FILES)
-	clj -T:build test
-	mkdir -p target && touch target/.test-passed
+	clj -T:build test && mkdir -p target && touch target/.test-passed
 
 target/.uberjar-built: target/.test-passed $(SRC_FILES)
 	clj -T:build uber

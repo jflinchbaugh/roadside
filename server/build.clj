@@ -20,8 +20,10 @@
                :main "clojure.main"
                :jvm-opts ["--enable-preview"]
                :main-args (into ["-m" "cognitect.test-runner" "-d" "test"]
-                            (mapcat (fn [[k v]] [(str k) (str v)]) opts))})]
-    (b/process cmds)))
+                            (mapcat (fn [[k v]] [(str k) (str v)]) opts))})
+        {:keys [exit]} (b/process cmds)]
+    (when-not (zero? exit)
+      (throw (ex-info "Tests failed" {:exit exit})))))
 
 (defn uber [_]
   (b/copy-dir {:src-dirs ["src" "resources"]
