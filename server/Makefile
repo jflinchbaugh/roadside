@@ -1,17 +1,26 @@
+SRC_FILES := $(shell find src resources deps.edn build.clj -type f)
+TEST_FILES := $(shell find test -type f)
+
 all: container
 
-.PHONY: uber test
+.PHONY: clean run-server run-xtdb test uber container
 
-test:
+test: target/.test-passed
+uber: target/.uberjar-built
+
+target/.test-passed: $(SRC_FILES) $(TEST_FILES)
 	clj -T:build test
+	mkdir -p target && touch target/.test-passed
 
-uber: test
+target/.uberjar-built: target/.test-passed $(SRC_FILES)
 	clj -T:build uber
+	touch target/.uberjar-built
 
-.PHONY: container
-
-container: uber
+container: target/.uberjar-built Containerfile
 	podman build -t roadside-server:latest .
+
+clean:
+	clj -T:build clean
 
 run-server:
 	podman kube play --wait roadside-server.yaml

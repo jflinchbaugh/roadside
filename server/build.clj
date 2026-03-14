@@ -24,7 +24,6 @@
     (b/process cmds)))
 
 (defn uber [_]
-  (clean _)
   (b/copy-dir {:src-dirs ["src" "resources"]
                :target-dir class-dir})
   (b/compile-clj {:basis @basis
