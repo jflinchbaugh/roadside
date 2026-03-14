@@ -142,7 +142,12 @@
                                   (from :stands [xt/id])
                                   (where (= xt/id id))))
                               id])]
-              (is (= 0 (count del-check))))))))))
+              (is (= 0 (count del-check))))))
+
+        (testing "Delete non-existent stand"
+          (let [del-resp (core/delete-stand-handler {:path-params {:id "non-existent"} :identity "alice"})]
+            (is (= 200 (:status del-resp)))
+            (is (= "'non-existent' deleted" (:message (json/read-str (:body del-resp) :key-fn keyword))))))))))
 
 (deftest creator-test
   (testing "Creator value behavior"

@@ -104,10 +104,10 @@
               :updated (str (t/now))}
         existing-user (first
                        (xt/q @node
-                             ['(fn [l]
+                             ['(fn [u]
                                  (->
                                   (from :users [login])
-                                  (where (= login l))))
+                                  (where (= login u))))
                               login]))]
     (cond
       (seq missing-fields)
@@ -137,10 +137,10 @@
   (let [id (get-in req [:path-params :id])
         stand (first
                (xt/q @node
-                     ['(fn [id]
+                     ['(fn [id-param]
                          (->
-                          (from :stands [*])
-                          (where (= xt/id id))))
+                          (from :stands [xt/id *])
+                          (where (= xt/id id-param))))
                       id]))]
     (if stand
       (api-response 200 stand)
@@ -164,10 +164,10 @@
                   (dissoc :creator))
         existing-stand (first
                         (xt/q @node
-                              ['(fn [id]
+                              ['(fn [id-param]
                                   (->
-                                   (from :stands [*])
-                                   (where (= xt/id id))))
+                                   (from :stands [xt/id *])
+                                   (where (= xt/id id-param))))
                                id]))]
     (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
       (api-response 403 {:error "Forbidden: You do not own this stand"})
@@ -183,10 +183,10 @@
   (let [id (get-in req [:path-params :id])
         existing-stand (first
                         (xt/q @node
-                              ['(fn [id]
+                              ['(fn [id-param]
                                   (->
-                                   (from :stands [*])
-                                   (where (= xt/id id))))
+                                   (from :stands [xt/id *])
+                                   (where (= xt/id id-param))))
                                id]))]
     (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
       (api-response 403 {:error "Forbidden: You do not own this stand"})
@@ -207,9 +207,9 @@
         password (:password authdata)
         user (first
               (xt/q @node
-                    ['(fn [l]
+                    ['(fn [u]
                         (-> (from :users [login password])
-                            (where (= login l))))
+                            (where (= login u))))
                      login]))]
     (when (and user (hashers/check password (:password user)))
       (:login user))))
