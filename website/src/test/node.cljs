@@ -5,6 +5,9 @@
             [com.hjsoft.roadside.website.utils-test]
             [com.hjsoft.roadside.website.state-test]
             [com.hjsoft.roadside.website.ui.layout-test]
+            [com.hjsoft.roadside.website.ui.stands-test]
+            [com.hjsoft.roadside.website.controller-test]
+            [com.hjsoft.roadside.website.api-test]
             [com.hjsoft.roadside.website.domain.stand-test]))
 
 (defn main []
