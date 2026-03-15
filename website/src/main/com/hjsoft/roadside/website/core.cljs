@@ -23,26 +23,22 @@
 (defn use-app-side-effects
   [app-state dispatch user-location]
   (let [{:keys [stands settings map-center]} app-state
-        {:keys [location get-location]} user-location]
+        {:keys [get-location]} user-location]
 
     ;; Local persistence
     (hooks/use-effect
      [stands settings map-center]
      (controller/save-local-data! stands settings map-center))
 
-    ;; Location sync to map center
-    (hooks/use-effect
-     [location]
-     (when location
-       (dispatch [:set-map-center location])))
-
     ;; Fetch from Remote API on settings or map-center change
     (hooks/use-effect
      [settings map-center]
      (controller/fetch-remote-stands! app-state dispatch))
 
-    ;; Initial location fetch
-    (hooks/use-effect :once (get-location))))
+    ;; Initial location fetch and center map
+    (hooks/use-effect
+     :once
+     (get-location (fn [loc] (dispatch [:set-map-center loc]))))))
 
 (defnc app []
   (let [[app-state dispatch] (hooks/use-reducer
@@ -115,7 +111,8 @@
             (d/button
              {:type "button"
               :class "location-btn"
-              :onClick #((:get-location user-location))}
+              :onClick #((:get-location user-location)
+                         (fn [loc] (dispatch [:set-map-center loc])))}
              "\u2316")))
           ($ product-list {:stands stands-by-expiry})
           (when show-form ($ stand-form))
