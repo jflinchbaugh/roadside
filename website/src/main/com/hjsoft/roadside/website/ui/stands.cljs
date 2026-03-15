@@ -101,30 +101,33 @@
               :class "go-stand-btn"}
              "Go"))
       (when owner?
-        (d/button
-         {:class "edit-stand-btn"
-          :onClick (fn [e]
-                     (.stopPropagation e)
-                     (set-confirming false)
-                     (on-edit stand))
-          :title "Edit this stand"}
-         "Edit"))
+        (let [handle-edit (fn [e]
+                            (.stopPropagation e)
+                            (set-confirming false)
+                            (on-edit stand))]
+          (d/button
+           {:class "edit-stand-btn"
+            :onClick handle-edit
+            :title "Edit this stand"}
+           "Edit")))
       (when owner?
         (if confirming?
-          (d/button
-           {:class "delete-stand-btn"
-            :onClick (fn [e]
-                       (.stopPropagation e)
-                       (on-delete stand))
-            :title "Really delete this stand?"}
-           "Really?")
-          (d/button
-           {:class "delete-stand-btn"
-            :onClick (fn [e]
-                       (.stopPropagation e)
-                       (set-confirming true))
-            :title "Delete this stand"}
-           "Delete")))))))
+          (let [handle-delete (fn [e]
+                                (.stopPropagation e)
+                                (on-delete stand))]
+            (d/button
+             {:class "delete-stand-btn"
+              :onClick handle-delete
+              :title "Really delete this stand?"}
+             "Really?"))
+          (let [handle-delete-confirm (fn [e]
+                                        (.stopPropagation e)
+                                        (set-confirming true))]
+            (d/button
+             {:class "delete-stand-btn"
+              :onClick handle-delete-confirm
+              :title "Delete this stand"}
+             "Delete"))))))))
 
 (defnc stands-list
   [{:keys [stands]}]

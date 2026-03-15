@@ -45,43 +45,45 @@
         get-location (hooks/use-callback
                       [dispatch]
                       (fn [& [on-success on-error]]
-                        (when-not @locating-ref
-                          (when dispatch
-                            (dispatch [:set-selected-stand nil]))
-                          (reset! locating-ref true)
-                          (reset! cancelled-ref false)
-                          (set-is-locating true)
-                          (set-error nil)
-                          (if (and
-                               (exists? js/navigator)
-                               (exists? js/navigator.geolocation))
-                            (js/navigator.geolocation.getCurrentPosition
-                             (fn [position]
-                               (reset! locating-ref false)
-                               (set-is-locating false)
-                               (when-not @cancelled-ref
-                                 (let [coords (.-coords position)
-                                       loc [(.-latitude coords)
-                                            (.-longitude coords)]]
-                                   (set-location loc)
-                                   (when (fn? on-success) (on-success loc)))))
-                             (fn [err]
-                               (reset! locating-ref false)
-                               (set-is-locating false)
-                               (when-not @cancelled-ref
-                                 (let [msg (.-message err)]
-                                   (tel/log! :error {:failed-location msg})
-                                   (set-error "Unable to retrieve location.")
-                                   (when (fn? on-error) (on-error msg)))))
-                             #js {:enableHighAccuracy false
-                                  :timeout 20000
-                                  :maximumAge 30000})
-                            (do
-                              (reset! locating-ref false)
-                              (set-is-locating false)
-                              (set-error "Geolocation not supported.")
-                              (when (fn? on-error)
-                                (on-error "Geolocation not supported.")))))))
+                        (let [on-geoposition-success (fn [position]
+                                                       (reset! locating-ref false)
+                                                       (set-is-locating false)
+                                                       (when-not @cancelled-ref
+                                                         (let [coords (.-coords position)
+                                                               loc [(.-latitude coords)
+                                                                    (.-longitude coords)]]
+                                                           (set-location loc)
+                                                           (when (fn? on-success) (on-success loc)))))
+                              on-geoposition-error (fn [err]
+                                                     (reset! locating-ref false)
+                                                     (set-is-locating false)
+                                                     (when-not @cancelled-ref
+                                                       (let [msg (.-message err)]
+                                                         (tel/log! :error {:failed-location msg})
+                                                         (set-error "Unable to retrieve location.")
+                                                         (when (fn? on-error) (on-error msg)))))]
+                          (when-not @locating-ref
+                            (when dispatch
+                              (dispatch [:set-selected-stand nil]))
+                            (reset! locating-ref true)
+                            (reset! cancelled-ref false)
+                            (set-is-locating true)
+                            (set-error nil)
+                            (if (and
+                                 (exists? js/navigator)
+                                 (exists? js/navigator.geolocation))
+                              (js/navigator.geolocation.getCurrentPosition
+                               on-geoposition-success
+                               on-geoposition-error
+                               #js {:enableHighAccuracy false
+                                    :timeout 20000
+                                    :maximumAge 30000})
+                              (do
+                                (reset! locating-ref false)
+                                (set-is-locating false)
+                                (set-error "Geolocation not supported.")
+                                (when (fn? on-error)
+                                  (on-error "Geolocation not supported."))))))))
         cancel-location (hooks/use-callback
                          :once
                          (fn []

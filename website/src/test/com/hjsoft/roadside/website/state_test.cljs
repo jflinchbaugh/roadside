@@ -52,37 +52,6 @@
              (sut/app-reducer {:stands [{:id "1" :name "A"}]}
                               [:remove-stand {:id "1" :name "A"}])))))
 
-(deftest select-filtered-stands-test
-  (let [yesterday (.substring
-                   (.toISOString (js/Date.
-                                  (- (.getTime (js/Date.)) one-day)))
-                   0 10)
-        tomorrow (.substring
-                  (.toISOString (js/Date.
-                                 (+ (.getTime (js/Date.)) one-day)))
-                  0 10)
-        stands [{:id "1" :name "B" :updated "2023-01-01T12:00:00Z" :products ["Apples"] :expiration tomorrow}
-                {:id "2" :name "A" :updated "2023-01-02T12:00:00Z" :products ["Corn"] :expiration tomorrow}
-                {:id "3" :name "C" :updated "2023-01-01T10:00:00Z" :products ["Apples"] :expiration tomorrow}
-                {:id "4" :name "Expired Apples" :expiration yesterday :products ["Apples"] :updated "2023-01-03T00:00:00Z"}]]
-    (testing "sorting by updated date (descending)"
-      (let [result (sut/select-filtered-stands {:stands stands :show-expired? true})]
-        (is (= ["Expired Apples" "A" "B" "C"] (map :name result)))))
-
-    (testing "filtering by product"
-      (let [result (sut/select-filtered-stands {:stands stands :product-filter "Apples"})]
-        (is (= ["B" "C"] (map :name result))))
-
-      (testing "filtering by product combined with expiry"
-        (let [result-hidden (sut/select-filtered-stands {:stands stands
-                                                         :product-filter "Apples"
-                                                         :show-expired? false})
-              result-shown (sut/select-filtered-stands {:stands stands
-                                                        :product-filter "Apples"
-                                                        :show-expired? true})]
-          (is (= ["B" "C"] (map :name result-hidden)))
-          (is (= ["Expired Apples" "B" "C"] (map :name result-shown))))))))
-
 (deftest select-stands-by-expiry-test
   (let [active-stand {:name "Active" :expiration (utils/in-a-week)}
         expired-stand {:name "Expired" :expiration "2020-01-01"}

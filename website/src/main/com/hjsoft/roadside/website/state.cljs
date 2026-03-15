@@ -90,10 +90,3 @@
       (let [[u-lat u-lng] user-location]
         (sort-by (partial distance-from u-lat u-lng) filtered))
       (sort-by :updated #(compare %2 %1) filtered))))
-
-(defn select-filtered-stands
-  [{:keys [product-filter] :as state}]
-  (let [filtered-by-expiry (select-stands-by-expiry state)]
-    (if product-filter
-      (filterv #(some #{product-filter} (:products %)) filtered-by-expiry)
-      (vec filtered-by-expiry))))
