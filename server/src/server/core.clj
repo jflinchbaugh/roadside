@@ -17,6 +17,8 @@
 
 (defonce node (atom nil))
 
+(tel/set-min-level! :debug)
+
 (def ^:const realm "roadside")
 
 (def ^:const base-url "/roadside")
@@ -127,10 +129,51 @@
         (xt/submit-tx @node [[:put-docs :users user]])
         (api-response 201 {:login login})))))
 
+(def ^:const search-radius-km 500.0)
+
+(defn haversine-distance
+  "Calculate distance between two points in km."
+  [lat1 lon1 lat2 lon2]
+  (let [R 6371.0 ; Earth radius in km
+        dlat (Math/toRadians (- lat2 lat1))
+        dlon (Math/toRadians (- lon2 lon1))
+        a (+ (Math/pow (Math/sin (/ dlat 2)) 2)
+             (* (Math/cos (Math/toRadians lat1))
+                (Math/cos (Math/toRadians lat2))
+                (Math/pow (Math/sin (/ dlon 2)) 2)))
+        c (* 2 (Math/atan2 (Math/sqrt a) (Math/sqrt (- 1 a))))]
+    (* R c)))
+
+(defn parse-coordinate [coord-str]
+  (try
+    (let [[lat lon] (str/split coord-str #",\s*")]
+      [(Double/parseDouble lat) (Double/parseDouble lon)])
+    (catch Exception _ nil)))
+
 (defn get-stands-handler
-  [_req]
-  (let [stands (vec (xt/q @node '(from :stands [*])))]
-    (api-response 200 stands)))
+  [req]
+  (let [params (:params req)
+        lat (some-> (get params :lat) Double/parseDouble)
+        lon (some-> (get params :lon) Double/parseDouble)
+        stands (vec (xt/q @node '(from :stands [*])))]
+    (tel/log! :info {:fetching-stands {:lat lat :lon lon :radius search-radius-km}})
+    (if (and lat lon)
+      (let [filtered-stands (filterv
+                             (fn [stand]
+                               (if-let [[s-lat s-lon] (parse-coordinate (:coordinate stand))]
+                                 (let [dist (haversine-distance lat lon s-lat s-lon)
+                                       keep? (<= dist search-radius-km)]
+                                   (tel/log! :info {:stand-distance {:name (:name stand) :dist dist :keep? keep?}})
+                                   keep?)
+                                 (do
+                                   (tel/log! :warn {:missing-coordinate {:stand-id (:xt/id stand)}})
+                                   false)))
+                             stands)]
+        (tel/log! :info {:filtered-stands {:original (count stands) :returned (count filtered-stands)}})
+        (api-response 200 filtered-stands))
+      (do
+        (tel/log! :info {:returning-all-stands {:count (count stands)}})
+        (api-response 200 stands)))))
 
 (defn get-stand-handler
   [req]
@@ -259,13 +302,28 @@
     (reset! server nil))
   (reset! node nil))
 
+(defn cleanup-stands!
+  "Remove transient fields from all stands in the database."
+  [node]
+  (let [stands (xt/q node '(from :stands [*]))
+        transient-fields [:show-address? :current-product :editing-stand :map-center]
+        to-update (keep (fn [stand]
+                          (let [clean-stand (apply dissoc stand transient-fields)]
+                            (when (not= stand clean-stand)
+                              clean-stand)))
+                        stands)]
+    (when (seq to-update)
+      (tel/log! :info {:cleaning-up-stands {:count (count to-update)}})
+      (xt/submit-tx node (mapv (fn [s] [:put-docs :stands s]) to-update)))))
+
 (defn start-server!
   [port db-host]
   (if (nil? @server)
-    (do
-      (reset! node (xt/client {:host db-host}))
+    (let [new-node (xt/client {:host db-host})]
+      (reset! node new-node)
+      (cleanup-stands! new-node)
       (reset! server (hks/run-server #'app {:port port}))
-      (tel/log! :info "Server started."))
+      (tel/log! :info {:server-started {:port port :db-host db-host}}))
     "server already running"))
 
 (defn -main [& [port db-host]]

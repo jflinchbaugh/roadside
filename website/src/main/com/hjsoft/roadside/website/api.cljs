@@ -4,10 +4,14 @@
 
 (def ^:private stands-url "api/stands")
 
-(defn fetch-stands [user password]
+(defn fetch-stands [user password & [lat lng]]
   (go
-    (let [response (<! (http/get stands-url
-                                 {:basic-auth {:username user :password password}}))]
+    (let [params (cond-> {}
+                   lat (assoc :lat lat)
+                   lng (assoc :lon lng))
+          response (<! (http/get stands-url
+                                 {:basic-auth {:username user :password password}
+                                  :query-params params}))]
       (if (:success response)
         {:success true :data (:body response)}
         {:success false :error (str "HTTP Error: " stands-url ", " (:status response))}))))

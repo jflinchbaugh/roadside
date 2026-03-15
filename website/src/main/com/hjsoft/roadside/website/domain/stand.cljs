@@ -46,7 +46,9 @@
     state))
 
 (defn prepare-submit-data [state]
-  (stand-form-reducer state [:add-product]))
+  (-> state
+      (stand-form-reducer [:add-product])
+      (dissoc :show-address? :current-product :editing-stand :map-center)))
 
 (defn stand-key
   "Generates a unique key for a stand, preferring ID but falling back to content."

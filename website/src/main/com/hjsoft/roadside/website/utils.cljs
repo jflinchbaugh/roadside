@@ -69,3 +69,10 @@
     (if (empty? content)
       "(no details)"
       content)))
+
+(defn debounce
+  [f ms]
+  (let [timer (atom nil)]
+    (fn [& args]
+      (when @timer (js/clearTimeout @timer))
+      (reset! timer (js/setTimeout #(apply f args) ms)))))

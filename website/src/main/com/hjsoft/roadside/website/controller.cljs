@@ -23,12 +23,14 @@
    (dispatch [:set-notification {:type type :message message :stand-id stand-id}])))
 
 (defn fetch-remote-stands!
-  [{:keys [settings]} dispatch]
+  [{:keys [settings map-center]} dispatch]
   (when (has-credentials? settings)
     (go
-      (let [{:keys [success data error]} (<! (api/fetch-stands
+      (let [[lat lng] map-center
+            {:keys [success data error]} (<! (api/fetch-stands
                                               (:user settings)
-                                              (:password settings)))]
+                                              (:password settings)
+                                              lat lng))]
         (if success
           (do
             (dispatch [:set-stands data])

@@ -13,14 +13,23 @@
             [com.hjsoft.roadside.website.ui.forms
              :refer [stand-form settings-dialog]]
             [com.hjsoft.roadside.website.ui.layout
-             :refer [header fixed-header notification-toast]]))
+             :refer [header fixed-header notification-toast]]
+            [taoensso.telemere :as tel]))
+
+(tel/set-min-level! :debug)
 
 (def initial-zoom-level 11)
 
 (defn use-app-side-effects
   [app-state dispatch user-location]
   (let [{:keys [stands settings map-center]} app-state
-        {:keys [location get-location]} user-location]
+        {:keys [location get-location]} user-location
+        debounced-fetch (hooks/use-memo
+                         [dispatch]
+                         (utils/debounce
+                          (fn [state d]
+                            (controller/fetch-remote-stands! state d))
+                          500))]
 
     ;; Local persistence
     (hooks/use-effect
@@ -33,10 +42,10 @@
      (when location
        (dispatch [:set-map-center location])))
 
-    ;; Fetch from Remote API on settings change
+    ;; Fetch from Remote API on settings or map-center change
     (hooks/use-effect
-     [settings]
-     (controller/fetch-remote-stands! app-state dispatch))
+     [settings map-center]
+     (debounced-fetch app-state dispatch))
 
     ;; Initial location fetch
     (hooks/use-effect :once (get-location))))

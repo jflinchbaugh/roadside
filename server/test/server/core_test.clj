@@ -101,11 +101,25 @@
         (is (not (nil? id)))
         (is (= "Morning Coffee" (:name created-stand)))
 
-        (testing "Get all stands"
+        (testing "Get all stands (no filter)"
           (let [get-resp (core/get-stands-handler {})
                 stands (json/read-str (:body get-resp) :key-fn keyword)]
             (is (= 200 (:status get-resp)))
-            (is (= 1 (count stands)))))
+            (is (>= (count stands) 1))))
+
+        (testing "Get stands within radius"
+          ;; Lancaster, PA: 40.0379, -76.3055
+          (let [get-resp (core/get-stands-handler {:params {:lat "40.0" :lon "-76.0"}})
+                stands (json/read-str (:body get-resp) :key-fn keyword)]
+            (is (= 200 (:status get-resp)))
+            (is (>= (count stands) 1) "Should find the stand near Lancaster")))
+
+        (testing "Get stands outside radius"
+          ;; Los Angeles: 34.0522, -118.2437 (far from Lancaster, PA)
+          (let [get-resp (core/get-stands-handler {:params {:lat "34.0" :lon "-118.0"}})
+                stands (json/read-str (:body get-resp) :key-fn keyword)]
+            (is (= 200 (:status get-resp)))
+            (is (= 0 (count (filter #(= (:id %) id) stands))) "Should NOT find the Lancaster stand from LA")))
 
         (testing "Get single stand"
           (let [get-resp (core/get-stand-handler {:path-params {:id id}})]

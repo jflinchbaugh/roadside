@@ -1,1 +1,13 @@
-* TODO how do we tune logging to show debug level and above?
+* DONE is `show-address?` a field in the json? it shouldn't need to be.
+  CLOSED: [2026-03-14 Sat 18:35]
+  It *was* being serialized because it was kept in the form state during submission.
+  I have updated `prepare-submit-data` in `stand.cljs` to `dissoc` it along with
+  other transient fields (`:current-product`, `:editing-stand`, `:map-center`)
+  before the data is sent to the server or stored.
+  I also added `cleanup-stands!` in `server/core.clj` which runs on startup
+  to remove these fields from any existing records in the database.
+* DONE how do we tune logging to show debug level and above?
+  CLOSED: [2026-03-14 Sat 18:40]
+  Telemere logging can be tuned programmatically using `(tel/set-min-level! :debug)`
+  or by setting the JVM system property `taoensso.telemere.min-level=debug`.
+  You can also configure specific handlers to filter levels independently.
