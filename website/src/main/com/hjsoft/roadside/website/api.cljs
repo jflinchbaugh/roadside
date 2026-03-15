@@ -26,7 +26,8 @@
                     lat (assoc :lat lat)
                     lng (assoc :lon lng))
            response (<! (get stands-url
-                             (with-auth-opts user password {:query-params params})))]
+                             (with-auth-opts user password
+                               {:query-params params})))]
        (if (:success response)
          {:success true
           :data (:body response)}
@@ -38,7 +39,8 @@
   ([user password stand {:keys [post]}]
    (go
      (let [response (<! (post stands-url
-                              (with-auth-opts user password {:json-params stand})))]
+                              (with-auth-opts user password
+                                {:json-params stand})))]
        (if (:success response)
          {:success true :data (:body response)}
          {:success false :error (str "HTTP Error: " (:status response))})))))
@@ -50,7 +52,8 @@
          resource-url (str stands-url "/" id)]
      (go
        (let [response (<! (put resource-url
-                               (with-auth-opts user password {:json-params stand})))]
+                               (with-auth-opts user password
+                                 {:json-params stand})))]
          (if (:success response)
            {:success true :data (:body response)}
            {:success false :error (str "HTTP Error: " (:status response))}))))))
@@ -75,7 +78,8 @@
    (go
      (let [url "api/geocode"
            params {:q address}
-           response (<! (get url (with-auth-opts user password {:query-params params})))]
+           response (<! (get url (with-auth-opts user password
+                                   {:query-params params})))]
        (if (and (:success response) (seq (:body response)))
          (let [result (first (:body response))]
            {:success true
@@ -91,7 +95,8 @@
    (go
      (let [url "api/reverse-geocode"
            params {:lat lat :lon lng}
-           response (<! (get url (with-auth-opts user password {:query-params params})))]
+           response (<! (get url (with-auth-opts user password
+                                   {:query-params params})))]
        (if (:success response)
          {:success true :data (:body response)}
          {:success false
