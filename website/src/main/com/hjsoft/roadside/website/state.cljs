@@ -73,12 +73,19 @@
     state))
 
 (defn select-stands-by-expiry
-  [{:keys [stands show-expired?]}]
-  (let [sorted-stands (sort-by :updated #(compare %2 %1) stands)]
-    (if show-expired?
-      sorted-stands
-      (filterv #(not (utils/past-expiration? (:expiration %)))
-               sorted-stands))))
+  [{:keys [stands show-expired?]} & [user-location]]
+  (let [filtered (if show-expired?
+                   stands
+                   (filterv #(not (utils/past-expiration? (:expiration %))) stands))]
+    (if (and user-location (seq user-location))
+      (let [[u-lat u-lng] user-location]
+        (sort-by
+         (fn [stand]
+           (if-let [[s-lat s-lon] (utils/parse-coordinates (:coordinate stand))]
+             (utils/haversine-distance u-lat u-lng s-lat s-lon)
+             js/Number.MAX_VALUE))
+         filtered))
+      (sort-by :updated #(compare %2 %1) filtered))))
 
 (defn select-filtered-stands
   [{:keys [product-filter] :as state}]

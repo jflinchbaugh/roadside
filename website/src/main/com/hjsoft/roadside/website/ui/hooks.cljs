@@ -36,16 +36,18 @@
      (fn []
        (.removeEventListener js/document "keydown" handle-keydown)))))
 
-(defn use-user-location []
+(defn use-user-location [dispatch]
   (let [[location set-location] (hooks/use-state nil)
         [error set-error] (hooks/use-state nil)
         [is-locating set-is-locating] (hooks/use-state false)
         locating-ref (hooks/use-ref false)
         cancelled-ref (hooks/use-ref false)
         get-location (hooks/use-callback
-                      :once
+                      [dispatch]
                       (fn [& [on-success on-error]]
                         (when-not @locating-ref
+                          (when dispatch
+                            (dispatch [:set-selected-stand nil]))
                           (reset! locating-ref true)
                           (reset! cancelled-ref false)
                           (set-is-locating true)

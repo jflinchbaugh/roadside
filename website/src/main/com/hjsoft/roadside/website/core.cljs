@@ -23,13 +23,7 @@
 (defn use-app-side-effects
   [app-state dispatch user-location]
   (let [{:keys [stands settings map-center]} app-state
-        {:keys [location get-location]} user-location
-        debounced-fetch (hooks/use-memo
-                         [dispatch]
-                         (utils/debounce
-                          (fn [state d]
-                            (controller/fetch-remote-stands! state d))
-                          500))]
+        {:keys [location get-location]} user-location]
 
     ;; Local persistence
     (hooks/use-effect
@@ -45,7 +39,7 @@
     ;; Fetch from Remote API on settings or map-center change
     (hooks/use-effect
      [settings map-center]
-     (debounced-fetch app-state dispatch))
+     (controller/fetch-remote-stands! app-state dispatch))
 
     ;; Initial location fetch
     (hooks/use-effect :once (get-location))))
@@ -60,13 +54,13 @@
         [editing-stand set-editing-stand] (hooks/use-state nil)
         [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
 
-        user-location (use-user-location)
+        user-location (use-user-location dispatch)
 
         _ (use-app-side-effects app-state dispatch user-location)
 
         stands-by-expiry (hooks/use-memo
-                          [stands (:show-expired? app-state)]
-                          (state/select-stands-by-expiry app-state))
+                          [stands (:show-expired? app-state) (:location user-location)]
+                          (state/select-stands-by-expiry app-state (:location user-location)))
 
         filtered-stands (hooks/use-memo
                          [stands-by-expiry (:product-filter app-state)]
@@ -74,12 +68,14 @@
                            (filterv #(some #{pf} (:products %)) stands-by-expiry)
                            stands-by-expiry))
 
-        set-coordinate-form-data (hooks/use-callback
+        set-coordinate-form-data (hooks/use-memo
                                   [dispatch]
-                                  (fn [c]
-                                    (dispatch
-                                     [:set-map-center
-                                      (utils/parse-coordinates c)])))]
+                                  (utils/debounce
+                                   (fn [c]
+                                     (dispatch
+                                      [:set-map-center
+                                       (utils/parse-coordinates c)]))
+                                   500))]
 
     (d/div
      {:class "app-container"}
