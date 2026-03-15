@@ -46,6 +46,8 @@
      original-coordinate]}]
   (let [app-state (state/use-app-state)
         stands (state/select-stands-by-expiry app-state)
+        map-zoom (:map-zoom app-state 11)
+        final-zoom (max add-zoom-level map-zoom)
         {:keys [get-location error]} (state/use-user-location-state)
         [coordinate-display
          set-coordinate-display] (hooks/use-state
@@ -68,7 +70,7 @@
          :center (or
                   (utils/parse-coordinates (:coordinate stand-form-data))
                   state/map-home)
-         :zoom-level add-zoom-level
+         :zoom-level final-zoom
          :stands stands
          :show-crosshairs true
          :auto-pan? false

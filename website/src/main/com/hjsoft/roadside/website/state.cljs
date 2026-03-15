@@ -32,6 +32,7 @@
    :product-filter nil
    :selected-stand nil
    :map-center (or (storage/get-item "roadside-map-center") map-home)
+   :map-zoom 11
    :settings (or (storage/get-item "roadside-settings") {})
    :is-synced false
    :notification nil
@@ -69,7 +70,8 @@
    :set-product-filter #(set-value %1 :product-filter %2)
    :set-show-expired #(set-value %1 :show-expired? %2)
    :set-settings #(set-value %1 :settings %2)
-   :set-map-center #(set-value %1 :map-center %2)})
+   :set-map-center #(set-value %1 :map-center %2)
+   :set-map-zoom #(set-value %1 :map-zoom %2)})
 
 (defn app-reducer [state [action-type payload]]
   (if-let [handler (get action-handlers action-type)]

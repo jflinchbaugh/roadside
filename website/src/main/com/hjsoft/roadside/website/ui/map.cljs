@@ -7,6 +7,8 @@
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.utils :as utils]))
 
+(def ^:const crosshairs-zoom-level 12)
+
 (defn- make-marker
   [{:keys [coord stand set-selected-stand auto-pan?]
     :or {auto-pan? true}}]
@@ -124,7 +126,8 @@
         selected-stand (or selected-stand (:selected-stand app-state))
         center (or center (:map-center app-state))
         center-ref (hooks/use-ref center)
-        [stand-map set-stand-map] (hooks/use-state nil)]
+        [stand-map set-stand-map] (hooks/use-state nil)
+        [current-zoom set-current-zoom] (hooks/use-state zoom-level)]
 
     (hooks/use-effect
      [center]
@@ -135,11 +138,16 @@
      :once
      (let [m (init-map div-id center zoom-level)]
        (when set-coordinate-form-data
-         (.on
-          m
-          "moveend"
-          (fn []
-            (let [center (.getCenter m)]
+         (dispatch [:set-map-zoom zoom-level]))
+       (.on
+        m
+        "moveend zoomend"
+        (fn []
+          (let [center (.getCenter m)
+                zoom (.getZoom m)]
+            (set-current-zoom zoom)
+            (when set-coordinate-form-data
+              (dispatch [:set-map-zoom zoom])
               (set-coordinate-form-data
                (str (.-lat center) ", " (.-lng center)))))))
        (set-stand-map m)
@@ -152,12 +160,15 @@
 
     (use-map-center stand-map center)
     (use-map-markers stand-map stands selected-stand auto-pan? dispatch)
-    (use-user-location-marker stand-map location)))
+    (use-user-location-marker stand-map location)
+    {:stand-map stand-map
+     :zoom current-zoom}))
 
 (defnc leaflet-map
   [{:keys [div-id show-crosshairs] :as props}]
-  (let [{:keys [is-locating cancel-location]} (state/use-user-location-state)]
-    (use-leaflet-map props)
+  (let [{:keys [is-locating cancel-location]} (state/use-user-location-state)
+        {:keys [zoom]} (use-leaflet-map props)
+        show-crosshairs (or show-crosshairs (>= zoom crosshairs-zoom-level))]
     (d/div {:id div-id
             :class "map-wrapper"}
            (when show-crosshairs
