@@ -4,6 +4,11 @@
 
 (def ^:private stands-url "api/stands")
 
+(defn- with-auth-opts
+  ([user password] (with-auth-opts user password {}))
+  ([user password opts]
+   (assoc opts :basic-auth {:username user :password password})))
+
 (def default-http-deps
   {:get http/get
    :post http/post
@@ -21,8 +26,7 @@
                     lat (assoc :lat lat)
                     lng (assoc :lon lng))
            response (<! (get stands-url
-                             {:basic-auth {:username user :password password}
-                              :query-params params}))]
+                             (with-auth-opts user password {:query-params params})))]
        (if (:success response)
          {:success true
           :data (:body response)}
@@ -34,9 +38,7 @@
   ([user password stand {:keys [post]}]
    (go
      (let [response (<! (post stands-url
-                              {:basic-auth {:username user
-                                            :password password}
-                               :json-params stand}))]
+                              (with-auth-opts user password {:json-params stand})))]
        (if (:success response)
          {:success true :data (:body response)}
          {:success false :error (str "HTTP Error: " (:status response))})))))
@@ -48,9 +50,7 @@
          resource-url (str stands-url "/" id)]
      (go
        (let [response (<! (put resource-url
-                               {:basic-auth {:username user
-                                             :password password}
-                                :json-params stand}))]
+                               (with-auth-opts user password {:json-params stand})))]
          (if (:success response)
            {:success true :data (:body response)}
            {:success false :error (str "HTTP Error: " (:status response))}))))))
@@ -62,8 +62,7 @@
    (let [resource-url (str stands-url "/" stand-id)]
      (go
        (let [response (<! (delete resource-url
-                                  {:basic-auth {:username user
-                                                :password password}}))]
+                                  (with-auth-opts user password)))]
          (if (:success response)
            {:success true}
            {:success false
@@ -76,9 +75,7 @@
    (go
      (let [url "api/geocode"
            params {:q address}
-           response (<! (get url {:query-params params
-                                  :basic-auth {:username user
-                                               :password password}}))]
+           response (<! (get url (with-auth-opts user password {:query-params params})))]
        (if (and (:success response) (seq (:body response)))
          (let [result (first (:body response))]
            {:success true
@@ -94,9 +91,7 @@
    (go
      (let [url "api/reverse-geocode"
            params {:lat lat :lon lng}
-           response (<! (get url {:query-params params
-                                  :basic-auth {:username user
-                                               :password password}}))]
+           response (<! (get url (with-auth-opts user password {:query-params params})))]
        (if (:success response)
          {:success true :data (:body response)}
          {:success false
