@@ -3,6 +3,7 @@
             [com.hjsoft.roadside.website.controller :as sut]
             [com.hjsoft.roadside.website.storage :as storage]
             [com.hjsoft.roadside.website.api :as api]
+            [clojure.string :as str]
             [cljs.core.async :refer [go]]
             [com.hjsoft.roadside.website.state :as state]))
 
@@ -107,6 +108,44 @@
                     (is (some #(= (first %) :set-is-synced) @dispatched))
                     (done))
                   1000)))))
+
+(deftest fetch-remote-stands-failure-test
+  (async done
+    (testing "fetch-remote-stands! dispatches error notification on failure"
+      (let [dispatched (atom [])
+            dispatch (fn [action] (swap! dispatched conj action))
+            app-state {:settings {:user "alice" :password "secret"}
+                       :map-center [10 20]}
+            deps (assoc
+                   mock-deps
+                   :fetch-stands (fn [& _]
+                                   (go {:success false :error "API Down"} )))]
+        (sut/fetch-remote-stands! app-state dispatch deps)
+        (wait-for dispatched
+                  (fn [actions] (some (fn [[type payload]]
+                                        (and (= type :set-notification)
+                                             (= (:type payload) :error)
+                                             (= (:message payload) "Sync failed: API Down")))
+                                      actions))
+                  done 1000)))))
+
+(deftest create-stand-failure-test
+  (async done
+    (testing "create-stand! handles remote failure with error notification"
+      (let [dispatched (atom [])
+            dispatch (fn [action] (swap! dispatched conj action))
+            app-state {:settings {:user "alice" :password "secret"} :stands []}
+            form-data {:name "New Stand" :coordinate "1.0, 2.0"}
+            deps (assoc mock-deps
+                        :create-stand (fn [& _] (go {:success false :error "Conflict"})))]
+        (sut/create-stand! app-state dispatch form-data deps)
+        (wait-for dispatched
+                  (fn [actions] (some (fn [[type payload]]
+                                        (and (= type :set-notification)
+                                             (= (:type payload) :error)
+                                             (str/includes? (:message payload) "Create failed: Conflict")))
+                                      actions))
+                  done 1000)))))
 
 (deftest delete-stand-test
   (async done
