@@ -8,6 +8,7 @@
             [com.hjsoft.roadside.website.ui.stands-test]
             [com.hjsoft.roadside.website.controller-test]
             [com.hjsoft.roadside.website.api-test]
+            [com.hjsoft.roadside.website.storage-test]
             [com.hjsoft.roadside.website.domain.stand-test]))
 
 (defn main []
