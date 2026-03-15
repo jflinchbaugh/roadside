@@ -52,10 +52,11 @@
 (defn stand-key
   "Generates a unique key for a stand, preferring ID but falling back to content."
   [stand]
-  (if-let [id (:id stand)]
-    (str id)
-    (let [{:keys [name coordinate address town state products]} stand]
-      (str name "|" coordinate "|" address "|" town "|" state "|" (str/join "," products)))))
+  (when stand
+    (if-let [id (:id stand)]
+      (str id)
+      (let [{:keys [name coordinate address town state products]} stand]
+        (str name "|" coordinate "|" address "|" town "|" state "|" (str/join "," products))))))
 
 (defn- product-matches-name? [name-lower current-set product]
   (and (str/includes? name-lower (str/lower-case product))
