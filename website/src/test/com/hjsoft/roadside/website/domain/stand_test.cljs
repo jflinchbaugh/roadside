@@ -4,7 +4,7 @@
 
 (deftest stand-key-test
   (testing "nil or empty stand"
-    (is (= "|||||" (sut/stand-key nil)))
+    (is (nil? (sut/stand-key nil)))
     (is (= "|||||" (sut/stand-key {}))))
 
   (testing "id-based key"

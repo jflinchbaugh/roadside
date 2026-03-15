@@ -70,20 +70,24 @@
 
 (defn- use-map-markers
   [stand-map stands selected-stand auto-pan? dispatch]
-  (let [layer-group-ref (hooks/use-ref nil)]
+  (let [layer-group-ref (hooks/use-ref nil)
+        prev-selected-ref (hooks/use-ref nil)]
     (hooks/use-effect
      [stands selected-stand stand-map auto-pan?]
      (when stand-map
-       (let [locations (->>
+       (let [selection-changed? (not (identical? selected-stand @prev-selected-ref))
+             should-auto-pan? (and auto-pan? selection-changed?)
+             locations (->>
                         stands
                         (map (fn [s]
                                {:coord (utils/parse-coordinates (:coordinate s))
                                 :stand s}))
                         (remove (comp nil? :coord))
-                        (map (partial prepare-marker auto-pan? dispatch)))
+                        (map (partial prepare-marker should-auto-pan? dispatch)))
              new-layer-group (when (seq locations)
                                (L/layerGroup
                                 (clj->js (map second locations))))]
+         (reset! prev-selected-ref selected-stand)
          (when @layer-group-ref
            (.removeLayer ^js stand-map @layer-group-ref))
          (when new-layer-group
