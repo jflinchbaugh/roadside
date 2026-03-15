@@ -82,4 +82,3 @@
                                    (or (:errors body) [(:message body)])
                                    [(or (:status-text response)
                                         (str "Error: " (:status response)))]))}))))
-
