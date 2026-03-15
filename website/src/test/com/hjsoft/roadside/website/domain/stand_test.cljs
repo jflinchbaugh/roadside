@@ -88,13 +88,14 @@
                  :current-product "Apples"}
           final (sut/prepare-submit-data state)]
       (is (= ["Corn" "Apples"] (:products final)))
-      (is (= "" (:current-product final)))))
+      (is (nil? (:current-product final)))))
 
   (testing "empty current-product adds nothing to products"
     (let [state {:products ["Corn"]
                  :current-product ""}
           final (sut/prepare-submit-data state)]
-      (is (= state final)))))
+      (is (= ["Corn"] (:products final)))
+      (is (nil? (:current-product final))))))
 
 (deftest add-and-edit-stand-test
   (let [stands [{:id "1"
