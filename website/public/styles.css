@@ -578,11 +578,6 @@ body {
   text-decoration: underline;
 }
 
-.stand-item.selected-stand {
-  background-color: #e0e0e0;
-  border: 2px solid #007bff;
-}
-
 .stand-item.expired-stand {
   opacity: 0.7;
   border-style: dashed;
@@ -591,6 +586,12 @@ body {
 .stand-item.incomplete-stand {
   background-color: #fff9e6;
   border-color: #ffeeba;
+}
+
+.stand-item.selected-stand {
+  background-color: #e0e0e0;
+  border: 2px solid #007bff;
+  opacity: 1; /* Ensure full opacity when selected even if expired */
 }
 
 .expired-label {
