@@ -57,6 +57,17 @@
           (.getZoom ^js stand-map)
           (clj->js {:animate false})))))))
 
+(defn- same-as-selected? [selected-stand [stand _]]
+  (= (stand-domain/stand-key selected-stand)
+     (stand-domain/stand-key stand)))
+
+(defn- prepare-marker [auto-pan? dispatch {:keys [coord stand]}]
+  (make-marker
+   {:coord coord
+    :stand stand
+    :auto-pan? auto-pan?
+    :set-selected-stand #(dispatch [:set-selected-stand %])}))
+
 (defn- use-map-markers
   [stand-map stands selected-stand auto-pan? dispatch]
   (let [layer-group-ref (hooks/use-ref nil)]
@@ -69,13 +80,7 @@
                                {:coord (utils/parse-coordinates (:coordinate s))
                                 :stand s}))
                         (remove (comp nil? :coord))
-                        (map
-                         (fn [{:keys [coord stand]}]
-                           (make-marker
-                            {:coord coord
-                             :stand stand
-                             :auto-pan? auto-pan?
-                             :set-selected-stand #(dispatch [:set-selected-stand %])}))))
+                        (map (partial prepare-marker auto-pan? dispatch)))
              new-layer-group (when (seq locations)
                                (L/layerGroup
                                 (clj->js (map second locations))))]
@@ -86,9 +91,7 @@
            (reset! layer-group-ref new-layer-group)
            (some->>
             locations
-            (filter
-             (fn [[s _]]
-               (= (stand-domain/stand-key selected-stand) (stand-domain/stand-key s))))
+            (filter (partial same-as-selected? selected-stand))
             first
             second
             (#(.openPopup ^js %)))))))))

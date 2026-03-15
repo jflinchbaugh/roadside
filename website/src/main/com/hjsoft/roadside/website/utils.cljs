@@ -54,16 +54,20 @@
        sort
        vec))
 
+(defn deg->rad
+  "Convert degrees to radians."
+  [deg]
+  (* deg (/ (.-PI js/Math) 180)))
+
 (defn haversine-distance
   "Calculate distance between two points in km."
   [lat1 lon1 lat2 lon2]
   (let [R 6371.0 ; Earth radius in km
-        to-rad (fn [deg] (* deg (/ (.-PI js/Math) 180)))
-        dlat (to-rad (- lat2 lat1))
-        dlon (to-rad (- lon2 lon1))
+        dlat (deg->rad (- lat2 lat1))
+        dlon (deg->rad (- lon2 lon1))
         a (+ (js/Math.pow (js/Math.sin (/ dlat 2)) 2)
-             (* (js/Math.cos (to-rad lat1))
-                (js/Math.cos (to-rad lat2))
+             (* (js/Math.cos (deg->rad lat1))
+                (js/Math.cos (deg->rad lat2))
                 (js/Math.pow (js/Math.sin (/ dlon 2)) 2)))
         c (* 2 (js/Math.atan2 (js/Math.sqrt a) (js/Math.sqrt (- 1 a))))]
     (* R c)))

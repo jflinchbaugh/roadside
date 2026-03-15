@@ -42,23 +42,27 @@
     (update state key payload)
     (assoc state key payload)))
 
+(defn- handle-set-stands [state payload]
+  (let [data (if (fn? payload)
+               (payload (:stands state))
+               payload)
+        new-data (if (coll? data) (vec data) [])
+        existing-map (into {} (map (juxt :id identity) (:stands state)))
+        new-map (into {} (map (juxt :id identity) new-data))
+        merged-map (merge existing-map new-map)]
+    (assoc state :stands (vec (vals merged-map)))))
+
+(defn- handle-remove-stand [state payload]
+  (update
+   state
+   :stands
+   (fn [stands]
+     (filterv #(not= (:id %) (:id payload))
+              stands))))
+
 (def action-handlers
-  {:set-stands (fn [state payload]
-                 (let [data (if (fn? payload)
-                              (payload (:stands state))
-                              payload)
-                       new-data (if (coll? data) (vec data) [])
-                       existing-map (into {} (map (juxt :id identity) (:stands state)))
-                       new-map (into {} (map (juxt :id identity) new-data))
-                       merged-map (merge existing-map new-map)]
-                   (assoc state :stands (vec (vals merged-map)))))
-   :remove-stand (fn [state payload]
-                   (update
-                    state
-                    :stands
-                    (fn [stands]
-                      (filterv #(not= (:id %) (:id payload))
-                               stands))))
+  {:set-stands handle-set-stands
+   :remove-stand handle-remove-stand
    :set-notification #(set-value %1 :notification %2)
    :set-is-synced #(set-value %1 :is-synced %2)
    :set-selected-stand #(set-value %1 :selected-stand %2)
@@ -72,6 +76,11 @@
     (handler state payload)
     state))
 
+(defn- distance-from [lat lng stand]
+  (if-let [[s-lat s-lon] (utils/parse-coordinates (:coordinate stand))]
+    (utils/haversine-distance lat lng s-lat s-lon)
+    js/Number.MAX_VALUE))
+
 (defn select-stands-by-expiry
   [{:keys [stands show-expired?]} & [user-location]]
   (let [filtered (if show-expired?
@@ -79,12 +88,7 @@
                    (filterv #(not (utils/past-expiration? (:expiration %))) stands))]
     (if (and user-location (seq user-location))
       (let [[u-lat u-lng] user-location]
-        (sort-by
-         (fn [stand]
-           (if-let [[s-lat s-lon] (utils/parse-coordinates (:coordinate stand))]
-             (utils/haversine-distance u-lat u-lng s-lat s-lon)
-             js/Number.MAX_VALUE))
-         filtered))
+        (sort-by (partial distance-from u-lat u-lng) filtered))
       (sort-by :updated #(compare %2 %1) filtered))))
 
 (defn select-filtered-stands

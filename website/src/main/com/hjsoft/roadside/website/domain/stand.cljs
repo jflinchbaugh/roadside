@@ -26,6 +26,9 @@
                                        (seq (:state initial))))
            :current-product "")))
 
+(defn- remove-product-by-name [products product-name]
+  (filterv #(not= % product-name) products))
+
 (defn stand-form-reducer [state [action-type payload]]
   (case action-type
     :update-field (assoc state (first payload) (second payload))
@@ -37,11 +40,7 @@
                      (-> state
                          (update :products #(conj (or % []) product))
                          (assoc :current-product ""))))
-    :remove-product (update
-                     state
-                     :products
-                     (fn [products]
-                       (filterv #(not= % payload) products)))
+    :remove-product (update state :products #(remove-product-by-name % payload))
     :toggle-address (update state :show-address? not)
     state))
 
@@ -58,6 +57,10 @@
     (let [{:keys [name coordinate address town state products]} stand]
       (str name "|" coordinate "|" address "|" town "|" state "|" (str/join "," products)))))
 
+(defn- product-matches-name? [name-lower current-set product]
+  (and (str/includes? name-lower (str/lower-case product))
+       (not (contains? current-set product))))
+
 (defn infer-products
   "Automatically detects and adds products that appear in the stand name
    if they already exist in other stands."
@@ -65,9 +68,7 @@
   (let [name-lower (str/lower-case (or stand-name ""))
         current-set (set current-products)]
     (->> all-products
-         (filter (fn [p]
-                   (and (str/includes? name-lower (str/lower-case p))
-                        (not (contains? current-set p)))))
+         (filter #(product-matches-name? name-lower current-set %))
          (into (or current-products []))
          (vec))))
 
@@ -89,20 +90,26 @@
       (ensure-creator creator)
       (assoc :updated (utils/get-current-timestamp))))
 
+(defn- same-stand? [s1 s2]
+  (= (stand-key s1) (stand-key s2)))
+
+(defn- replace-matching-stand [stands old-stand new-stand]
+  (mapv #(if (same-stand? % old-stand) new-stand %) stands))
+
 (defn- finalize-stand
   "Standardized result for stand operations.
    Two arities:
    - [stands processed-data] -> Add (with duplicate check)
    - [stands editing-stand processed-data] -> Edit (replace matching)"
   ([stands processed-data]
-   (if (some #(= (stand-key processed-data) (stand-key %)) stands)
+   (if (some #(same-stand? processed-data %) stands)
      {:success false :error "This stand already exists!"}
      (finalize-stand stands nil processed-data)))
   ([stands editing-stand processed-data]
    {:success true
     :processed-data processed-data
     :stands (if editing-stand
-              (mapv #(if (= (stand-key %) (stand-key editing-stand)) processed-data %) stands)
+              (replace-matching-stand stands editing-stand processed-data)
               (conj (vec stands) processed-data))}))
 
 (defn add-stand
