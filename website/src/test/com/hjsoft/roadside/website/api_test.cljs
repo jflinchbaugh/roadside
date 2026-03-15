@@ -26,6 +26,18 @@
             (is (= [{:id 1}] (:data result)))
             (done)))))))
 
+(deftest fetch-stands-failure-test
+  (async done
+    (testing "fetch-stands handles HTTP error"
+      (let [deps (make-mock-deps
+                  :get (fn [_ _]
+                         (mock-http-response {:success false :status 500})))]
+        (go
+          (let [result (<! (sut/fetch-stands "user" "pass" 1.0 2.0 deps))]
+            (is (not (:success result)))
+            (is (= "HTTP Error: api/stands, 500" (:error result)))
+            (done)))))))
+
 (deftest create-stand-test
   (async done
     (testing "create-stand sends POST with correct body"
@@ -110,4 +122,38 @@
           (let [result (<! (sut/register-user "u" "p" "e" deps))]
             (is (:success result))
             (is (= "ok" (get-in result [:data :msg])))
+            (done)))))))
+
+(deftest register-user-failure-test
+  (async done
+    (testing "register-user handles server error with message"
+      (let [deps (make-mock-deps
+                  :post (fn [_ _]
+                          (mock-http-response {:status 400
+                                               :body {:message "User exists"}})))]
+        (go
+          (let [result (<! (sut/register-user "u" "p" "e" deps))]
+            (is (not (:success result)))
+            (is (= ["User exists"] (:error result)))
+            (done))))))
+  (async done
+    (testing "register-user handles server error with list of errors"
+      (let [deps (make-mock-deps
+                  :post (fn [_ _]
+                          (mock-http-response {:status 400
+                                               :body {:errors ["Error 1" "Error 2"]}})))]
+        (go
+          (let [result (<! (sut/register-user "u" "p" "e" deps))]
+            (is (not (:success result)))
+            (is (= ["Error 1" "Error 2"] (:error result)))
+            (done))))))
+  (async done
+    (testing "register-user handles generic server error"
+      (let [deps (make-mock-deps
+                  :post (fn [_ _]
+                          (mock-http-response {:status 500 :status-text "Internal Server Error"})))]
+        (go
+          (let [result (<! (sut/register-user "u" "p" "e" deps))]
+            (is (not (:success result)))
+            (is (= ["Internal Server Error"] (:error result)))
             (done)))))))
