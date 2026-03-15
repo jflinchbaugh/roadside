@@ -40,7 +40,7 @@
      :once
      (get-location (fn [loc] (dispatch [:set-map-center loc]))))))
 
-(defnc app []
+(defnc app [{:keys [geolocation]}]
   (let [[app-state dispatch] (hooks/use-reducer
                               state/app-reducer
                               state/initial-app-state)
@@ -50,9 +50,13 @@
         [editing-stand set-editing-stand] (hooks/use-state nil)
         [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
 
-        user-location (use-user-location dispatch)
+        user-location (use-user-location
+                       dispatch
+                       (or geolocation
+                           (when (exists? js/navigator) js/navigator.geolocation)))
 
         _ (use-app-side-effects app-state dispatch user-location)
+
 
         stands-by-expiry (hooks/use-memo
                           [stands (:show-expired? app-state) (:location user-location)]
