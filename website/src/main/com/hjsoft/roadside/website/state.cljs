@@ -32,7 +32,7 @@
    :product-filter nil
    :selected-stand nil
    :map-center (or (storage/get-item "roadside-map-center") map-home)
-   :map-zoom 11
+   :map-zoom (or (storage/get-item "roadside-map-zoom") 11)
    :settings (or (storage/get-item "roadside-settings") {})
    :is-synced false
    :notification nil

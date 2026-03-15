@@ -22,13 +22,13 @@
 
 (defn use-app-side-effects
   [app-state dispatch user-location]
-  (let [{:keys [stands settings map-center]} app-state
+  (let [{:keys [stands settings map-center map-zoom]} app-state
         {:keys [get-location]} user-location]
 
     ;; Local persistence
     (hooks/use-effect
-     [stands settings map-center]
-     (controller/save-local-data! stands settings map-center))
+     [stands settings map-center map-zoom]
+     (controller/save-local-data! stands settings map-center map-zoom))
 
     ;; Fetch from Remote API on settings or map-center change
     (hooks/use-effect

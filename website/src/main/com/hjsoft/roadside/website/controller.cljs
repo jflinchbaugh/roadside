@@ -7,10 +7,11 @@
             [clojure.string :as str]
             [cljs.core.async :refer [go <!]]))
 
-(defn save-local-data! [stands settings map-center]
+(defn save-local-data! [stands settings map-center map-zoom]
   (storage/set-item! "roadside-stands" stands)
   (storage/set-item! "roadside-settings" settings)
-  (storage/set-item! "roadside-map-center" map-center))
+  (storage/set-item! "roadside-map-center" map-center)
+  (storage/set-item! "roadside-map-zoom" map-zoom))
 
 (defn- has-credentials? [settings]
   (and (seq (:user settings))
