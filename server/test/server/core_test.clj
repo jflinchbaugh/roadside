@@ -82,7 +82,7 @@
 
 (deftest stands-test
   (testing "Stands handlers"
-    (let [stand-doc {:name "Morning Coffee" :location "Main St" :coordinate "40.0379, -76.3055"}
+    (let [stand-doc {:name "Morning Coffee" :address "Main St" :coordinate "40.0379, -76.3055"}
           body (json/write-str stand-doc)
           create-req {:body (ByteArrayInputStream. (.getBytes body))
                       :identity "alice"}
@@ -130,7 +130,7 @@
 
         (testing "Update non-existent stand (upsert behavior)"
           (let [non-existent-id "missing-id"
-                update-doc {:name "New Stand" :location "Unknown"}
+                update-doc {:name "New Stand" :address "Unknown"}
                 update-body (json/write-str update-doc)
                 update-req {:path-params {:id non-existent-id}
                             :body (ByteArrayInputStream. (.getBytes update-body))
@@ -211,7 +211,7 @@
 (deftest upsert-test
   (testing "Updating a non-existent stand creates it (upsert)"
     (let [id "upsert-id"
-          stand-doc {:name "Upserted Stand" :location "Upsert Lane"}
+          stand-doc {:name "Upserted Stand" :address "Upsert Lane"}
           body (json/write-str stand-doc)
           req {:path-params {:id id}
                :body (ByteArrayInputStream. (.getBytes body))

@@ -45,7 +45,21 @@
   [:map
    [:login [:re #"^[a-zA-Z0-9_]{3,20}$"]]
    [:password [:string {:min 8}]]
-   [:email [:re #".+@.+\..+"]]])
+   [:email [:re #".+@.+\..+"]]
+   [:updated {:optional true} [:maybe :string]]])
+(def StandSchema
+  [:map
+   [:name [:string {:min 1}]]
+   [:coordinate {:optional true} [:re #"^-?\d+\.?\d*,\s*-?\d+\.?\d*$"]]
+   [:location {:optional true} [:maybe :string]]
+   [:address {:optional true} [:maybe :string]]
+   [:town {:optional true} [:maybe :string]]
+   [:state {:optional true} [:maybe :string]]
+   [:products {:optional true} [:vector :string]]
+   [:expiration {:optional true} [:maybe :string]]
+   [:notes {:optional true} [:maybe :string]]
+   [:shared? {:optional true} :boolean]
+   [:updated {:optional true} [:maybe :string]]])
 
 (defn register-handler [req]
   (let [id (or (get-in req [:params :id]) (str (java.util.UUID/randomUUID)))
@@ -99,11 +113,15 @@
                   sanitize-stand
                   (dissoc :creator))
         id (or (:id stand) (:xt/id stand) (str (java.util.UUID/randomUUID)))
-        stand (assoc stand :xt/id id
-                     :creator (:identity req))
-        stand (dissoc stand :id)]
-    (db/save-stand stand)
-    (api-response 201 (assoc stand :id id))))
+        stand-to-validate (dissoc stand :id :xt/id)]
+    (if-not (m/validate StandSchema stand-to-validate)
+      (api-response 400 {:status "failed"
+                         :errors (me/humanize (m/explain StandSchema stand-to-validate))})
+      (let [stand (assoc stand :xt/id id
+                         :creator (:identity req))
+            stand (dissoc stand :id)]
+        (db/save-stand stand)
+        (api-response 201 (assoc stand :id id))))))
 
 (defn update-stand-handler [req]
   (let [id (or (get-in req [:path-params :id])
@@ -114,12 +132,16 @@
         existing-stand (when id (db/get-stand id))]
     (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
       (api-response 403 {:error "Forbidden: You do not own this stand"})
-      (let [final-id (or id (:id stand) (:xt/id stand) (str (java.util.UUID/randomUUID)))
-            stand (assoc stand :xt/id final-id
-                         :creator (or (:creator existing-stand) (:identity req)))
-            stand (dissoc stand :id)]
-        (db/save-stand stand)
-        (api-response 200 (assoc stand :id final-id))))))
+      (let [stand-to-validate (dissoc stand :id :xt/id)]
+        (if-not (m/validate StandSchema stand-to-validate)
+          (api-response 400 {:status "failed"
+                             :errors (me/humanize (m/explain StandSchema stand-to-validate))})
+          (let [final-id (or id (:id stand) (:xt/id stand) (str (java.util.UUID/randomUUID)))
+                stand (assoc stand :xt/id final-id
+                             :creator (or (:creator existing-stand) (:identity req)))
+                stand (dissoc stand :id)]
+            (db/save-stand stand)
+            (api-response 200 (assoc stand :id final-id))))))))
 
 (defn delete-stand-handler [req]
   (let [id (get-in req [:path-params :id])
