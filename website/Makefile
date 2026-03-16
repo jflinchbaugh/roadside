@@ -6,10 +6,10 @@ install:
 	npm install
 
 dev:
-	npx shadow-cljs watch frontend test test-browser
+	npx shadow-cljs watch frontend
 
 dev-test:
-	npx shadow-cljs watch frontend test-browser
+	npx shadow-cljs watch frontend test test-browser
 
 test:
 	npx shadow-cljs compile test

@@ -1,4 +1,4 @@
-SRC_FILES := $(shell find src resources deps.edn build.clj -type f)
+SRC_FILES := $(shell find src resources deps.edn build.clj ../common/src -type f)
 TEST_FILES := $(shell find test -type f)
 
 all: container
