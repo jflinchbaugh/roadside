@@ -5,13 +5,24 @@
             [malli.error :as me]
             [com.hjsoft.roadside.common.logic :as logic]))
 
-(def transient-fields [:show-address? :current-product :editing-stand :map-center])
+(defn- get-map-keys [schema]
+  (->> (m/entries schema)
+       (map first)
+       set))
+
+(def stand-keys (get-map-keys logic/StandSchema))
+
+(defn select-stand-fields
+  "Returns a map containing only the keys defined in StandSchema (plus :xt/id)."
+  [stand]
+  (let [valid-keys (conj stand-keys :xt/id)]
+    (select-keys stand valid-keys)))
 
 (defn stand-key
   "Generates a unique key for a stand, preferring ID but falling back to content."
   [stand]
   (when stand
-    (if-let [id (:id stand)]
+    (if-let [id (or (:id stand) (:xt/id stand))]
       (str id)
       (let [{:keys [name coordinate address town state products]} stand]
         (str name "|" coordinate "|" address "|" town "|" state "|" (str/join "," products))))))
@@ -32,7 +43,7 @@
          (vec))))
 
 (defn- ensure-id [stand]
-  (if (:id stand)
+  (if (or (:id stand) (:xt/id stand))
     stand
     (assoc stand :id (utils/random-uuid-str))))
 
@@ -72,7 +83,7 @@
               (conj (vec stands) processed-data))}))
 
 (defn validate-stand [stand]
-  (if-not (m/validate logic/StandSchema (dissoc stand :id :creator))
-    (let [errors (me/humanize (m/explain logic/StandSchema (dissoc stand :id :creator)))]
+  (if-not (m/validate logic/StandSchema (dissoc stand :xt/id))
+    (let [errors (me/humanize (m/explain logic/StandSchema (dissoc stand :xt/id)))]
       {:success false :error (str "Validation failed: " (str/join ", " (map (fn [[k v]] (str (name k) ": " (str/join "; " v))) errors)))})
     {:success true}))

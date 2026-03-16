@@ -48,7 +48,7 @@
 (defn prepare-submit-data [state]
   (-> state
       (stand-form-reducer [:add-product])
-      (dissoc :show-address? :current-product :editing-stand :map-center)))
+      common-stand/select-stand-fields))
 
 (def stand-key common-stand/stand-key)
 (def infer-products common-stand/infer-products)

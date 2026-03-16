@@ -80,24 +80,19 @@
                           (<= (utils/haversine-distance lat lon s-lat s-lon) search-radius-km)
                           false))
                       stands)]
-        (api-response 200 filtered))
-      (api-response 200 stands))))
+        (api-response 200 (mapv common-stand/select-stand-fields filtered)))
+      (api-response 200 (mapv common-stand/select-stand-fields stands)))))
 
 (defn get-stand-handler [req]
   (let [id (get-in req [:path-params :id])
         stand (db/get-stand id)]
     (if stand
-      (api-response 200 stand)
+      (api-response 200 (common-stand/select-stand-fields stand))
       (not-found))))
-
-(def transient-fields common-stand/transient-fields)
-
-(defn- sanitize-stand [stand]
-  (apply dissoc stand transient-fields))
 
 (defn create-stand-handler [req]
   (let [stand (-> (json/read-str (rur/body-string req) :key-fn keyword)
-                  sanitize-stand
+                  common-stand/select-stand-fields
                   (dissoc :creator))
         id (or (:id stand) (:xt/id stand) (common-utils/random-uuid-str))
         stand-to-validate (dissoc stand :id :xt/id)]
@@ -114,7 +109,7 @@
   (let [id (or (get-in req [:path-params :id])
                (get-in req [:params :id]))
         stand (-> (json/read-str (rur/body-string req) :key-fn keyword)
-                  sanitize-stand
+                  common-stand/select-stand-fields
                   (dissoc :creator))
         existing-stand (when id (db/get-stand id))]
     (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
