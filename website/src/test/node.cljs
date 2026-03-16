@@ -5,6 +5,7 @@
             [cljs.test :as test]
             [com.hjsoft.roadside.website.utils-test]
             [com.hjsoft.roadside.website.state-test]
+            [com.hjsoft.roadside.website.core-test]
             [com.hjsoft.roadside.website.ui.layout-test]
             [com.hjsoft.roadside.website.ui.hooks-test]
             [com.hjsoft.roadside.website.ui.map-test]

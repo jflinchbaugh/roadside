@@ -1,6 +1,5 @@
 (ns com.hjsoft.roadside.website.core
   (:require ["react-dom/client" :as rdom]
-            ["leaflet" :as L]
             [helix.core :refer [defnc $ <>]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
@@ -15,10 +14,8 @@
              :refer [stand-form settings-dialog]]
             [com.hjsoft.roadside.website.ui.layout
              :refer [header fixed-header notification-toast]]
+            [goog.object :as gobj]
             [taoensso.telemere :as tel]))
-
-;; Inject Leaflet
-(ui-map/set-leaflet! L)
 
 (tel/set-min-level! :debug)
 
@@ -83,7 +80,7 @@
 
     (d/div
      {:class "app-container"}
-     ($ (.-Provider state/app-context)
+     ($ (gobj/get state/app-context "Provider")
         {:value {:state app-state
                  :dispatch dispatch
                  :user-location user-location
