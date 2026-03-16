@@ -1,8 +1,17 @@
 (ns com.hjsoft.roadside.website.ui.layout
-  (:require [helix.core :refer [defnc]]
+  (:require [helix.core :refer [defnc $]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
             [com.hjsoft.roadside.website.state :as state]))
+
+(defnc loading-indicator []
+  (let [{:keys [state]} (hooks/use-context state/app-context)
+        {:keys [loading-stands?]} state]
+    (when loading-stands?
+      (d/div
+       {:class "loading-indicator"}
+       (d/div {:class "mini-spinner"})
+       (d/span "Refreshing...")))))
 
 (defnc header []
   (d/header
@@ -15,7 +24,8 @@
     {:class "main-header"}
     "Roadside Stands"
     " "
-    (d/span {:style {:font-size "0.5em"}} "beta"))))
+    (d/span {:style {:font-size "0.5em"}} "beta"))
+   ($ loading-indicator)))
 
 (defnc fixed-header [{:keys [children]}]
   (d/div

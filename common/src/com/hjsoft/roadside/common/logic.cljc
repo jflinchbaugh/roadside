@@ -45,7 +45,7 @@
   [:map
    [:id {:optional true} [:maybe :string]]
    [:creator {:optional true} [:maybe :string]]
-   [:name [:string {:min 1}]]
+   [:name {:optional true} [:maybe :string]]
    [:coordinate {:optional true} [:re #"^-?\d+\.?\d*,\s*-?\d+\.?\d*$"]]
    [:address {:optional true} [:maybe :string]]
    [:town {:optional true} [:maybe :string]]

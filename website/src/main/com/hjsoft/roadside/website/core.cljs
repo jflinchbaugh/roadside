@@ -13,28 +13,45 @@
             [com.hjsoft.roadside.website.ui.forms
              :refer [stand-form settings-dialog]]
             [com.hjsoft.roadside.website.ui.layout
-             :refer [header fixed-header notification-toast]]
+             :refer [header fixed-header notification-toast loading-indicator]]
             [goog.object :as gobj]
             [taoensso.telemere :as tel]))
 
 (tel/set-min-level! :debug)
 
 (def initial-zoom-level 11)
+(def fetch-stands-threshold-km 100.0)
 
 (defn use-app-side-effects
-  [app-state dispatch user-location]
+  [app-state dispatch user-location show-form editing-stand]
   (let [{:keys [stands settings map-center map-zoom]} app-state
-        {:keys [get-location]} user-location]
+        {:keys [get-location]} user-location
+        [last-fetched-center set-last-fetched-center] (hooks/use-state map-center)]
 
     ;; Local persistence
     (hooks/use-effect
      [stands settings map-center map-zoom]
      (controller/save-local-data! stands settings map-center map-zoom))
 
-    ;; Fetch from Remote API on settings or map-center change
+    ;; Fetch from Remote API on settings change
     (hooks/use-effect
-     [settings map-center]
-     (controller/fetch-remote-stands! app-state dispatch))
+     [settings]
+     (when-not (or show-form editing-stand)
+       (controller/fetch-remote-stands! app-state dispatch)
+       (set-last-fetched-center map-center)))
+
+    ;; Fetch from Remote API on map-center change beyond threshold
+    (hooks/use-effect
+     [map-center]
+     (let [distance (if (and last-fetched-center map-center)
+                      (let [[lat1 lon1] last-fetched-center
+                            [lat2 lon2] map-center]
+                        (utils/haversine-distance lat1 lon1 lat2 lon2))
+                      js/Number.MAX_VALUE)]
+       (when (and (not (or show-form editing-stand))
+                  (> distance fetch-stands-threshold-km))
+         (controller/fetch-remote-stands! app-state dispatch)
+         (set-last-fetched-center map-center))))
 
     ;; Initial location fetch and center map
     (hooks/use-effect
@@ -45,6 +62,10 @@
   (let [[app-state dispatch] (hooks/use-reducer
                               state/app-reducer
                               state/initial-app-state)
+        _ (hooks/use-effect
+           :once
+           (do (gobj/set js/window "dispatch" dispatch)
+               (fn [] (gobj/remove js/window "dispatch"))))
         {:keys [stands]} app-state
 
         [show-form set-show-form] (hooks/use-state false)
@@ -56,8 +77,7 @@
                        (or geolocation
                            (when (exists? js/navigator) js/navigator.geolocation)))
 
-        _ (use-app-side-effects app-state dispatch user-location)
-
+        _ (use-app-side-effects app-state dispatch user-location show-form editing-stand)
 
         stands-by-expiry (hooks/use-memo
                           [stands (:show-expired? app-state) (:location user-location)]

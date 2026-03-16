@@ -42,6 +42,7 @@ body {
   margin-bottom: 0.5rem;
   margin-top: 0.25rem;
   flex-shrink: 0;
+  position: relative;
 }
 
 .logo {
@@ -448,9 +449,36 @@ body {
   animation: spin 2s linear infinite;
 }
 
+.mini-spinner {
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  animation: spin 1s linear infinite;
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.loading-indicator {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  z-index: 1000;
+  background: white;
+  padding: 4px 10px;
+  border-radius: 15px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #3498db;
+  border: 1px solid #3498db;
 }
 
 .location-btn, .reset-location-btn {

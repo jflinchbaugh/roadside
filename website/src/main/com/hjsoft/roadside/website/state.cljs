@@ -35,6 +35,7 @@
    :map-zoom (or (storage/get-item "roadside-map-zoom") 11)
    :settings (or (storage/get-item "roadside-settings") {})
    :is-synced false
+   :loading-stands? false
    :notification nil
    :show-expired? false})
 
@@ -66,6 +67,7 @@
    :remove-stand handle-remove-stand
    :set-notification #(set-value %1 :notification %2)
    :set-is-synced #(set-value %1 :is-synced %2)
+   :set-loading-stands #(set-value %1 :loading-stands? %2)
    :set-selected-stand #(set-value %1 :selected-stand %2)
    :set-product-filter #(set-value %1 :product-filter %2)
    :set-show-expired #(set-value %1 :show-expired? %2)

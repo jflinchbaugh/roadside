@@ -36,17 +36,18 @@
    (fetch-remote-stands! app-state dispatch default-deps))
   ([{:keys [settings map-center]} dispatch {:keys [fetch-stands]}]
    (when (has-credentials? settings)
+     (dispatch [:set-loading-stands true])
      (go
        (let [[lat lng] map-center
              {:keys [success data error]} (<! (fetch-stands
                                                (:user settings)
                                                (:password settings)
                                                lat lng))]
+         (dispatch [:set-loading-stands false])
          (if success
            (do
              (dispatch [:set-stands data])
-             (dispatch [:set-is-synced true])
-             (notify! dispatch :success "Stands refreshed"))
+             (dispatch [:set-is-synced true]))
            (do
              (tel/log! :error {:msg "Failed to fetch stands" :error error})
              (notify! dispatch :error (str "Sync failed: " error)))))))))

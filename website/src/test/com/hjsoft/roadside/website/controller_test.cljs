@@ -88,7 +88,7 @@
 
 (deftest fetch-remote-stands-test
   (async done
-    (testing "fetch-remote-stands! dispatches stands and success notification"
+    (testing "fetch-remote-stands! dispatches stands and loading states"
       (let [dispatched (atom [])
             dispatch (fn [action] (swap! dispatched conj action))
             app-state {:settings {:user "alice" :password "secret"}
@@ -99,13 +99,17 @@
                                    (go {:success true :data [{:id "s1"}]} )))]
         (sut/fetch-remote-stands! app-state dispatch deps)
         (wait-for dispatched
-                  (fn [actions] (some (fn [[type payload]]
-                                        (and (= type :set-notification)
-                                             (= (:type payload) :success)))
-                                      actions))
+                  (fn [actions] (some #(= (first %) :set-is-synced) actions))
                   (fn []
+                    (is (some #(= % [:set-loading-stands true]) @dispatched))
+                    (is (some #(= % [:set-loading-stands false]) @dispatched))
                     (is (some #(= (first %) :set-stands) @dispatched))
                     (is (some #(= (first %) :set-is-synced) @dispatched))
+                    ;; Verify NO success notification is sent anymore
+                    (is (not (some (fn [[type payload]]
+                                     (and (= type :set-notification)
+                                          (= (:type payload) :success)))
+                                   @dispatched)))
                     (done))
                   1000)))))
 

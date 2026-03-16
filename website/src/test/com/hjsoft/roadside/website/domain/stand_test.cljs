@@ -116,6 +116,16 @@
                in other stands")
         (is (= "test-user" (:creator (:processed-data result))))))
 
+    (testing "adding a stand with empty name"
+      (let [result (sut/add-stand
+                    {:name ""
+                     :coordinate "3,4"
+                     :products ["Apples"]}
+                    stands
+                    "test-user")]
+        (is (:success result))
+        (is (= "" (:name (:processed-data result))))))
+
     (testing "preventing duplicates in add-stand"
       (let [result (sut/add-stand
                     {:id "1" :name "Apple Farm" :coordinate "1,2" :products ["apples"]}
