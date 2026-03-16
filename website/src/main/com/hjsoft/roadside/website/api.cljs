@@ -1,6 +1,7 @@
 (ns com.hjsoft.roadside.website.api
   (:require [cljs-http.client :as http]
-            [cljs.core.async :refer [go <!]]))
+            [cljs.core.async :refer [go <!]]
+            [clojure.string :as str]))
 
 (def ^:private stands-url "api/stands")
 
@@ -14,6 +15,15 @@
    :post http/post
    :put http/put
    :delete http/delete})
+
+(defn- extract-error [response default-msg]
+  (let [body (:body response)]
+    (if (and (map? body) (:errors body))
+      (let [errors (:errors body)]
+        (if (map? errors)
+          (str/join ", " (map (fn [[k v]] (str (name k) ": " (str/join "; " v))) errors))
+          (str/join ", " errors)))
+      (or (:status-text response) default-msg))))
 
 (defn fetch-stands
   ([user password]
@@ -32,7 +42,7 @@
          {:success true
           :data (:body response)}
          {:success false
-          :error (str "HTTP Error: " stands-url ", " (:status response))})))))
+          :error (extract-error response (str "HTTP Error: " stands-url ", " (:status response)))})))))
 
 (defn create-stand
   ([user password stand] (create-stand user password stand default-http-deps))
@@ -43,7 +53,7 @@
                                 {:json-params stand})))]
        (if (:success response)
          {:success true :data (:body response)}
-         {:success false :error (str "HTTP Error: " (:status response))})))))
+         {:success false :error (extract-error response (str "HTTP Error: " (:status response)))})))))
 
 (defn update-stand
   ([user password stand] (update-stand user password stand default-http-deps))
@@ -56,7 +66,7 @@
                                  {:json-params stand})))]
          (if (:success response)
            {:success true :data (:body response)}
-           {:success false :error (str "HTTP Error: " (:status response))}))))))
+           {:success false :error (extract-error response (str "HTTP Error: " (:status response)))}))))))
 
 (defn delete-stand
   ([user password stand-id]
@@ -69,7 +79,7 @@
          (if (:success response)
            {:success true}
            {:success false
-            :error (str "HTTP Error: " (:status response))}))))))
+            :error (extract-error response (str "HTTP Error: " (:status response)))}))))))
 
 (defn geocode-address
   ([user password address]

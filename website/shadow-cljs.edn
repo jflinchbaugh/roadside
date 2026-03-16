@@ -1,4 +1,5 @@
-{:source-paths ["src/main"
+{:source-paths ["../common/src"
+                "src/main"
                 "src/dev"
                 "src/test"]
  :dependencies [[lilactown/helix "0.2.2"]
@@ -6,7 +7,8 @@
                 [cider/cider-nrepl "0.58.0"]
                 [binaryage/devtools "1.0.7"]
                 [refactor-nrepl "3.11.0"]
-                [cljs-http "0.1.49"]]
+                [cljs-http "0.1.49"]
+                [metosin/malli "0.17.0"]]
  :dev-http {3000 {:root "public"
                   :proxy-url "http://localhost:7000/roadside"}}
  :builds

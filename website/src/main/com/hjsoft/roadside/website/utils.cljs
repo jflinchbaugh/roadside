@@ -1,10 +1,10 @@
 (ns com.hjsoft.roadside.website.utils
   (:require [clojure.string :as str]
             [goog.string]
-            [goog.i18n.DateTimeFormat]))
+            [goog.i18n.DateTimeFormat]
+            [com.hjsoft.roadside.common.utils :as common-utils]))
 
-(defn get-current-timestamp []
-  (.toISOString (js/Date.)))
+(def get-current-timestamp common-utils/get-current-timestamp)
 
 (defn format-timestamp [iso-str]
   (when (seq iso-str)
@@ -14,29 +14,10 @@
         (let [formatter (goog.i18n.DateTimeFormat. "yyyy-MM-dd HH:mm")]
           (.format formatter date))))))
 
-(defn in-a-week []
-  (let [date (js/Date.)
-        week-later (+ (.getTime date) (* 7 24 60 60 1000))]
-    (.substring (.toISOString (js/Date. week-later)) 0 10)))
-
-(defn past-expiration? [expiration-str]
-  (if (str/blank? expiration-str)
-    false
-    (let [today (.substring (.toISOString (js/Date.)) 0 10)]
-      (neg? (compare expiration-str today)))))
-
-(defn random-uuid-str []
-  (str (cljs.core/random-uuid)))
-
-(defn parse-coordinates
-  [coords]
-  (when (string? coords)
-    (let [res (->>
-               (str/split coords #", *")
-               (map str/trim)
-               (map parse-double)
-               (remove nil?))]
-      (when (= 2 (count res)) res))))
+(def in-a-week common-utils/in-a-week)
+(def past-expiration? common-utils/past-expiration?)
+(def random-uuid-str common-utils/random-uuid-str)
+(def parse-coordinates common-utils/parse-coordinates)
 
 (defn make-map-link [coordinate-str]
   (when coordinate-str
@@ -44,33 +25,8 @@
       (when (and lat lng)
         (str "geo:" (str/trim lat) "," (str/trim lng))))))
 
-(defn get-all-unique-products [stands]
-  (->> stands
-       (mapcat :products)
-       (filter string?)
-       (map str/trim)
-       (filter (complement str/blank?))
-       distinct
-       sort
-       vec))
-
-(defn deg->rad
-  "Convert degrees to radians."
-  [deg]
-  (* deg (/ (.-PI js/Math) 180)))
-
-(defn haversine-distance
-  "Calculate distance between two points in km."
-  [lat1 lon1 lat2 lon2]
-  (let [R 6371.0 ; Earth radius in km
-        dlat (deg->rad (- lat2 lat1))
-        dlon (deg->rad (- lon2 lon1))
-        a (+ (js/Math.pow (js/Math.sin (/ dlat 2)) 2)
-             (* (js/Math.cos (deg->rad lat1))
-                (js/Math.cos (deg->rad lat2))
-                (js/Math.pow (js/Math.sin (/ dlon 2)) 2)))
-        c (* 2 (js/Math.atan2 (js/Math.sqrt a) (js/Math.sqrt (- 1 a))))]
-    (* R c)))
+(def get-all-unique-products common-utils/get-all-unique-products)
+(def haversine-distance common-utils/haversine-distance)
 
 (defn stand-popup-html
   "Generates sanitized HTML content for a stand's map popup."

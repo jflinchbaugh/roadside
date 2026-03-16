@@ -1,6 +1,7 @@
 (ns server.db
   (:require [xtdb.api :as xt]
-            [tick.core :as t]))
+            [tick.core :as t]
+            [com.hjsoft.roadside.common.domain.stand :as common-stand]))
 
 (defonce node (atom nil))
 
@@ -34,12 +35,13 @@
 
 (defn cleanup-stands!
   "Remove transient fields from all stands in the database."
-  [node transient-fields]
-  (let [stands (xt/q node '(from :stands [*]))
-        to-update (keep (fn [stand]
-                          (let [clean-stand (apply dissoc stand transient-fields)]
-                            (when (not= stand clean-stand)
-                              clean-stand)))
-                        stands)]
-    (when (seq to-update)
-      (xt/submit-tx node (mapv (fn [s] [:put-docs :stands s]) to-update)))))
+  ([node] (cleanup-stands! node common-stand/transient-fields))
+  ([node transient-fields]
+   (let [stands (xt/q node '(from :stands [*]))
+         to-update (keep (fn [stand]
+                           (let [clean-stand (apply dissoc stand transient-fields)]
+                             (when (not= stand clean-stand)
+                               clean-stand)))
+                         stands)]
+     (when (seq to-update)
+       (xt/submit-tx node (mapv (fn [s] [:put-docs :stands s]) to-update))))))

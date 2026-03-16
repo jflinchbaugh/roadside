@@ -8,7 +8,10 @@
             [buddy.hashers :as hashers]
             [malli.core :as m]
             [malli.error :as me]
-            [taoensso.telemere :as tel]))
+            [taoensso.telemere :as tel]
+            [com.hjsoft.roadside.common.logic :as logic]
+            [com.hjsoft.roadside.common.utils :as common-utils]
+            [com.hjsoft.roadside.common.domain.stand :as common-stand]))
 
 (defn- api-response
   [code document]
@@ -41,28 +44,12 @@
           (api-response 502 {:error error})
           (api-response 200 data))))))
 
-(def UserSchema
-  [:map
-   [:login [:re #"^[a-zA-Z0-9_]{3,20}$"]]
-   [:password [:string {:min 8}]]
-   [:email [:re #".+@.+\..+"]]
-   [:updated {:optional true} [:maybe :string]]])
-(def StandSchema
-  [:map
-   [:name [:string {:min 1}]]
-   [:coordinate {:optional true} [:re #"^-?\d+\.?\d*,\s*-?\d+\.?\d*$"]]
-   [:location {:optional true} [:maybe :string]]
-   [:address {:optional true} [:maybe :string]]
-   [:town {:optional true} [:maybe :string]]
-   [:state {:optional true} [:maybe :string]]
-   [:products {:optional true} [:vector :string]]
-   [:expiration {:optional true} [:maybe :string]]
-   [:notes {:optional true} [:maybe :string]]
-   [:shared? {:optional true} :boolean]
-   [:updated {:optional true} [:maybe :string]]])
+(def UserSchema logic/UserSchema)
+
+(def StandSchema logic/StandSchema)
 
 (defn register-handler [req]
-  (let [id (or (get-in req [:params :id]) (str (java.util.UUID/randomUUID)))
+  (let [id (or (get-in req [:params :id]) (common-utils/random-uuid-str))
         login (get-in req [:params :login])
         password (get-in req [:params :password])
         email (get-in req [:params :email])
@@ -103,7 +90,7 @@
       (api-response 200 stand)
       (not-found))))
 
-(def transient-fields [:show-address? :current-product :editing-stand :map-center])
+(def transient-fields common-stand/transient-fields)
 
 (defn- sanitize-stand [stand]
   (apply dissoc stand transient-fields))
@@ -112,7 +99,7 @@
   (let [stand (-> (json/read-str (rur/body-string req) :key-fn keyword)
                   sanitize-stand
                   (dissoc :creator))
-        id (or (:id stand) (:xt/id stand) (str (java.util.UUID/randomUUID)))
+        id (or (:id stand) (:xt/id stand) (common-utils/random-uuid-str))
         stand-to-validate (dissoc stand :id :xt/id)]
     (if-not (m/validate StandSchema stand-to-validate)
       (api-response 400 {:status "failed"
@@ -136,7 +123,7 @@
         (if-not (m/validate StandSchema stand-to-validate)
           (api-response 400 {:status "failed"
                              :errors (me/humanize (m/explain StandSchema stand-to-validate))})
-          (let [final-id (or id (:id stand) (:xt/id stand) (str (java.util.UUID/randomUUID)))
+          (let [final-id (or id (:id stand) (:xt/id stand) (common-utils/random-uuid-str))
                 stand (assoc stand :xt/id final-id
                              :creator (or (:creator existing-stand) (:identity req)))
                 stand (dissoc stand :id)]
