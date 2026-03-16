@@ -32,11 +32,11 @@
             context-val {:state {:settings {}}
                          :dispatch dispatch
                          :ui {:set-show-settings-dialog (fn [_])}}
-            mock-register (fn [_ _ _] 
+            mock-register (fn [_ _ _]
                             (mock-http-response {:success false :error ["Username taken"]}))
             res (render-with-context ($ forms/settings-dialog {:register-fn mock-register}) context-val)
             container (.-container res)]
-        
+
         ;; Switch to registration
         (let [register-link (tlr/getByText container "Don't have an account? Register")]
           (tlr/fireEvent.click register-link))
@@ -49,14 +49,14 @@
 
         (let [register-btn (tlr/getByText container "Register")]
           (tlr/fireEvent.click register-btn)
-          
+
           ;; Wait for error to appear
-          (.then (tlr/waitFor (fn [] 
+          (.then (tlr/waitFor (fn []
                                 (if (tlr/queryByText container "Username taken")
                                   true
                                   (throw (js/Error. "Still waiting")))))
                  (fn []
-                   (is (some? (tlr/queryByText container "Username taken")) 
+                   (is (some? (tlr/queryByText container "Username taken"))
                        "Error message should be visible")
                    (done))))))))
 
