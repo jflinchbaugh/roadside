@@ -62,10 +62,6 @@
   (let [[app-state dispatch] (hooks/use-reducer
                               state/app-reducer
                               state/initial-app-state)
-        _ (hooks/use-effect
-           :once
-           (do (gobj/set js/window "dispatch" dispatch)
-               (fn [] (gobj/remove js/window "dispatch"))))
         {:keys [stands]} app-state
 
         [show-form set-show-form] (hooks/use-state false)
