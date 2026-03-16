@@ -4,7 +4,8 @@
             [helix.dom :as d]
             [com.hjsoft.roadside.website.state :as state]
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
-            [com.hjsoft.roadside.website.utils :as utils]))
+            [com.hjsoft.roadside.website.utils :as utils]
+            [goog.object :as gobj]))
 
 (defonce ^:private leaflet-ref (atom nil))
 
@@ -18,34 +19,38 @@
 (defn- make-marker
   [{:keys [coord stand set-selected-stand auto-pan?]
     :or {auto-pan? true}}]
-  (let [l ^js @L
-        marker ^js ((.-marker l) (clj->js coord))
-        popup-content (utils/stand-popup-html stand)]
+  (let [l @L
+        marker-fn (gobj/get l "marker")
+        marker ^js (marker-fn (clj->js coord))
+        popup-content (utils/stand-popup-html stand)
+        point-fn (gobj/get l "point")]
     (.bindPopup
      ^js marker
      popup-content
      (clj->js {"autoPan" auto-pan?
-               "autoPanPadding" ((.-point l) 100 100)}))
+               "autoPanPadding" (point-fn 100 100)}))
     (.on ^js marker "click" #(set-selected-stand stand))
     [stand marker]))
 
 (defn- make-current-location-marker
   [coord]
-  (let [l ^js @L]
-    ((.-circleMarker l) (clj->js coord)
-                    (clj->js {:radius 6
-                              :color "#ffffff"
-                              :fillColor "#3388ff"
-                              :fillOpacity 0.8
-                              :weight 1}))))
+  (let [l @L
+        cm-fn (gobj/get l "circleMarker")]
+    (cm-fn (clj->js coord)
+           (clj->js {:radius 6
+                     :color "#ffffff"
+                     :fillColor "#3388ff"
+                     :fillOpacity 0.8
+                     :weight 1}))))
 
 (defn- init-map [div-id center zoom-level]
-  (let [l ^js @L
-        m ^js ((.-map l) div-id)
-        tl ^js ((.-tileLayer l)
-            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")]
-    (.setView ^js m (clj->js center) zoom-level)
-    (.addTo ^js tl m)
+  (let [l @L
+        map-fn (gobj/get l "map")
+        m ^js (map-fn div-id)
+        tl-fn (gobj/get l "tileLayer")
+        tl ^js (tl-fn "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")]
+    (.setView m (clj->js center) zoom-level)
+    (.addTo tl m)
     m))
 
 (defn coordinates-differ?
@@ -96,9 +101,9 @@
                         (remove (comp nil? :coord))
                         (map (partial prepare-marker should-auto-pan? dispatch)))
              new-layer-group (when (seq locations)
-                               (let [l ^js @L]
-                                 ((.-layerGroup l)
-                                  (clj->js (map second locations)))))]
+                               (let [l ^js @L
+                                     lg-fn (gobj/get l "layerGroup")]
+                                 (lg-fn (clj->js (map second locations)))))]
          (reset! prev-selected-ref selected-stand)
          (when @layer-group-ref
            (.removeLayer ^js stand-map @layer-group-ref))

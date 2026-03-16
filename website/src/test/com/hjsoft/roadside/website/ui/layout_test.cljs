@@ -3,7 +3,8 @@
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.roadside.website.ui.layout :as layout]
-            [com.hjsoft.roadside.website.state :as state]))
+            [com.hjsoft.roadside.website.state :as state]
+            [goog.object :as gobj]))
 
 ;; Automatically unmount components after each test
 (use-fixtures :each
@@ -12,9 +13,9 @@
 (deftest notification-toast-test
   (is (some? js/document) "js/document should be defined")
   (testing "no notification message when message is not present"
-    (let [^js ctx state/app-context
+    (let [ctx state/app-context
           res (tlr/render
-               ($ (.-Provider ctx)
+               ($ (gobj/get ctx "Provider")
                   {:value {:state {:notification nil}
                            :dispatch (fn [_])}}
                   ($ layout/notification-toast)))
@@ -22,10 +23,10 @@
       (is (= "" (.-textContent container)))))
 
   (testing "renders notification message when present"
-    (let [^js ctx state/app-context
+    (let [ctx state/app-context
           test-notification {:type :success :message "Test Success Message"}
           res (tlr/render
-               ($ (.-Provider ctx)
+               ($ (gobj/get ctx "Provider")
                   {:value {:state {:notification test-notification}
                            :dispatch (fn [_])}}
                   ($ layout/notification-toast)))

@@ -3,15 +3,16 @@
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.roadside.website.ui.stands :as stands]
-            [com.hjsoft.roadside.website.state :as state]))
+            [com.hjsoft.roadside.website.state :as state]
+            [goog.object :as gobj]))
 
 (use-fixtures :each
   {:after tlr/cleanup})
 
 (defn render-stand-item [state stand & [props]]
-  (let [^js ctx state/app-context]
+  (let [ctx state/app-context]
     (tlr/render
-     ($ (.-Provider ctx)
+     ($ (gobj/get ctx "Provider")
         {:value {:state state
                  :dispatch (fn [_])
                  :ui {:set-editing-stand (fn [_])
