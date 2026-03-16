@@ -57,7 +57,6 @@
   (if (nil? @server)
     (let [new-node (xt/client {:host db-host})]
       (reset! db/node new-node)
-      (db/cleanup-stands! new-node handlers/transient-fields)
       (reset! server (hks/run-server #'app {:port port}))
       (tel/log! :info {:server-started {:port port :db-host db-host}}))
     "server already running"))
