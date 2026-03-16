@@ -27,7 +27,8 @@
     :output-to "out/node-tests.js"
     :autorun true
     :preloads [node-init]
-    :closure-defines {com.hjsoft.roadside.website.ui.forms/NODE_TEST true
+    :closure-defines {com.hjsoft.roadside.website.ui.forms.stand/NODE_TEST true
+                      com.hjsoft.roadside.website.ui.forms.inputs/NODE_TEST true
                       node-init/ENABLE_JSDOM true}}
 
   :test-browser

@@ -3,7 +3,8 @@
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.roadside.website.leaflet-init]
-            [com.hjsoft.roadside.website.ui.forms :as forms]
+            [com.hjsoft.roadside.website.ui.forms.stand :as stand]
+            [com.hjsoft.roadside.website.ui.forms.settings :as settings]
             [com.hjsoft.roadside.website.state :as state]
             [com.hjsoft.roadside.website.api :as api]
             [cljs.core.async :refer [go <! put! chan]]
@@ -34,9 +35,8 @@
                          :ui {:set-show-settings-dialog (fn [_])}}
             mock-register (fn [_ _ _]
                             (mock-http-response {:success false :error ["Username taken"]}))
-            res (render-with-context ($ forms/settings-dialog {:register-fn mock-register}) context-val)
+            res (render-with-context ($ settings/settings-dialog {:register-fn mock-register}) context-val)
             container (.-container res)]
-
         ;; Switch to registration
         (let [register-link (tlr/getByText container "Don't have an account? Register")]
           (tlr/fireEvent.click register-link))
@@ -68,7 +68,7 @@
                        :ui {:editing-stand nil
                             :set-show-form (fn [v] (when (false? v) (reset! cancelled true)))
                             :set-editing-stand (fn [_])}}
-          res (render-with-context ($ forms/stand-form) context-val)
+          res (render-with-context ($ stand/stand-form) context-val)
           container (.-container res)
           cancel-btn (tlr/getByTitle container "Cancel")]
       (tlr/fireEvent.click cancel-btn)
