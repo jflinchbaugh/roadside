@@ -1,6 +1,7 @@
-(ns node-init
-  (:require ["global-jsdom" :as global-jsdom]))
+(ns node-init)
 
-;; Initialize JSDOM immediately so that browser globals are available
-;; during namespace loading of other files.
-(global-jsdom)
+(goog-define ENABLE_JSDOM false)
+
+(when ENABLE_JSDOM
+  (let [global-jsdom (js/require "global-jsdom")]
+    (global-jsdom)))

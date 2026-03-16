@@ -12,6 +12,8 @@
             [cljs.core.async :refer [go <!]]
             [clojure.string :as str]))
 
+(goog-define NODE_TEST false)
+
 (def add-zoom-level 14)
 
 (defnc form-field
@@ -22,7 +24,7 @@
   (d/div
    {:class "form-group"}
    (when label
-     (d/label {:for id} label))
+     (d/label {:htmlFor id} label))
    (if (= type "textarea")
      (d/textarea
       {:value value
@@ -201,10 +203,11 @@
                "\u2713")))
       (d/div
        {:class "form-content-wrapper"}
-       ($ location-input
-          {:stand-form-data stand-form-data
-           :on-update local-dispatch
-           :original-coordinate (:coordinate editing-stand)})
+       (when-not NODE_TEST
+         ($ location-input
+            {:stand-form-data stand-form-data
+             :on-update local-dispatch
+             :original-coordinate (:coordinate editing-stand)}))
        ($ product-input
           {:stand-form-data stand-form-data
            :on-update local-dispatch})
@@ -280,7 +283,7 @@
                         [:update-field
                          [:shared? (.. % -target -checked)]])}))))))
 
-(defnc settings-dialog []
+(defnc settings-dialog [{:keys [register-fn]}]
   (let [app-state (state/use-app-state)
         dispatch (state/use-dispatch)
         {:keys [set-show-settings-dialog]} (state/use-ui)
@@ -293,7 +296,8 @@
                        (not (str/blank? (:password form-data))))
         handle-register (fn []
                           (go
-                            (let [res (<! (api/register-user
+                            (let [register (or register-fn api/register-user)
+                                  res (<! (register
                                            (:user form-data)
                                            (:password form-data)
                                            (:email form-data)))]
@@ -333,6 +337,7 @@
              (d/li {:key err} err)))))
        ($ form-field
           {:label "User:"
+           :id "settings-user"
            :value (:user form-data)
            :on-change #(do
                          (set-register-error nil)
@@ -340,6 +345,7 @@
                           (assoc form-data :user (.. % -target -value))))})
        ($ form-field
           {:label "Password:"
+           :id "settings-password"
            :type "password"
            :value (:password form-data)
            :on-change #(do
@@ -349,6 +355,7 @@
        (when registering?
          ($ form-field
             {:label "Email:"
+             :id "settings-email"
              :value (:email form-data)
              :on-change #(do
                            (set-register-error nil)

@@ -25,11 +25,15 @@
   {:target :node-test
     :main node/main
     :output-to "out/node-tests.js"
-    :autorun true}
+    :autorun true
+    :preloads [node-init]
+    :closure-defines {com.hjsoft.roadside.website.ui.forms/NODE_TEST true
+                      node-init/ENABLE_JSDOM true}}
 
   :test-browser
   {:target :browser-test
     :test-dir "out/browser/test"
     :autorun true
     :devtools {:http-port 3021
-               :http-root "out/browser/test"}}}}
+               :http-root "out/browser/test"}}
+}}

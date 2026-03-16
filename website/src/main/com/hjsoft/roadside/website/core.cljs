@@ -1,5 +1,6 @@
 (ns com.hjsoft.roadside.website.core
   (:require ["react-dom/client" :as rdom]
+            ["leaflet" :as L]
             [helix.core :refer [defnc $ <>]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
@@ -7,7 +8,7 @@
             [com.hjsoft.roadside.website.state :as state]
             [com.hjsoft.roadside.website.controller :as controller]
             [com.hjsoft.roadside.website.ui.hooks :refer [use-user-location]]
-            [com.hjsoft.roadside.website.ui.map :refer [leaflet-map]]
+            [com.hjsoft.roadside.website.ui.map :as ui-map :refer [leaflet-map]]
             [com.hjsoft.roadside.website.ui.stands
              :refer [stands-list product-list]]
             [com.hjsoft.roadside.website.ui.forms
@@ -15,6 +16,9 @@
             [com.hjsoft.roadside.website.ui.layout
              :refer [header fixed-header notification-toast]]
             [taoensso.telemere :as tel]))
+
+;; Inject Leaflet
+(ui-map/set-leaflet! L)
 
 (tel/set-min-level! :debug)
 
