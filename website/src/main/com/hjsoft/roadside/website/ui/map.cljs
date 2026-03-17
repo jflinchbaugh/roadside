@@ -54,19 +54,24 @@
     m))
 
 (defn coordinates-differ?
-  [^js current-center new-center]
-  (let [new-lat (first new-center)
-        new-lng (second new-center)]
-    (or (not= (.toFixed (.-lat current-center) 6) (.toFixed new-lat 6))
-        (not= (.toFixed (.-lng current-center) 6) (.toFixed new-lng 6)))))
+  [c1 c2]
+  (if (and c1 c2)
+    (let [lat1 (if (vector? c1) (first c1) (.-lat ^js c1))
+          lng1 (if (vector? c1) (second c1) (.-lng ^js c1))
+          lat2 (if (vector? c2) (first c2) (.-lat ^js c2))
+          lng2 (if (vector? c2) (second c2) (.-lng ^js c2))]
+      (or (not= (.toFixed lat1 6) (.toFixed lat2 6))
+          (not= (.toFixed lng1 6) (.toFixed lng2 6))))
+    (not (and (nil? c1) (nil? c2)))))
 
 (defn- use-map-center
-  [stand-map center]
+  [stand-map center reported-center-ref]
   (hooks/use-effect
    [(first center) (second center) stand-map]
    (when (and stand-map center)
      (let [current-center (.getCenter ^js stand-map)]
-       (when (coordinates-differ? current-center center)
+       (when (and (coordinates-differ? current-center center)
+                  (coordinates-differ? @reported-center-ref center))
          (.setView
           ^js stand-map
           (clj->js center)
@@ -141,6 +146,7 @@
         selected-stand (or selected-stand (:selected-stand app-state))
         center (or center (:map-center app-state))
         center-ref (hooks/use-ref center)
+        reported-center-ref (hooks/use-ref nil)
         [stand-map set-stand-map] (hooks/use-state nil)
         [current-zoom set-current-zoom] (hooks/use-state zoom-level)]
 
@@ -159,12 +165,15 @@
         "moveend zoomend"
         (fn []
           (let [center-val ^js (.getCenter m)
-                zoom (.getZoom m)]
+                zoom (.getZoom m)
+                lat (.-lat center-val)
+                lng (.-lng center-val)]
             (set-current-zoom zoom)
             (when set-coordinate-form-data
+              (reset! reported-center-ref [lat lng])
               (dispatch [:set-map-zoom zoom])
               (set-coordinate-form-data
-               (str (.-lat center-val) ", " (.-lng center-val)))))))
+               (str lat ", " lng))))))
        (set-stand-map m)
        ;; Ensure map is correctly sized after modal animation/render
        (js/setTimeout
@@ -173,7 +182,7 @@
           (.setView m (clj->js @center-ref) zoom-level))
         100)))
 
-    (use-map-center stand-map center)
+    (use-map-center stand-map center reported-center-ref)
     (use-map-markers stand-map stands selected-stand auto-pan? dispatch)
     (use-user-location-marker stand-map location)
     {:stand-map stand-map

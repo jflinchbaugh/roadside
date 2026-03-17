@@ -92,7 +92,7 @@
                                      (dispatch
                                       [:set-map-center
                                        (utils/parse-coordinates c)]))
-                                   500))]
+                                   50))]
 
     (d/div
      {:class "app-container"}
