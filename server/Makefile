@@ -1,5 +1,5 @@
-SRC_FILES := $(shell find src resources deps.edn build.clj ../common/src -type f)
-TEST_FILES := $(shell find test -type f)
+SRC_FILES := $(shell find src/main deps.edn build.clj ../common/src -type f)
+TEST_FILES := $(shell find src/test -type f)
 
 all: container
 
@@ -9,7 +9,7 @@ test: target/.test-passed
 uber: target/.uberjar-built
 
 target/.test-passed: $(SRC_FILES) $(TEST_FILES)
-	clj -T:build test && mkdir -p target && touch target/.test-passed
+	clj -T:build run-test && mkdir -p target && touch target/.test-passed
 
 target/.uberjar-built: target/.test-passed $(SRC_FILES)
 	clj -T:build uber

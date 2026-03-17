@@ -1,5 +1,4 @@
 (ns build
-  (:refer-clojure :exclude [test])
   (:require [clojure.tools.build.api :as b]))
 
 (def lib 'com.hjsoft/server)
@@ -13,20 +12,20 @@
 (defn clean [_]
   (b/delete {:path "target"}))
 
-(defn test [opts]
+(defn run-test [opts]
   (let [basis (b/create-basis {:project "deps.edn" :aliases [:test]})
         cmds (b/java-command
               {:basis basis
                :main "clojure.main"
                :jvm-opts ["--enable-preview"]
-               :main-args (into ["-m" "cognitect.test-runner" "-d" "test"]
+               :main-args (into ["-m" "cognitect.test-runner" "-d" "src/test"]
                             (mapcat (fn [[k v]] [(str k) (str v)]) opts))})
         {:keys [exit]} (b/process cmds)]
     (when-not (zero? exit)
       (throw (ex-info "Tests failed" {:exit exit})))))
 
 (defn uber [_]
-  (b/copy-dir {:src-dirs ["src" "resources"]
+  (b/copy-dir {:src-dirs ["src/main" "src/resources"]
                :target-dir class-dir})
   (b/compile-clj {:basis @basis
                   :ns-compile '[server.core]
