@@ -13,7 +13,7 @@
                  (where (= login u))))
           username])))
 
-(defn get-stand [id]
+(defn get-stand-unfiltered [id]
   (first
    (xt/q @node
          ['(fn [id-param]
@@ -21,8 +21,23 @@
                  (where (= xt/id id-param))))
           id])))
 
-(defn list-stands []
-  (vec (xt/q @node '(from :stands [*]))))
+(defn get-stand [id user-id]
+  (first
+   (xt/q @node
+         ['(fn [id-param u]
+             (-> (from :stands [xt/id *])
+                 (where (and (= xt/id id-param)
+                             (or (= creator u)
+                                 (= shared? true))))))
+          id user-id])))
+
+(defn list-stands [user-id]
+  (vec (xt/q @node
+             ['(fn [u]
+                 (-> (from :stands [*])
+                     (where (or (= creator u)
+                                (= shared? true)))))
+              user-id])))
 
 (defn save-user [user]
   (xt/submit-tx @node [[:put-docs :users (assoc user :updated (str (t/now)))]]))

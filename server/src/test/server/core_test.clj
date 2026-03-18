@@ -148,7 +148,7 @@
         (testing "Delete stand"
           (let [del-resp (handlers/delete-stand-handler {:path-params {:id id} :identity "alice"})]
             (is (= 200 (:status del-resp)))
-            (is (nil? (db/get-stand id)))))
+            (is (nil? (db/get-stand-unfiltered id)))))
 
         (testing "Delete non-existent stand"
           (let [del-resp (handlers/delete-stand-handler {:path-params {:id "non-existent"} :identity "alice"})]

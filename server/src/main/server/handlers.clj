@@ -73,11 +73,7 @@
         params (:params req)
         lat (some-> (get params :lat) Double/parseDouble)
         lon (some-> (get params :lon) Double/parseDouble)
-        all-stands (db/list-stands)
-        stands (filterv (fn [stand]
-                          (or (= (:creator stand) identity)
-                              (:shared? stand)))
-                        all-stands)]
+        stands (db/list-stands identity)]
     (if (and lat lon)
       (let [filtered (filterv
                       (fn [stand]
@@ -91,9 +87,8 @@
 (defn get-stand-handler [req]
   (let [identity (:identity req)
         id (get-in req [:path-params :id])
-        stand (db/get-stand id)]
-    (if (and stand (or (= (:creator stand) identity)
-                       (:shared? stand)))
+        stand (db/get-stand id identity)]
+    (if stand
       (api-response 200 (common-stand/select-stand-fields stand))
       (not-found))))
 
@@ -118,7 +113,7 @@
         stand (-> (json/read-str (rur/body-string req) :key-fn keyword)
                   common-stand/select-stand-fields
                   (dissoc :creator))
-        existing-stand (when id (db/get-stand id))]
+        existing-stand (when id (db/get-stand-unfiltered id))]
     (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
       (api-response 403 {:error "Forbidden: You do not own this stand"})
       (let [stand-to-validate (dissoc stand :id :xt/id)]
@@ -134,7 +129,7 @@
 
 (defn delete-stand-handler [req]
   (let [id (get-in req [:path-params :id])
-        existing-stand (db/get-stand id)]
+        existing-stand (db/get-stand-unfiltered id)]
     (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
       (api-response 403 {:error "Forbidden: You do not own this stand"})
       (do
