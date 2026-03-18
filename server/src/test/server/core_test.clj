@@ -94,27 +94,27 @@
         (is (= "Morning Coffee" (:name created-stand)))
 
         (testing "Get all stands (no filter)"
-          (let [get-resp (handlers/get-stands-handler {})
+          (let [get-resp (handlers/get-stands-handler {:identity "alice"})
                 stands (json/read-str (:body get-resp) :key-fn keyword)]
             (is (= 200 (:status get-resp)))
             (is (>= (count stands) 1))))
 
         (testing "Get stands within radius"
           ;; Lancaster, PA: 40.0379, -76.3055
-          (let [get-resp (handlers/get-stands-handler {:params {:lat "40.0" :lon "-76.0"}})
+          (let [get-resp (handlers/get-stands-handler {:params {:lat "40.0" :lon "-76.0"} :identity "alice"})
                 stands (json/read-str (:body get-resp) :key-fn keyword)]
             (is (= 200 (:status get-resp)))
             (is (>= (count stands) 1) "Should find the stand near Lancaster")))
 
         (testing "Get stands outside radius"
           ;; Los Angeles: 34.0522, -118.2437 (far from Lancaster, PA)
-          (let [get-resp (handlers/get-stands-handler {:params {:lat "34.0" :lon "-118.0"}})
+          (let [get-resp (handlers/get-stands-handler {:params {:lat "34.0" :lon "-118.0"} :identity "alice"})
                 stands (json/read-str (:body get-resp) :key-fn keyword)]
             (is (= 200 (:status get-resp)))
             (is (= 0 (count (filter #(= (:id %) id) stands))) "Should NOT find the Lancaster stand from LA")))
 
         (testing "Get single stand"
-          (let [get-resp (handlers/get-stand-handler {:path-params {:id id}})]
+          (let [get-resp (handlers/get-stand-handler {:path-params {:id id} :identity "alice"})]
             (is (= 200 (:status get-resp)))
             (is (= "Morning Coffee" (:name (json/read-str (:body get-resp) :key-fn keyword))))))
 
@@ -141,7 +141,7 @@
               (is (= "New Stand" (:name created)))
               (is (= non-existent-id (:id created)))
               ;; Verify it's actually in the DB
-              (let [get-resp (handlers/get-stand-handler {:path-params {:id non-existent-id}})]
+              (let [get-resp (handlers/get-stand-handler {:path-params {:id non-existent-id} :identity "alice"})]
                 (is (= 200 (:status get-resp)))
                 (is (= "New Stand" (:name (json/read-str (:body get-resp) :key-fn keyword))))))))
 
