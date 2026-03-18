@@ -155,6 +155,53 @@
             (is (= 200 (:status del-resp)))
             (is (= "'non-existent' deleted" (:message (json/read-str (:body del-resp) :key-fn keyword))))))))))
 
+(deftest stands-visibility-test
+  (testing "Stands visibility filtering"
+    (let [alice-stand {:xt/id "alice-1" :name "Alice Stand" :shared? false}
+          bob-private {:xt/id "bob-private" :name "Bob Private" :shared? false}
+          bob-shared {:xt/id "bob-shared" :name "Bob Shared" :shared? true}]
+
+      ;; Setup stands in DB
+      (xt/submit-tx @db/node [[:put-docs :stands (assoc alice-stand :creator "alice")]
+                              [:put-docs :stands (assoc bob-private :creator "bob")]
+                              [:put-docs :stands (assoc bob-shared :creator "bob")]])
+
+      (testing "Alice sees her own and bob's shared stands"
+        (let [req {:identity "alice"}
+              resp (handlers/get-stands-handler req)
+              stands (json/read-str (:body resp) :key-fn keyword)
+              ids (set (map :id stands))]
+          (is (= 200 (:status resp)))
+          (is (contains? ids "alice-1"))
+          (is (contains? ids "bob-shared"))
+          (is (not (contains? ids "bob-private")))))
+
+      (testing "Bob sees his own and bob's shared stands (all 3 in this case since he owns both private and shared)"
+        (let [req {:identity "bob"}
+              resp (handlers/get-stands-handler req)
+              stands (json/read-str (:body resp) :key-fn keyword)
+              ids (set (map :id stands))]
+          (is (= 200 (:status resp)))
+          (is (contains? ids "bob-private"))
+          (is (contains? ids "bob-shared"))
+          ;; Bob should NOT see Alice's private stand
+          (is (not (contains? ids "alice-1")))))
+
+      (testing "Unauthenticated user (if allowed, though routes usually require auth) sees only shared stands"
+        ;; Although the route has auth middleware, the handler itself should handle nil identity gracefully if it ever reached there
+        (let [req {:identity nil}
+              resp (handlers/get-stands-handler req)
+              stands (json/read-str (:body resp) :key-fn keyword)
+              ids (set (map :id stands))]
+          (is (= 200 (:status resp)))
+          (is (= #{"bob-shared"} ids))))
+
+      (testing "Individual stand visibility"
+        (is (= 200 (:status (handlers/get-stand-handler {:path-params {:id "alice-1"} :identity "alice"}))))
+        (is (= 404 (:status (handlers/get-stand-handler {:path-params {:id "bob-private"} :identity "alice"}))))
+        (is (= 200 (:status (handlers/get-stand-handler {:path-params {:id "bob-shared"} :identity "alice"}))))
+        (is (= 200 (:status (handlers/get-stand-handler {:path-params {:id "bob-private"} :identity "bob"}))))))))
+
 (deftest creator-test
   (testing "Creator value behavior"
     (let [stand-id "stand-1"
@@ -224,7 +271,7 @@
         (is (= "alice" (:creator created)))
 
         ;; Verify it persists in DB
-        (let [get-resp (handlers/get-stand-handler {:path-params {:id id}})]
+        (let [get-resp (handlers/get-stand-handler {:path-params {:id id} :identity "alice"})]
           (is (= 200 (:status get-resp)))
           (is (= "Upserted Stand" (:name (json/read-str (:body get-resp) :key-fn keyword)))))))))
 

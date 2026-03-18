@@ -69,10 +69,15 @@
 (def ^:const search-radius-km 500.0)
 
 (defn get-stands-handler [req]
-  (let [params (:params req)
+  (let [identity (:identity req)
+        params (:params req)
         lat (some-> (get params :lat) Double/parseDouble)
         lon (some-> (get params :lon) Double/parseDouble)
-        stands (db/list-stands)]
+        all-stands (db/list-stands)
+        stands (filterv (fn [stand]
+                          (or (= (:creator stand) identity)
+                              (:shared? stand)))
+                        all-stands)]
     (if (and lat lon)
       (let [filtered (filterv
                       (fn [stand]
@@ -84,9 +89,11 @@
       (api-response 200 (mapv common-stand/select-stand-fields stands)))))
 
 (defn get-stand-handler [req]
-  (let [id (get-in req [:path-params :id])
+  (let [identity (:identity req)
+        id (get-in req [:path-params :id])
         stand (db/get-stand id)]
-    (if stand
+    (if (and stand (or (= (:creator stand) identity)
+                       (:shared? stand)))
       (api-response 200 (common-stand/select-stand-fields stand))
       (not-found))))
 
