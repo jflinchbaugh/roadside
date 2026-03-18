@@ -1,6 +1,7 @@
 (ns server.db
   (:require [xtdb.api :as xt]
             [tick.core :as t]
+            [server.utils :as utils]
             [com.hjsoft.roadside.common.domain.stand :as common-stand]))
 
 (defonce node (atom nil))
@@ -31,19 +32,39 @@
                                  (= shared? true))))))
           id user-id])))
 
-(defn list-stands [user-id]
-  (vec (xt/q @node
+(defn list-stands
+  ([user-id] (list-stands user-id nil))
+  ([user-id {:keys [lat lon radius]}]
+   (let [q (if (and lat lon radius)
+             (let [rad (/ Math/PI 180.0)
+                   lat1-rad (* lat rad)
+                   lon1-rad (* lon rad)
+                   R 6371.0]
+               ['(fn [u lat1-rad lon1-rad rad R r]
+                   (-> (from :stands [lat lon *])
+                       (where (and (or (= creator u)
+                                       (= shared? true))
+                                   (<= (* R (* 2.0 (asin (sqrt (+ (* (sin (/ (- (* lat rad) lat1-rad) 2.0))
+                                                                     (sin (/ (- (* lat rad) lat1-rad) 2.0)))
+                                                                  (* (cos lat1-rad) (cos (* lat rad))
+                                                                     (sin (/ (- (* lon rad) lon1-rad) 2.0))
+                                                                     (sin (/ (- (* lon rad) lon1-rad) 2.0))))))))
+                                       r)))))
+                user-id lat1-rad lon1-rad rad R radius])
              ['(fn [u]
                  (-> (from :stands [*])
                      (where (or (= creator u)
                                 (= shared? true)))))
-              user-id])))
+              user-id])]
+     (vec (xt/q @node q)))))
 
 (defn save-user [user]
   (xt/submit-tx @node [[:put-docs :users (assoc user :updated (str (t/now)))]]))
 
 (defn save-stand [stand]
-  (xt/submit-tx @node [[:put-docs :stands (assoc stand :updated (str (t/now)))]]))
+  (let [[lat lon] (utils/parse-coordinate (:coordinate stand))
+        stand (assoc stand :lat lat :lon lon)]
+    (xt/submit-tx @node [[:put-docs :stands (assoc stand :updated (str (t/now)))]])))
 
 (defn delete-stand [id]
   (xt/submit-tx @node [[:delete-docs :stands id]]))
