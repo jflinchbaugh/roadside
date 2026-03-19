@@ -101,7 +101,14 @@
                  :current-product ""}
           final (sut/prepare-submit-data state)]
       (is (= ["Corn"] (:products final)))
-      (is (nil? (:current-product final))))))
+      (is (nil? (:current-product final)))))
+
+  (testing "coordinates are parsed correctly"
+    (let [state {:coordinate "40, -76"}
+          final (sut/prepare-submit-data state)]
+      (is (= 40 (:lat final)))
+      (is (= -76 (:lon final)))
+      (is (not (contains? final :coordinate))))))
 
 (deftest add-and-edit-stand-test
   (let [stands [{:id "1"
