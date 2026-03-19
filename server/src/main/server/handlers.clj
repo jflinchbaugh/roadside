@@ -88,29 +88,29 @@
       (not-found))))
 
 (defn create-stand-handler [req]
-  (tel/log! :info {:create-stand req})
   (let [stand (-> (json/read-str (rur/body-string req) :key-fn keyword)
                   common-stand/select-stand-fields
                   (dissoc :creator))
         id (or (:id stand) (:xt/id stand) (common-utils/random-uuid-str))
         stand-to-validate (dissoc stand :id :xt/id)]
+    (tel/log! :info {:create-stand stand})
     (if-not (m/validate StandSchema stand-to-validate)
       (api-response 400 {:status "failed"
                          :errors (me/humanize (m/explain StandSchema stand-to-validate))})
       (let [stand (assoc stand :xt/id id
-                         :creator (:identity req))
+                    :creator (:identity req))
             stand (dissoc stand :id)]
         (db/save-stand stand)
         (api-response 201 (assoc stand :id id))))))
 
 (defn update-stand-handler [req]
-  (tel/log! :info {:update-stand req})
   (let [id (or (get-in req [:path-params :id])
-               (get-in req [:params :id]))
+             (get-in req [:params :id]))
         stand (-> (json/read-str (rur/body-string req) :key-fn keyword)
-                  common-stand/select-stand-fields
-                  (dissoc :creator))
+                common-stand/select-stand-fields
+                (dissoc :creator))
         existing-stand (when id (db/get-stand-unfiltered id))]
+    (tel/log! :info {:update-stand stand})
     (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
       (api-response 403 {:error "Forbidden: You do not own this stand"})
       (let [stand-to-validate (dissoc stand :id :xt/id)]
