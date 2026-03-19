@@ -79,6 +79,7 @@
     (api-response 200 results)))
 
 (defn get-stand-handler [req]
+  (tel/log! :info {:get-stand req})
   (let [identity (:identity req)
         id (get-in req [:path-params :id])
         stand (db/get-stand id identity)]
@@ -87,6 +88,7 @@
       (not-found))))
 
 (defn create-stand-handler [req]
+  (tel/log! :info {:create-stand req})
   (let [stand (-> (json/read-str (rur/body-string req) :key-fn keyword)
                   common-stand/select-stand-fields
                   (dissoc :creator))
@@ -102,6 +104,7 @@
         (api-response 201 (assoc stand :id id))))))
 
 (defn update-stand-handler [req]
+  (tel/log! :info {:update-stand req})
   (let [id (or (get-in req [:path-params :id])
                (get-in req [:params :id]))
         stand (-> (json/read-str (rur/body-string req) :key-fn keyword)
@@ -122,6 +125,7 @@
             (api-response 200 (assoc stand :id final-id))))))))
 
 (defn delete-stand-handler [req]
+  (tel/log! :info {:delete-stand req})
   (let [id (get-in req [:path-params :id])
         existing-stand (db/get-stand-unfiltered id)]
     (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
