@@ -54,4 +54,6 @@
    [:expiration {:optional true} [:maybe :string]]
    [:notes {:optional true} [:maybe :string]]
    [:shared? {:optional true} :boolean]
-   [:updated {:optional true} [:maybe :string]]])
+   [:updated {:optional true} [:maybe :string]]
+   [:lat {:optional true} [:maybe :double]]
+   [:lon {:optional true} [:maybe :double]]])

@@ -1,7 +1,11 @@
 (ns server.db
   (:require [xtdb.api :as xt]
             [tick.core :as t]
+            [taoensso.telemere :as tel]
             [server.utils :as utils]
+            [malli.core :as m]
+            [malli.error :as me]
+            [com.hjsoft.roadside.common.logic :as logic]
             [com.hjsoft.roadside.common.domain.stand :as common-stand]))
 
 (defonce node (atom nil))
@@ -41,7 +45,7 @@
                    lon1-rad (* lon rad)
                    R 6371.0]
                ['(fn [u lat1-rad lon1-rad rad R r]
-                   (-> (from :stands [lat lon *])
+                   (-> (from :stands [lat lon creator shared? *])
                        (where (and (or (= creator u)
                                        (= shared? true))
                                    (<= (* R (* 2.0 (asin (sqrt (+ (* (sin (/ (- (* lat rad) lat1-rad) 2.0))
@@ -52,10 +56,11 @@
                                        r)))))
                 user-id lat1-rad lon1-rad rad R radius])
              ['(fn [u]
-                 (-> (from :stands [*])
+                 (-> (from :stands [creator shared? *])
                      (where (or (= creator u)
                                 (= shared? true)))))
               user-id])]
+     (tel/log! :info {:list-stands q})
      (vec (xt/q @node q)))))
 
 (defn save-user [user]
@@ -63,8 +68,11 @@
 
 (defn save-stand [stand]
   (let [[lat lon] (utils/parse-coordinate (:coordinate stand))
-        stand (assoc stand :lat lat :lon lon)]
-    (xt/submit-tx @node [[:put-docs :stands (assoc stand :updated (str (t/now)))]])))
+        stand (assoc stand :lat lat :lon lon :updated (str (t/now)))]
+    (if-not (m/validate logic/StandSchema (dissoc stand :xt/id))
+      (throw (ex-info "Invalid stand data"
+                      {:errors (me/humanize (m/explain logic/StandSchema (dissoc stand :xt/id)))}))
+      (xt/submit-tx @node [[:put-docs :stands stand]]))))
 
 (defn delete-stand [id]
   (xt/submit-tx @node [[:delete-docs :stands id]]))

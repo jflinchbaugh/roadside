@@ -22,8 +22,14 @@
 (use-fixtures :each with-xtdb-container)
 
 (deftest empty-stands-test
-  (testing "Get stands when none exist"
+  (testing "Get stands when none exist and no lat/lon"
     (let [resp (handlers/get-stands-handler {:identity "alice"})]
+      (is (= 200 (:status resp)))
+      (is (= [] (json/read-str (:body resp))))))
+  (testing "Get stands by lat/lon when none exist"
+    (let [resp (handlers/get-stands-handler
+                 {:identity "alice"
+                  :params {:lat "-74.333", :lon "40.1234"}})]
       (is (= 200 (:status resp)))
       (is (= [] (json/read-str (:body resp)))))))
 
@@ -168,9 +174,9 @@
           bob-shared {:xt/id "bob-shared" :name "Bob Shared" :shared? true}]
 
       ;; Setup stands in DB
-      (xt/submit-tx @db/node [[:put-docs :stands (assoc alice-stand :creator "alice" :lat "40.0" :lon "-76.0")]
-                              [:put-docs :stands (assoc bob-private :creator "bob" :lat "40.0" :lon "-76.0")]
-                              [:put-docs :stands (assoc bob-shared :creator "bob" :lat "40.0" :lon "-76.0")]])
+      (xt/submit-tx @db/node [[:put-docs :stands (assoc alice-stand :creator "alice" :lat 40.0 :lon -76.0)]
+                              [:put-docs :stands (assoc bob-private :creator "bob" :lat 40.0 :lon -76.0)]
+                              [:put-docs :stands (assoc bob-shared :creator "bob" :lat 40.0 :lon -76.0)]])
 
       (testing "Alice sees her own and bob's shared stands"
         (let [req {:identity "alice"}
