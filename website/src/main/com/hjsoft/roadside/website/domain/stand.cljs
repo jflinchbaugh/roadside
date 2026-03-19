@@ -8,6 +8,8 @@
 (def default-stand-form-data
   {:name ""
    :coordinate (str (first map-home) ", " (second map-home))
+   :lat (first map-home)
+   :lon (second map-home)
    :address ""
    :town ""
    :state ""
@@ -17,10 +19,14 @@
    :shared? true})
 
 (defn init-form-state [{:keys [editing-stand map-center]}]
-  (let [initial (or editing-stand
-                    (assoc default-stand-form-data
-                           :coordinate (str (first map-center) ", " (second map-center))
-                           :expiration (utils/in-a-week)))]
+  (let [initial (if editing-stand
+                  (assoc editing-stand
+                         :coordinate (str (:lat editing-stand) ", " (:lon editing-stand)))
+                  (assoc default-stand-form-data
+                         :coordinate (str (first map-center) ", " (second map-center))
+                         :lat (first map-center)
+                         :lon (second map-center)
+                         :expiration (utils/in-a-week)))]
     (assoc initial
            :show-address? (boolean (or (seq (:address initial))
                                        (seq (:town initial))
@@ -46,9 +52,12 @@
     state))
 
 (defn prepare-submit-data [state]
-  (-> state
-      (stand-form-reducer [:add-product])
-      common-stand/select-stand-fields))
+  (let [with-products (stand-form-reducer state [:add-product])
+        [lat lon] (utils/parse-coordinates (:coordinate with-products))]
+    (-> with-products
+        (assoc :lat lat :lon lon)
+        (dissoc :coordinate)
+        common-stand/select-stand-fields)))
 
 (def stand-key common-stand/stand-key)
 (def infer-products common-stand/infer-products)

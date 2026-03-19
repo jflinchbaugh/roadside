@@ -73,12 +73,12 @@
     [-10.0 -12.0] "-10.0, -12.0"))
 
 (deftest make-map-link
-  (are [expected input]
-      (= expected (sut/make-map-link input))
-    nil nil
-    nil ""
-    nil ","
-    "geo:1,2" " 1, 2 "
+  (are [expected lat lon]
+      (= expected (sut/make-map-link lat lon))
+    nil nil nil
+    nil "" ""
+    "geo:1,2" 1 2
+    "geo:1,2" "1" "2"
     ))
 
 (deftest stand-popup-html

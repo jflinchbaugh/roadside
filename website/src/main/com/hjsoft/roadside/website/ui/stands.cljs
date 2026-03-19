@@ -70,8 +70,8 @@
       (when selected?
         (d/div
          {:class "stand-extra-info"}
-         (when (seq (:coordinate stand))
-           (d/p {:class "coordinate-text"} (:coordinate stand)))
+         (when (and (:lat stand) (:lon stand))
+           (d/p {:class "coordinate-text"} (str (:lat stand) ", " (:lon stand))))
          (when (seq (:expiration stand))
            (d/p
             {:class "expiration-date"}
@@ -94,7 +94,7 @@
      (d/div
       {:class "stand-actions"}
 
-      (when-let [map-link (utils/make-map-link (:coordinate stand))]
+      (when-let [map-link (utils/make-map-link (:lat stand) (:lon stand))]
         (d/a {:href map-link
               :target "_blank"
               :rel "noopener noreferrer"

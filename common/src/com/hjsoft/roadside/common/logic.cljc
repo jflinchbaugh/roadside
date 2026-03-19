@@ -46,7 +46,6 @@
    [:id {:optional true} [:maybe :string]]
    [:creator {:optional true} [:maybe :string]]
    [:name {:optional true} [:maybe :string]]
-   [:coordinate {:optional true} [:re #"^-?\d+\.?\d*,\s*-?\d+\.?\d*$"]]
    [:address {:optional true} [:maybe :string]]
    [:town {:optional true} [:maybe :string]]
    [:state {:optional true} [:maybe :string]]
@@ -55,5 +54,5 @@
    [:notes {:optional true} [:maybe :string]]
    [:shared? {:optional true} :boolean]
    [:updated {:optional true} [:maybe :string]]
-   [:lat {:optional true} [:maybe :double]]
-   [:lon {:optional true} [:maybe :double]]])
+   [:lat :double]
+   [:lon :double]])

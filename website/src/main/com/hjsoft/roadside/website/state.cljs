@@ -81,8 +81,8 @@
     state))
 
 (defn- distance-from [lat lng stand]
-  (if-let [[s-lat s-lon] (utils/parse-coordinates (:coordinate stand))]
-    (utils/haversine-distance lat lng s-lat s-lon)
+  (if (and (:lat stand) (:lon stand))
+    (utils/haversine-distance lat lng (:lat stand) (:lon stand))
     js/Number.MAX_VALUE))
 
 (defn select-stands-by-expiry

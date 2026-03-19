@@ -65,7 +65,10 @@
          ($ location-input
             {:stand-form-data stand-form-data
              :on-update local-dispatch
-             :original-coordinate (:coordinate editing-stand)}))
+             :original-coordinate (when editing-stand
+                                    (str (:lat editing-stand)
+                                         ", "
+                                         (:lon editing-stand)))}))
        ($ product-input
           {:stand-form-data stand-form-data
            :on-update local-dispatch})

@@ -2,7 +2,6 @@
   (:require [xtdb.api :as xt]
             [tick.core :as t]
             [taoensso.telemere :as tel]
-            [server.utils :as utils]
             [malli.core :as m]
             [malli.error :as me]
             [com.hjsoft.roadside.common.logic :as logic]
@@ -63,12 +62,23 @@
      (tel/log! :info {:list-stands q})
      (vec (xt/q @node q)))))
 
+(defn migrate-stands! []
+  (let [stands (xt/q @node '(from :stands [xt/id *]))]
+    (doseq [stand stands]
+      (when (and (:coordinate stand) (not (and (:lat stand) (:lon stand))))
+        (tel/log! :info {:migrating-stand (:xt/id stand)})
+        (if-let [[lat lon] (logic/parse-coordinate (:coordinate stand))]
+          (let [updated-stand (-> stand
+                                  (assoc :lat lat :lon lon)
+                                  (dissoc :coordinate))]
+            (xt/submit-tx @node [[:put-docs :stands updated-stand]]))
+          (tel/log! :error {:migration-failed (:xt/id stand) :msg "Could not parse coordinate"}))))))
+
 (defn save-user [user]
   (xt/submit-tx @node [[:put-docs :users (assoc user :updated (str (t/now)))]]))
 
 (defn save-stand [stand]
-  (let [[lat lon] (utils/parse-coordinate (:coordinate stand))
-        stand (assoc stand :lat lat :lon lon :updated (str (t/now)))]
+  (let [stand (assoc stand :updated (str (t/now)))]
     (if-not (m/validate logic/StandSchema (dissoc stand :xt/id))
       (throw (ex-info "Invalid stand data"
                       {:errors (me/humanize (m/explain logic/StandSchema (dissoc stand :xt/id)))}))

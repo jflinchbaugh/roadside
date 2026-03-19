@@ -5,15 +5,16 @@
 (deftest stand-key-test
   (testing "nil or empty stand"
     (is (nil? (sut/stand-key nil)))
-    (is (= "|||||" (sut/stand-key {}))))
+    (is (= "|,||||" (sut/stand-key {}))))
 
   (testing "id-based key"
     (is (= "my-uuid" (sut/stand-key {:id "my-uuid"}))))
 
   (testing "content-based key"
-    (is (= "name|[1 2]|address|town|state|prod,thing"
+    (is (= "name|1,2|address|town|state|prod,thing"
            (sut/stand-key {:name "name"
-                           :coordinate [1.0 2.0]
+                           :lat 1.0
+                           :lon 2.0
                            :address "address"
                            :town "town"
                            :state "state"
@@ -37,14 +38,19 @@
     (let [map-center [40.5 -76.5]
           state (sut/init-form-state {:map-center map-center})]
       (is (= "40.5, -76.5" (:coordinate state)))
+      (is (= 40.5 (:lat state)))
+      (is (= -76.5 (:lon state)))
       (is (= "" (:name state)))
       (is (false? (:show-address? state)))
       (is (= "" (:current-product state)))))
 
   (testing "initializes from editing-stand and detects show-address?"
-    (let [editing {:name "Existing" :address "123 Main St"}
+    (let [editing {:name "Existing" :address "123 Main St" :lat 1.0 :lon 2.0}
           state (sut/init-form-state {:editing-stand editing})]
       (is (= "Existing" (:name state)))
+      (is (= "1, 2" (:coordinate state)))
+      (is (= 1.0 (:lat state)))
+      (is (= 2.0 (:lon state)))
       (is (true? (:show-address? state)))
       (is (= "" (:current-product state))))))
 
@@ -101,11 +107,13 @@
   (let [stands [{:id "1"
                  :name "Apple Farm"
                  :products ["apples"]
-                 :coordinate "1,2"}]]
+                 :lat 1.0
+                 :lon 2.0}]]
     (testing "adding a new stand with auto-product detection"
       (let [result (sut/add-stand
                     {:name "Better Apples"
-                     :coordinate "3,4"
+                     :lat 3.0
+                     :lon 4.0
                      :products []}
                     stands
                     "test-user")]
@@ -119,7 +127,8 @@
     (testing "adding a stand with empty name"
       (let [result (sut/add-stand
                     {:name ""
-                     :coordinate "3,4"
+                     :lat 3.0
+                     :lon 4.0
                      :products ["Apples"]}
                     stands
                     "test-user")]
@@ -128,20 +137,21 @@
 
     (testing "preventing duplicates in add-stand"
       (let [result (sut/add-stand
-                    {:id "1" :name "Apple Farm" :coordinate "1,2" :products ["apples"]}
+                    {:id "1" :name "Apple Farm" :lat 1.0 :lon 2.0 :products ["apples"]}
                     stands
                     "test-user")]
         (is (not (:success result)))
         (is (= "This stand already exists!" (:error result)))))
 
     (testing "editing stand replaces the old one and DOES NOT auto-detect products"
-      (let [stands [{:id "1" :name "Original" :products ["apples"] :coordinate "1,2"}
-                    {:id "2" :name "Corn Stand" :products ["corn"] :coordinate "3,4"}]
+      (let [stands [{:id "1" :name "Original" :products ["apples"] :lat 1.0 :lon 2.0}
+                    {:id "2" :name "Corn Stand" :products ["corn"] :lat 3.0 :lon 4.0}]
             result (sut/edit-stand
                     {:id "1"
                      :name "Original and corn"
                      :products ["apples"]
-                     :coordinate "1,2"}
+                     :lat 1.0
+                     :lon 2.0}
                     stands
                     (first stands)
                     "test-user")
@@ -150,17 +160,20 @@
         (is (:updated processed-data))
         (is (= {:id "1"
                 :name "Original and corn"
-                :coordinate "1,2"
+                :lat 1.0
+                :lon 2.0
                 :products ["apples"]}
                (dissoc processed-data :updated :creator)))
         (is (not (some #(= "corn" %) (:products processed-data)))
             "Should NOT have added corn even though it is in the name and exists elsewhere")
         (is (= [{:id "1"
                  :name "Original and corn"
-                 :coordinate "1,2"
+                 :lat 1.0
+                 :lon 2.0
                  :products ["apples"]}
                 {:id "2"
                  :name "Corn Stand"
                  :products ["corn"]
-                 :coordinate "3,4"}]
+                 :lat 3.0
+                 :lon 4.0}]
                (map (fn [s] (dissoc s :updated :creator)) stands)))))))

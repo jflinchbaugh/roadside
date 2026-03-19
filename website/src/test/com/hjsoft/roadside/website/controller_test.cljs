@@ -49,7 +49,7 @@
       (let [dispatched (atom [])
             dispatch (fn [action] (swap! dispatched conj action))
             app-state {:settings {:user "alice" :password "secret"} :stands []}
-            form-data {:name "New Stand" :coordinate "1.0, 2.0"}]
+            form-data {:name "New Stand" :lat 1.0 :lon 2.0}]
         (let [result (sut/create-stand! app-state dispatch form-data mock-deps)]
           (is (true? result))
           (is (some (fn [[type _]] (= type :set-stands)) @dispatched))
@@ -65,13 +65,14 @@
     (testing "update-stand! replaces stand in state and triggers remote update"
       (let [dispatched (atom [])
             dispatch (fn [action] (swap! dispatched conj action))
-            old-stand {:id "s1" :name "Old"}
+            old-stand {:id "s1" :name "Old" :lat 1.0 :lon 2.0}
             app-state {:settings {:user "alice"
                                   :password "secret"}
                        :stands [old-stand]}
             form-data {:id "s1"
                        :name "New"
-                       :coordinate "3.0, 4.0"}]
+                       :lat 3.0
+                       :lon 4.0}]
         (let [result (sut/update-stand!
                        app-state
                        dispatch
@@ -139,7 +140,7 @@
       (let [dispatched (atom [])
             dispatch (fn [action] (swap! dispatched conj action))
             app-state {:settings {:user "alice" :password "secret"} :stands []}
-            form-data {:name "New Stand" :coordinate "1.0, 2.0"}
+            form-data {:name "New Stand" :lat 1.0 :lon 2.0}
             deps (assoc mock-deps
                         :create-stand (fn [& _] (go {:success false :error "Conflict"})))]
         (sut/create-stand! app-state dispatch form-data deps)

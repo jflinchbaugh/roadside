@@ -101,7 +101,8 @@
              locations (->>
                         stands
                         (map (fn [s]
-                               {:coord (utils/parse-coordinates (:coordinate s))
+                               {:coord (when (and (:lat s) (:lon s))
+                                         [(:lat s) (:lon s)])
                                 :stand s}))
                         (remove (comp nil? :coord))
                         (map (partial prepare-marker should-auto-pan? dispatch)))

@@ -112,8 +112,7 @@
        (do
          (dispatch [:set-stands stands])
          (dispatch [:set-selected-stand processed-data])
-         (when-let [coords (utils/parse-coordinates (:coordinate processed-data))]
-           (dispatch [:set-map-center coords]))
+         (dispatch [:set-map-center [(:lat processed-data) (:lon processed-data)]])
          (remote-create-stand! app-state dispatch processed-data deps)
          true)
        (do
@@ -137,8 +136,7 @@
        (do
          (dispatch [:set-stands stands])
          (dispatch [:set-selected-stand processed-data])
-         (when-let [coords (utils/parse-coordinates (:coordinate processed-data))]
-           (dispatch [:set-map-center coords]))
+         (dispatch [:set-map-center [(:lat processed-data) (:lon processed-data)]])
          (remote-update-stand! app-state dispatch processed-data deps)
          true)
        (do

@@ -94,7 +94,7 @@
 
 (deftest stands-test
   (testing "Stands handlers"
-    (let [stand-doc {:name "Morning Coffee" :address "Main St" :coordinate "40.0379, -76.3055"}
+    (let [stand-doc {:name "Morning Coffee" :address "Main St" :lat 40.0379 :lon -76.3055}
           body (json/write-str stand-doc)
           create-req {:body (ByteArrayInputStream. (.getBytes body))
                       :identity "alice"}
@@ -104,6 +104,8 @@
             id (:id created-stand)]
         (is (not (nil? id)))
         (is (= "Morning Coffee" (:name created-stand)))
+        (is (= 40.0379 (:lat created-stand)))
+        (is (= -76.3055 (:lon created-stand)))
 
         (testing "Get all stands (no filter)"
           (let [get-resp (handlers/get-stands-handler {:identity "alice"})
@@ -142,7 +144,7 @@
 
         (testing "Update non-existent stand (upsert behavior)"
           (let [non-existent-id "missing-id"
-                update-doc {:name "New Stand" :address "Unknown"}
+                update-doc {:name "New Stand" :address "Unknown" :lat 0.0 :lon 0.0}
                 update-body (json/write-str update-doc)
                 update-req {:path-params {:id non-existent-id}
                             :body (ByteArrayInputStream. (.getBytes update-body))
@@ -151,6 +153,8 @@
             (is (= 200 (:status update-resp)))
             (let [created (json/read-str (:body update-resp) :key-fn keyword)]
               (is (= "New Stand" (:name created)))
+              (is (= 0.0 (:lat created)))
+              (is (= 0.0 (:lon created)))
               (is (= non-existent-id (:id created)))
               ;; Verify it's actually in the DB
               (let [get-resp (handlers/get-stand-handler {:path-params {:id non-existent-id} :identity "alice"})]
@@ -215,7 +219,7 @@
         (is (= 200 (:status (handlers/get-stand-handler {:path-params {:id "bob-private"} :identity "bob"}))))))
 
     (testing "Reproduce 'Not all variables in scope' error with incomplete docs"
-      (xt/submit-tx @db/node [[:put-docs :stands {:xt/id "incomplete-1" :name "No creator or shared"}]])
+      (xt/submit-tx @db/node [[:put-docs :stands {:xt/id "incomplete-1" :name "No creator or shared" :lat 0.0 :lon 0.0}]])
       (let [req {:identity "alice" :params {:lat "40.0" :lon "-76.0"}}
             resp (handlers/get-stands-handler req)]
         (is (= 200 (:status resp)))))))
@@ -223,7 +227,7 @@
 (deftest creator-test
   (testing "Creator value behavior"
     (let [stand-id "stand-1"
-          stand-doc {:id stand-id :name "Creator Test Stand" :creator "malicious-user"}
+          stand-doc {:id stand-id :name "Creator Test Stand" :creator "malicious-user" :lat 0.0 :lon 0.0}
           body (json/write-str stand-doc)
           create-req {:body (ByteArrayInputStream. (.getBytes body))
                       :identity "alice"}
@@ -263,7 +267,7 @@
 
         (testing "Upserting new stand sets creator from current identity"
           (let [upsert-id "stand-2"
-                upsert-doc {:name "Upsert Stand" :creator "malicious-user"}
+                upsert-doc {:name "Upsert Stand" :creator "malicious-user" :lat 0.0 :lon 0.0}
                 upsert-body (json/write-str upsert-doc)
                 upsert-req {:path-params {:id upsert-id}
                             :body (ByteArrayInputStream. (.getBytes upsert-body))
@@ -276,7 +280,7 @@
 (deftest upsert-test
   (testing "Updating a non-existent stand creates it (upsert)"
     (let [id "upsert-id"
-          stand-doc {:name "Upserted Stand" :address "Upsert Lane"}
+          stand-doc {:name "Upserted Stand" :address "Upsert Lane" :lat 0.0 :lon 0.0}
           body (json/write-str stand-doc)
           req {:path-params {:id id}
                :body (ByteArrayInputStream. (.getBytes body))
@@ -292,6 +296,20 @@
         (let [get-resp (handlers/get-stand-handler {:path-params {:id id} :identity "alice"})]
           (is (= 200 (:status get-resp)))
           (is (= "Upserted Stand" (:name (json/read-str (:body get-resp) :key-fn keyword)))))))))
+
+(deftest migration-test
+  (testing "Migration from :coordinate to :lat and :lon"
+    (let [old-stand {:xt/id "old-1" :name "Old" :coordinate "40.0, -76.0" :creator "alice"}]
+      (xt/submit-tx @db/node [[:put-docs :stands old-stand]])
+      ;; Wait for tx
+      (Thread/sleep 100)
+      (db/migrate-stands!)
+      ;; Wait for migration tx
+      (Thread/sleep 100)
+      (let [migrated (db/get-stand-unfiltered "old-1")]
+        (is (= 40.0 (:lat migrated)))
+        (is (= -76.0 (:lon migrated)))
+        (is (nil? (:coordinate migrated)))))))
 
 (deftest auth-test
   (testing "authfn"

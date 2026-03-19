@@ -24,8 +24,8 @@
   (when stand
     (if-let [id (or (:id stand) (:xt/id stand))]
       (str id)
-      (let [{:keys [name coordinate address town state products]} stand]
-        (str name "|" coordinate "|" address "|" town "|" state "|" (str/join "," products))))))
+      (let [{:keys [name lat lon address town state products]} stand]
+        (str name "|" lat "," lon "|" address "|" town "|" state "|" (str/join "," products))))))
 
 (defn- product-matches-name? [name-lower current-set product]
   (and (str/includes? name-lower (str/lower-case product))

@@ -19,11 +19,9 @@
 (def random-uuid-str common-utils/random-uuid-str)
 (def parse-coordinates common-utils/parse-coordinates)
 
-(defn make-map-link [coordinate-str]
-  (when coordinate-str
-    (let [[lat lng] (str/split coordinate-str #", *")]
-      (when (and lat lng)
-        (str "geo:" (str/trim lat) "," (str/trim lng))))))
+(defn make-map-link [lat lon]
+  (when (and (seq (str lat)) (seq (str lon)))
+    (str "geo:" lat "," lon)))
 
 (def get-all-unique-products common-utils/get-all-unique-products)
 (def haversine-distance common-utils/haversine-distance)
