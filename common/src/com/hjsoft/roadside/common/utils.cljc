@@ -6,9 +6,9 @@
   #?(:clj (.format (java.time.format.DateTimeFormatter/ISO_INSTANT) (java.time.Instant/now))
      :cljs (.toISOString (js/Date.))))
 
-(defn in-a-week []
-  #?(:clj (str (.plus (java.time.LocalDate/now) 7 java.time.temporal.ChronoUnit/DAYS))
-     :cljs (.substring (.toISOString (js/Date. (+ (.getTime (js/Date.)) (* 7 24 60 60 1000)))) 0 10)))
+(defn in-days [d]
+  #?(:clj (str (.plus (java.time.LocalDate/now) d java.time.temporal.ChronoUnit/DAYS))
+     :cljs (.substring (.toISOString (js/Date. (+ (.getTime (js/Date.)) (* d 24 60 60 1000)))) 0 10)))
 
 (defn past-expiration? [expiration-str]
   (if (str/blank? expiration-str)

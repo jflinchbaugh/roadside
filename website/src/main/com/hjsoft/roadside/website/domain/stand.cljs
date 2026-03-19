@@ -26,7 +26,7 @@
                          :coordinate (str (first map-center) ", " (second map-center))
                          :lat (first map-center)
                          :lon (second map-center)
-                         :expiration (utils/in-a-week)))]
+                         :expiration (utils/in-days 28)))]
     (assoc initial
            :show-address? (boolean (or (seq (:address initial))
                                        (seq (:town initial))

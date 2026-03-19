@@ -53,7 +53,7 @@
                               [:remove-stand {:id "1" :name "A"}])))))
 
 (deftest select-stands-by-expiry-test
-  (let [active-stand {:name "Active" :expiration (utils/in-a-week)}
+  (let [active-stand {:name "Active" :expiration (utils/in-days 7)}
         expired-stand {:name "Expired" :expiration "2020-01-01"}
         stands [active-stand expired-stand]]
     (testing "hiding expired stands (default)"

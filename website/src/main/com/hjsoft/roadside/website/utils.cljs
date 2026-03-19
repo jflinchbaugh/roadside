@@ -14,7 +14,7 @@
         (let [formatter (goog.i18n.DateTimeFormat. "yyyy-MM-dd HH:mm")]
           (.format formatter date))))))
 
-(def in-a-week common-utils/in-a-week)
+(def in-days common-utils/in-days)
 (def past-expiration? common-utils/past-expiration?)
 (def random-uuid-str common-utils/random-uuid-str)
 (def parse-coordinates common-utils/parse-coordinates)

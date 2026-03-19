@@ -23,15 +23,15 @@
   (testing "handles invalid date strings by returning them"
     (is (= "not-a-date" (sut/format-timestamp "not-a-date")))))
 
-(deftest in-a-week
-  (is (re-matches #"\d{4}-\d{2}-\d{2}" (sut/in-a-week))
+(deftest in-days
+  (is (re-matches #"\d{4}-\d{2}-\d{2}" (sut/in-days 7))
         "iso date format")
-  (is (not= (js/Date.) (js/Date. (sut/in-a-week)))
+  (is (not= (js/Date.) (js/Date. (sut/in-days 7)))
         "it's not now")
-  (is (< (js/Date.) (js/Date. (sut/in-a-week)))
+  (is (< (js/Date.) (js/Date. (sut/in-days 7)))
         "it's in the future")
   (is (= 7
-           (- (int (/ (.getTime (js/Date. (sut/in-a-week))) 1000 60 60 24))
+           (- (int (/ (.getTime (js/Date. (sut/in-days 7))) 1000 60 60 24))
               (int (/ (.getTime (js/Date.)) 1000 60 60 24))))
         "7 days into the future"))
 
