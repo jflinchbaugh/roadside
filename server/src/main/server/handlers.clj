@@ -69,20 +69,14 @@
 (def ^:const search-radius-km 500.0)
 
 (defn get-stands-handler [req]
+  (tel/log! :info {:get-stands req})
   (let [identity (:identity req)
         params (:params req)
         lat (some-> (get params :lat) Double/parseDouble)
         lon (some-> (get params :lon) Double/parseDouble)
-        stands (db/list-stands identity)]
-    (if (and lat lon)
-      (let [filtered (filterv
-                      (fn [stand]
-                        (if-let [[s-lat s-lon] (utils/parse-coordinate (:coordinate stand))]
-                          (<= (utils/haversine-distance lat lon s-lat s-lon) search-radius-km)
-                          false))
-                      stands)]
-        (api-response 200 (mapv common-stand/select-stand-fields filtered)))
-      (api-response 200 (mapv common-stand/select-stand-fields stands)))))
+        stands (db/list-stands identity {:lat lat :lon lon :radius search-radius-km})
+        results (mapv common-stand/select-stand-fields stands)]
+    (api-response 200 results)))
 
 (defn get-stand-handler [req]
   (let [identity (:identity req)

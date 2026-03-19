@@ -21,6 +21,18 @@
 
 (use-fixtures :each with-xtdb-container)
 
+(deftest empty-stands-test
+  (testing "Get stands when none exist and no lat/lon"
+    (let [resp (handlers/get-stands-handler {:identity "alice"})]
+      (is (= 200 (:status resp)))
+      (is (= [] (json/read-str (:body resp))))))
+  (testing "Get stands by lat/lon when none exist"
+    (let [resp (handlers/get-stands-handler
+                 {:identity "alice"
+                  :params {:lat "-74.333", :lon "40.1234"}})]
+      (is (= 200 (:status resp)))
+      (is (= [] (json/read-str (:body resp)))))))
+
 (deftest ping-test
   (testing "Ping handler returns 200 pong"
     (let [response (handlers/ping-handler {})]
@@ -162,9 +174,9 @@
           bob-shared {:xt/id "bob-shared" :name "Bob Shared" :shared? true}]
 
       ;; Setup stands in DB
-      (xt/submit-tx @db/node [[:put-docs :stands (assoc alice-stand :creator "alice")]
-                              [:put-docs :stands (assoc bob-private :creator "bob")]
-                              [:put-docs :stands (assoc bob-shared :creator "bob")]])
+      (xt/submit-tx @db/node [[:put-docs :stands (assoc alice-stand :creator "alice" :lat 40.0 :lon -76.0)]
+                              [:put-docs :stands (assoc bob-private :creator "bob" :lat 40.0 :lon -76.0)]
+                              [:put-docs :stands (assoc bob-shared :creator "bob" :lat 40.0 :lon -76.0)]])
 
       (testing "Alice sees her own and bob's shared stands"
         (let [req {:identity "alice"}
@@ -200,7 +212,13 @@
         (is (= 200 (:status (handlers/get-stand-handler {:path-params {:id "alice-1"} :identity "alice"}))))
         (is (= 404 (:status (handlers/get-stand-handler {:path-params {:id "bob-private"} :identity "alice"}))))
         (is (= 200 (:status (handlers/get-stand-handler {:path-params {:id "bob-shared"} :identity "alice"}))))
-        (is (= 200 (:status (handlers/get-stand-handler {:path-params {:id "bob-private"} :identity "bob"}))))))))
+        (is (= 200 (:status (handlers/get-stand-handler {:path-params {:id "bob-private"} :identity "bob"}))))))
+
+    (testing "Reproduce 'Not all variables in scope' error with incomplete docs"
+      (xt/submit-tx @db/node [[:put-docs :stands {:xt/id "incomplete-1" :name "No creator or shared"}]])
+      (let [req {:identity "alice" :params {:lat "40.0" :lon "-76.0"}}
+            resp (handlers/get-stands-handler req)]
+        (is (= 200 (:status resp)))))))
 
 (deftest creator-test
   (testing "Creator value behavior"

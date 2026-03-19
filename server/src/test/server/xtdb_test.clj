@@ -22,3 +22,21 @@
                                  (from :users [*])
                                  (where (= xt/id "test-user"))))]
         (is (= "Test User" (:name (first result))))))))
+
+(deftest xtdb-math-functions-demo
+  (testing "XTDB 2.x math functions in queries"
+    (let [node *node*
+          tx (xt/submit-tx node [[:put-docs :math-test {:xt/id 1 :x 0.5}]])]
+      (Thread/sleep 1000)
+      (testing "sqrt in where"
+        (let [result (xt/q node '(from :math-test [x] (where (> (sqrt x) 0))))]
+          (is (= 1 (count result)))
+          (is (= 0.5 (:x (first result))))))
+      (testing "asin in where"
+        (let [result (xt/q node '(from :math-test [x] (where (> (asin x) 0))))]
+          (is (= 1 (count result)))
+          (is (= 0.5 (:x (first result))))))
+      (testing "sin/cos in where"
+        (let [result (xt/q node '(from :math-test [x] (where (and (> (sin x) 0) (< (cos x) 1)))))]
+          (is (= 1 (count result)))
+          (is (= 0.5 (:x (first result)))))))))

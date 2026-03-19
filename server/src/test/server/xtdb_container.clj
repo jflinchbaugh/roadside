@@ -1,6 +1,7 @@
 (ns server.xtdb-container
   (:require [clj-test-containers.core :as tc]
-            [xtdb.api :as xt]))
+            [xtdb.api :as xt]
+            [taoensso.telemere :as tel]))
 
 (defonce xtdb-container
   (delay
@@ -19,5 +20,11 @@
     (doseq [table [:users :stands]]
       (let [docs (xt/q node (list 'from table '[xt/id]))]
         (when (seq docs)
-          (xt/execute-tx node (mapv (fn [d] [:delete-docs table (:xt/id d)]) docs)))))
+          (tel/log! :info {:erase-docs docs})
+          (tel/log! :info
+            {:erase-docs (xt/submit-tx
+                           node
+                           (mapv
+                             (fn [d] [:erase-docs table (:xt/id d)])
+                             docs))}))))
     (f node)))
