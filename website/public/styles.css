@@ -73,6 +73,11 @@ body {
   padding: 0 1rem;
 }
 
+.main-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .map-actions-right {
   display: flex;
   gap: 0.5rem;
@@ -109,6 +114,20 @@ body {
 
 .add-stand-btn:hover {
   background-color: #45a049;
+}
+
+.upload-all-btn {
+  background-color: #6c757d;
+  border: none;
+  color: white;
+  padding: 12px 15px;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.upload-all-btn:hover {
+  background-color: #5a6268;
 }
 
 .form-overlay {
@@ -528,17 +547,6 @@ body {
   background-color: #0056b3;
 }
 
-.settings-btn {
-  background-color: #6c757d;
-  border: none;
-  color: white;
-  padding: 12px 15px;
-  font-size: 1rem;
-  cursor: pointer;
-  border-radius: 4px;
-  margin-left: 0.5rem;
-}
-
 .coordinate-input-group {
   display: flex;
   align-items: center;
@@ -743,11 +751,19 @@ body {
   font-size: 1rem;
   cursor: pointer;
   border-radius: 4px;
-  margin-left: 0.5rem;
 }
 
 .settings-btn:hover {
   background-color: #5a6268;
+}
+
+.bottom-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid #eee;
 }
 
 .settings-overlay {
@@ -834,6 +850,10 @@ body {
 
 .notification-toast.success {
   background-color: #28a745;
+}
+
+.notification-toast.info {
+  background-color: #17a2b8;
 }
 
 .notification-toast.error {

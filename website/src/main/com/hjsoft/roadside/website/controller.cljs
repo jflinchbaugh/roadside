@@ -94,6 +94,24 @@
             (tel/log! :error {:msg "Failed to delete stand" :error error})
             (notify! dispatch :error (str "Delete failed: " error))))))))
 
+(defn upload-all-stands!
+  ([app-state dispatch]
+   (upload-all-stands! app-state dispatch default-deps))
+  ([{:keys [stands settings]} dispatch {:keys [create-stand]}]
+   (if-not (has-credentials? settings)
+     (notify! dispatch :error "Authentication required to upload!")
+     (go
+       (notify! dispatch :info (str "Uploading " (count stands) " stands..."))
+       (let [results (atom [])]
+         (doseq [stand stands]
+           (let [res (<! (create-stand (:user settings) (:password settings) stand))]
+             (swap! results conj res)))
+         (let [success-count (count (filter :success @results))
+               fail-count (- (count stands) success-count)]
+           (if (pos? fail-count)
+             (notify! dispatch :error (str "Upload finished: " success-count " successes, " fail-count " failures."))
+             (notify! dispatch :success (str "Successfully uploaded " success-count " stands!")))))))))
+
 ;; Controller Intent Functions
 
 (defn create-stand!

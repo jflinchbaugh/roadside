@@ -119,12 +119,14 @@
           {:class "content"}
           (d/div
            {:class "main-actions"}
-           (d/button
-            {:class "add-stand-btn"
-             :onClick #(do
-                         (set-editing-stand nil)
-                         (set-show-form true))}
-            "Add Stand")
+           (d/div
+            {:class "main-buttons"}
+            (d/button
+             {:class "add-stand-btn"
+              :onClick #(do
+                          (set-editing-stand nil)
+                          (set-show-form true))}
+             "Add Stand"))
            (d/div
             {:class "map-actions-right"}
             (when (and (:error user-location) (string? (:error user-location)))
@@ -138,10 +140,16 @@
           ($ product-list {:stands stands-by-expiry})
           (when show-form ($ stand-form))
           ($ stands-list {:stands filtered-stands})
-          (d/button
-           {:class "settings-btn"
-            :onClick #(set-show-settings-dialog true)}
-           "\u2699")
+          (d/div
+           {:class "bottom-actions"}
+           (d/button
+            {:class "upload-all-btn"
+             :onClick #(controller/upload-all-stands! app-state dispatch)}
+            "\u21E7")
+           (d/button
+            {:class "settings-btn"
+             :onClick #(set-show-settings-dialog true)}
+            "\u2699"))
           (when show-settings-dialog ($ settings-dialog))))))))
 
 (defn init []

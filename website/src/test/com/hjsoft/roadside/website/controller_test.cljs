@@ -211,3 +211,29 @@
                             (= field :address)) @on-update-actions))
                     (done))
                   1000)))))
+
+(deftest upload-all-stands-test
+  (async done
+    (testing "upload-all-stands! triggers remote creation for all stands in state"
+      (let [dispatched (atom [])
+            dispatch (fn [action] (swap! dispatched conj action))
+            stands [{:id "s1" :name "S1"} {:id "s2" :name "S2"}]
+            app-state {:settings {:user "alice" :password "secret"}
+                       :stands stands}
+            created-count (atom 0)
+            deps (assoc mock-deps
+                        :create-stand (fn [& _]
+                                        (swap! created-count inc)
+                                        (go {:success true})))]
+        (sut/upload-all-stands! app-state dispatch deps)
+        (wait-for created-count
+                  (fn [count] (= count 2))
+                  (fn []
+                    (is (= 2 @created-count))
+                    (is (some (fn [[type payload]]
+                                (and (= type :set-notification)
+                                     (= (:type payload) :success)
+                                     (str/includes? (:message payload) "uploaded 2 stands")))
+                              @dispatched))
+                    (done))
+                  1000)))))
