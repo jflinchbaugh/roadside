@@ -35,6 +35,7 @@
    :map-zoom (or (storage/get-item "roadside-map-zoom") 11)
    :settings (or (storage/get-item "roadside-settings") {})
    :is-synced false
+   :last-sync (storage/get-item "roadside-last-sync")
    :loading-stands? false
    :notification nil
    :show-expired? false})
@@ -62,8 +63,19 @@
      (filterv #(not= (:id %) (:id payload))
               stands))))
 
+(defn- handle-sync-stands [state {:keys [stands deleted-ids last-sync]}]
+  (let [new-stands (if (coll? stands) stands [])
+        existing-map (into {} (map (juxt :id identity) (:stands state)))
+        new-map (into {} (map (juxt :id identity) new-stands))
+        merged-map (merge existing-map new-map)
+        final-map (apply dissoc merged-map deleted-ids)]
+    (cond-> state
+      true (assoc :stands (vec (vals final-map)))
+      last-sync (assoc :last-sync last-sync))))
+
 (def action-handlers
   {:set-stands handle-set-stands
+   :sync-stands handle-sync-stands
    :remove-stand handle-remove-stand
    :set-notification #(set-value %1 :notification %2)
    :set-is-synced #(set-value %1 :is-synced %2)

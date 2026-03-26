@@ -27,14 +27,15 @@
 
 (defn fetch-stands
   ([user password]
-   (fetch-stands user password nil nil default-http-deps))
-  ([user password lat lng]
-   (fetch-stands user password lat lng default-http-deps))
-  ([user password lat lng {:keys [get]}]
+   (fetch-stands user password nil nil nil default-http-deps))
+  ([user password lat lng since]
+   (fetch-stands user password lat lng since default-http-deps))
+  ([user password lat lng since {:keys [get]}]
    (go
      (let [params (cond-> {}
                     lat (assoc :lat lat)
-                    lng (assoc :lon lng))
+                    lng (assoc :lon lng)
+                    since (assoc :since since))
            response (<! (get stands-url
                              (with-auth-opts user password
                                {:query-params params})))]

@@ -25,13 +25,13 @@
   (testing "Get stands when none exist and no lat/lon"
     (let [resp (handlers/get-stands-handler {:identity "alice"})]
       (is (= 200 (:status resp)))
-      (is (= [] (json/read-str (:body resp))))))
+      (is (= [] (:stands (json/read-str (:body resp) :key-fn keyword))))))
   (testing "Get stands by lat/lon when none exist"
     (let [resp (handlers/get-stands-handler
                  {:identity "alice"
                   :params {:lat "-74.333", :lon "40.1234"}})]
       (is (= 200 (:status resp)))
-      (is (= [] (json/read-str (:body resp)))))))
+      (is (= [] (:stands (json/read-str (:body resp) :key-fn keyword)))))))
 
 (deftest ping-test
   (testing "Ping handler returns 200 pong"
@@ -109,21 +109,24 @@
 
         (testing "Get all stands (no filter)"
           (let [get-resp (handlers/get-stands-handler {:identity "alice"})
-                stands (json/read-str (:body get-resp) :key-fn keyword)]
+                body (json/read-str (:body get-resp) :key-fn keyword)
+                stands (:stands body)]
             (is (= 200 (:status get-resp)))
             (is (>= (count stands) 1))))
 
         (testing "Get stands within radius"
           ;; Lancaster, PA: 40.0379, -76.3055
           (let [get-resp (handlers/get-stands-handler {:params {:lat "40.0" :lon "-76.0"} :identity "alice"})
-                stands (json/read-str (:body get-resp) :key-fn keyword)]
+                body (json/read-str (:body get-resp) :key-fn keyword)
+                stands (:stands body)]
             (is (= 200 (:status get-resp)))
             (is (>= (count stands) 1) "Should find the stand near Lancaster")))
 
         (testing "Get stands outside radius"
           ;; Los Angeles: 34.0522, -118.2437 (far from Lancaster, PA)
           (let [get-resp (handlers/get-stands-handler {:params {:lat "34.0" :lon "-118.0"} :identity "alice"})
-                stands (json/read-str (:body get-resp) :key-fn keyword)]
+                body (json/read-str (:body get-resp) :key-fn keyword)
+                stands (:stands body)]
             (is (= 200 (:status get-resp)))
             (is (= 0 (count (filter #(= (:id %) id) stands))) "Should NOT find the Lancaster stand from LA")))
 
@@ -185,7 +188,8 @@
       (testing "Alice sees her own and bob's shared stands"
         (let [req {:identity "alice"}
               resp (handlers/get-stands-handler req)
-              stands (json/read-str (:body resp) :key-fn keyword)
+              body (json/read-str (:body resp) :key-fn keyword)
+              stands (:stands body)
               ids (set (map :id stands))]
           (is (= 200 (:status resp)))
           (is (contains? ids "alice-1"))
@@ -195,7 +199,8 @@
       (testing "Bob sees his own and bob's shared stands (all 3 in this case since he owns both private and shared)"
         (let [req {:identity "bob"}
               resp (handlers/get-stands-handler req)
-              stands (json/read-str (:body resp) :key-fn keyword)
+              body (json/read-str (:body resp) :key-fn keyword)
+              stands (:stands body)
               ids (set (map :id stands))]
           (is (= 200 (:status resp)))
           (is (contains? ids "bob-private"))
@@ -207,7 +212,8 @@
         ;; Although the route has auth middleware, the handler itself should handle nil identity gracefully if it ever reached there
         (let [req {:identity nil}
               resp (handlers/get-stands-handler req)
-              stands (json/read-str (:body resp) :key-fn keyword)
+              body (json/read-str (:body resp) :key-fn keyword)
+              stands (:stands body)
               ids (set (map :id stands))]
           (is (= 200 (:status resp)))
           (is (= #{"bob-shared"} ids))))

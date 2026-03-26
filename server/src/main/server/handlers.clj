@@ -74,9 +74,14 @@
         params (:params req)
         lat (some-> (get params :lat) Double/parseDouble)
         lon (some-> (get params :lon) Double/parseDouble)
-        stands (db/list-stands identity {:lat lat :lon lon :radius search-radius-km})
-        results (mapv common-stand/select-stand-fields stands)]
-    (api-response 200 results)))
+        since (get params :since)
+        stands (db/list-stands identity {:lat lat :lon lon :radius search-radius-km :since since})
+        results (mapv common-stand/select-stand-fields stands)
+        now (common-utils/get-current-timestamp)
+        deleted-ids (if since
+                      (db/list-deletions identity since {:lat lat :lon lon :radius search-radius-km})
+                      [])]
+    (api-response 200 {:stands results :deleted-ids deleted-ids :new-sync now})))
 
 (defn get-stand-handler [req]
   (tel/log! :info {:get-stand req})

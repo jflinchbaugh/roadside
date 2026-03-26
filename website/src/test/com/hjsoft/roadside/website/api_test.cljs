@@ -19,14 +19,20 @@
                               (is (= "api/stands" url))
                               (is (= {:username "user" :password "pass"}
                                      (:basic-auth opts)))
-                              (is (= {:lat 1.0 :lon 2.0} (:query-params opts)))
+                              (is (= {:lat 1.0 :lon 2.0 :since "2026-03-21T12:00:00Z"}
+                                     (:query-params opts)))
                               (mock-http-response
                                {:success true
-                                :body [{:id 1}]})))]
+                                :body {:stands [{:id 1}]
+                                       :deleted-ids []
+                                       :new-sync "2026-03-21T13:00:00Z"}})))]
              (go
-               (let [result (<! (sut/fetch-stands "user" "pass" 1.0 2.0 deps))]
+               (let [result (<! (sut/fetch-stands "user" "pass" 1.0 2.0 "2026-03-21T12:00:00Z" deps))]
                  (is (:success result))
-                 (is (= [{:id 1}] (:data result)))
+                 (is (= {:stands [{:id 1}]
+                         :deleted-ids []
+                         :new-sync "2026-03-21T13:00:00Z"}
+                        (:data result)))
                  (done)))))))
 
 (deftest fetch-stands-failure-test
@@ -36,11 +42,12 @@
                        :get (fn [_ _]
                               (mock-http-response
                                {:success false
-                                :status 500})))]
+                                :status 500
+                                :status-text "Internal Server Error"})))]
              (go
-               (let [result (<! (sut/fetch-stands "user" "pass" 1.0 2.0 deps))]
+               (let [result (<! (sut/fetch-stands "user" "pass" 1.0 2.0 nil deps))]
                  (is (not (:success result)))
-                 (is (= "HTTP Error: api/stands, 500" (:error result)))
+                 (is (= "Internal Server Error" (:error result)))
                  (done)))))))
 
 (deftest create-stand-test

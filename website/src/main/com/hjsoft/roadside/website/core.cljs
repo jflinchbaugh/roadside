@@ -24,20 +24,26 @@
 
 (defn use-app-side-effects
   [app-state dispatch user-location show-form editing-stand]
-  (let [{:keys [stands settings map-center map-zoom]} app-state
+  (let [{:keys [stands settings map-center map-zoom last-sync]} app-state
         {:keys [get-location]} user-location
-        [last-fetched-center set-last-fetched-center] (hooks/use-state map-center)]
+        [last-fetched-center set-last-fetched-center] (hooks/use-state map-center)
+        app-state-ref (hooks/use-ref app-state)]
+
+    ;; Keep app-state-ref up to date
+    (hooks/use-effect
+     [app-state]
+     (set! (.-current app-state-ref) app-state))
 
     ;; Local persistence
     (hooks/use-effect
-     [stands settings map-center map-zoom]
-     (controller/save-local-data! stands settings map-center map-zoom))
+     [stands settings map-center map-zoom last-sync]
+     (controller/save-local-data! stands settings map-center map-zoom last-sync))
 
     ;; Fetch from Remote API on settings change
     (hooks/use-effect
      [settings]
      (when-not (or show-form editing-stand)
-       (controller/fetch-remote-stands! app-state dispatch)
+       (controller/fetch-remote-stands! (.-current app-state-ref) dispatch)
        (set-last-fetched-center map-center)))
 
     ;; Fetch from Remote API on map-center change beyond threshold
@@ -50,7 +56,7 @@
                       js/Number.MAX_VALUE)]
        (when (and (not (or show-form editing-stand))
                   (> distance fetch-stands-threshold-km))
-         (controller/fetch-remote-stands! app-state dispatch)
+         (controller/fetch-remote-stands! (.-current app-state-ref) dispatch)
          (set-last-fetched-center map-center))))
 
     ;; Initial location fetch and center map

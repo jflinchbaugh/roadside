@@ -37,30 +37,60 @@
 
 (defn list-stands
   ([user-id] (list-stands user-id nil))
-  ([user-id {:keys [lat lon radius]}]
+  ([user-id {:keys [lat lon radius since]}]
    (let [q (if (and lat lon radius)
              (let [rad (/ Math/PI 180.0)
                    lat1-rad (* lat rad)
                    lon1-rad (* lon rad)
                    R 6371.0]
-               ['(fn [u lat1-rad lon1-rad rad R r]
-                   (-> (from :stands [lat lon creator shared? *])
+               ['(fn [u s lat1-rad lon1-rad rad R r]
+                   (-> (from :stands [lat lon creator shared? updated *])
                        (where (and (or (= creator u)
                                        (= shared? true))
+                                   (if s (> updated s) true)
                                    (<= (* R (* 2.0 (asin (sqrt (+ (* (sin (/ (- (* lat rad) lat1-rad) 2.0))
                                                                      (sin (/ (- (* lat rad) lat1-rad) 2.0)))
                                                                   (* (cos lat1-rad) (cos (* lat rad))
                                                                      (sin (/ (- (* lon rad) lon1-rad) 2.0))
                                                                      (sin (/ (- (* lon rad) lon1-rad) 2.0))))))))
                                        r)))))
-                user-id lat1-rad lon1-rad rad R radius])
-             ['(fn [u]
-                 (-> (from :stands [creator shared? *])
-                     (where (or (= creator u)
-                                (= shared? true)))))
-              user-id])]
+                user-id since lat1-rad lon1-rad rad R radius])
+             ['(fn [u s]
+                 (-> (from :stands [creator shared? updated *])
+                     (where (and (or (= creator u)
+                                     (= shared? true))
+                                 (if s (> updated s) true)))))
+              user-id since])]
      (tel/log! :info {:list-stands q})
      (vec (xt/q @node q)))))
+
+(defn list-deletions
+  [user-id since {:keys [lat lon radius]}]
+  (if-not (and since lat lon radius)
+    []
+    (let [rad (/ Math/PI 180.0)
+          lat1-rad (* lat rad)
+          lon1-rad (* lon rad)
+          R 6371.0
+          since-inst (t/instant since)
+          ;; Find all versions that ended (were deleted or updated) since 'since'
+          ;; and were in the requested radius.
+          q ['(fn [u s lat1-rad lon1-rad rad R r]
+               (-> (from :stands {:for-valid-time :all-time, :bind [xt/id lat lon xt/valid-to creator shared?]} )
+                   (where (and (>= xt/valid-to s)
+                               (or (= creator u) (= shared? true))
+                               (<= (* R (* 2.0 (asin (sqrt (+ (* (sin (/ (- (* lat rad) lat1-rad) 2.0))
+                                                                 (sin (/ (- (* lat rad) lat1-rad) 2.0)))
+                                                              (* (cos lat1-rad) (cos (* lat rad))
+                                                                 (sin (/ (- (* lon rad) lon1-rad) 2.0))
+                                                                 (sin (/ (- (* lon rad) lon1-rad) 2.0))))))))
+                                   r)))))
+             user-id since-inst lat1-rad lon1-rad rad R radius]
+
+          ended (xt/q @node q)
+          ;; Find what is currently active
+          active-ids (set (map :xt/id (list-stands user-id {:lat lat :lon lon :radius radius})))]
+      (vec (set (keep #(when-not (contains? active-ids (:xt/id %)) (:xt/id %)) ended))))))
 
 (defn migrate-stands! []
   (let [stands (xt/q @node '(from :stands [xt/id *]))]

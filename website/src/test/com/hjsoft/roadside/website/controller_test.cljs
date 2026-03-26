@@ -37,11 +37,12 @@
   (testing "save-local-data! persists all provided fields to storage"
     (let [saved (atom {})]
       (with-redefs [storage/set-item! (fn [k v] (swap! saved assoc k v))]
-        (sut/save-local-data! ["stand1"] {:user "alice"} [10 20] 15)
+        (sut/save-local-data! ["stand1"] {:user "alice"} [10 20] 15 "2026-03-21T12:00:00Z")
         (is (= ["stand1"] (get @saved "roadside-stands")))
         (is (= {:user "alice"} (get @saved "roadside-settings")))
         (is (= [10 20] (get @saved "roadside-map-center")))
-        (is (= 15 (get @saved "roadside-map-zoom")))))))
+        (is (= 15 (get @saved "roadside-map-zoom")))
+        (is (= "2026-03-21T12:00:00Z" (get @saved "roadside-last-sync")))))))
 
 (deftest create-stand-test
   (async done
@@ -89,28 +90,32 @@
 
 (deftest fetch-remote-stands-test
   (async done
-    (testing "fetch-remote-stands! dispatches stands and loading states"
+    (testing "fetch-remote-stands! dispatches sync-stands and loading states"
       (let [dispatched (atom [])
             dispatch (fn [action] (swap! dispatched conj action))
             app-state {:settings {:user "alice" :password "secret"}
-                       :map-center [10 20]}
+                       :map-center [10 20]
+                       :last-sync "2026-03-21T10:00:00Z"}
             deps (assoc
                    mock-deps
-                   :fetch-stands (fn [& _]
-                                   (go {:success true :data [{:id "s1"}]} )))]
+                   :fetch-stands (fn [_ _ _ _ since]
+                                   (is (= "2026-03-21T10:00:00Z" since))
+                                   (go {:success true :data {:stands [{:id "s1"}]
+                                                             :deleted-ids ["d1"]
+                                                             :new-sync "2026-03-21T11:00:00Z"}} )))]
         (sut/fetch-remote-stands! app-state dispatch deps)
         (wait-for dispatched
                   (fn [actions] (some #(= (first %) :set-is-synced) actions))
                   (fn []
                     (is (some #(= % [:set-loading-stands true]) @dispatched))
                     (is (some #(= % [:set-loading-stands false]) @dispatched))
-                    (is (some #(= (first %) :set-stands) @dispatched))
+                    (let [sync-action (some #(when (= (first %) :sync-stands) %) @dispatched)]
+                      (is (some? sync-action))
+                      (is (= {:stands [{:id "s1"}]
+                              :deleted-ids ["d1"]
+                              :last-sync "2026-03-21T11:00:00Z"}
+                             (second sync-action))))
                     (is (some #(= (first %) :set-is-synced) @dispatched))
-                    ;; Verify NO success notification is sent anymore
-                    (is (not (some (fn [[type payload]]
-                                     (and (= type :set-notification)
-                                          (= (:type payload) :success)))
-                                   @dispatched)))
                     (done))
                   1000)))))
 

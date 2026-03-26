@@ -15,11 +15,12 @@
    :geocode-address api/geocode-address
    :reverse-geocode api/reverse-geocode})
 
-(defn save-local-data! [stands settings map-center map-zoom]
+(defn save-local-data! [stands settings map-center map-zoom last-sync]
   (storage/set-item! "roadside-stands" stands)
   (storage/set-item! "roadside-settings" settings)
   (storage/set-item! "roadside-map-center" map-center)
-  (storage/set-item! "roadside-map-zoom" map-zoom))
+  (storage/set-item! "roadside-map-zoom" map-zoom)
+  (storage/set-item! "roadside-last-sync" last-sync))
 
 (defn- has-credentials? [settings]
   (and (seq (:user settings))
@@ -34,7 +35,7 @@
 (defn fetch-remote-stands!
   ([app-state dispatch]
    (fetch-remote-stands! app-state dispatch default-deps))
-  ([{:keys [settings map-center]} dispatch {:keys [fetch-stands]}]
+  ([{:keys [settings map-center last-sync]} dispatch {:keys [fetch-stands]}]
    (when (has-credentials? settings)
      (dispatch [:set-loading-stands true])
      (go
@@ -42,11 +43,14 @@
              {:keys [success data error]} (<! (fetch-stands
                                                (:user settings)
                                                (:password settings)
-                                               lat lng))]
+                                               lat lng
+                                               last-sync))]
          (dispatch [:set-loading-stands false])
          (if success
            (do
-             (dispatch [:set-stands data])
+             (dispatch [:sync-stands {:stands (:stands data)
+                                      :deleted-ids (:deleted-ids data)
+                                      :last-sync (:new-sync data)}])
              (dispatch [:set-is-synced true]))
            (do
              (tel/log! :error {:msg "Failed to fetch stands" :error error})
