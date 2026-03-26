@@ -75,7 +75,7 @@
         lat (some-> (get params :lat) Double/parseDouble)
         lon (some-> (get params :lon) Double/parseDouble)
         since (get params :since)
-        stands (db/list-stands identity {:lat lat :lon lon :radius search-radius-km :since since})
+        stands (db/list-stands identity {:lat lat :lon lon :radius search-radius-km})
         results (mapv common-stand/select-stand-fields stands)
         now (common-utils/get-current-timestamp)
         deleted-ids (if since
