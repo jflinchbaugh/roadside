@@ -48,7 +48,8 @@
         map-fn (gobj/get l "map")
         m ^js (map-fn div-id)
         tl-fn (gobj/get l "tileLayer")
-        tl ^js (tl-fn "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")]
+        tl ^js (tl-fn "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      (clj->js {:attribution "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"}))]
     (.setView m (clj->js center) zoom-level)
     (.addTo tl m)
     m))
