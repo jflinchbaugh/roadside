@@ -71,3 +71,7 @@ Access the running XTDB server from the api server:
 ```
 $ podman exec -it roadside-server-api psql -U xtdb -h xtdb
 ```
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
