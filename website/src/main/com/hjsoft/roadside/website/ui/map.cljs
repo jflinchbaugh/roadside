@@ -51,7 +51,7 @@
         tl ^js (tl-fn "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       (clj->js {:attribution "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"}))]
     (.setView m (clj->js center) zoom-level)
-    (.addTo tl m)
+    (.addTo ^js tl m)
     m))
 
 (defn coordinates-differ?
