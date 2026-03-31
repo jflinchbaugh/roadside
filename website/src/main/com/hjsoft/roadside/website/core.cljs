@@ -120,7 +120,8 @@
                {:div-id "map-container"
                 :stands filtered-stands
                 :zoom-level initial-zoom-level
-                :set-coordinate-form-data set-coordinate-form-data}))
+                :set-coordinate-form-data set-coordinate-form-data})
+            ($ loading-indicator))
          (d/div
           {:class "content"}
           (d/div

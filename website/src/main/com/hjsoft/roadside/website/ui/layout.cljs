@@ -24,8 +24,7 @@
     {:class "main-header"}
     "Roadside Stands"
     " "
-    (d/span {:style {:font-size "0.5em"}} "beta"))
-   ($ loading-indicator)))
+    (d/span {:style {:font-size "0.5em"}} "beta"))))
 
 (defnc fixed-header [{:keys [children]}]
   (d/div
