@@ -32,6 +32,11 @@
    {:id "fixed-header"}
    children))
 
+(defnc sticky-wrapper [{:keys [children]}]
+  (d/div
+   {:class "sticky-wrapper"}
+   children))
+
 (defnc notification-toast []
   (let [{:keys [state dispatch]} (hooks/use-context state/app-context)
         {:keys [notification]} state]

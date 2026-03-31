@@ -13,7 +13,7 @@
             [com.hjsoft.roadside.website.ui.forms
              :refer [stand-form settings-dialog]]
             [com.hjsoft.roadside.website.ui.layout
-             :refer [header fixed-header notification-toast loading-indicator]]
+             :refer [header fixed-header sticky-wrapper notification-toast loading-indicator]]
             [goog.object :as gobj]
             [taoensso.telemere :as tel]))
 
@@ -114,8 +114,8 @@
                       :set-show-settings-dialog set-show-settings-dialog}}}
         (<>
          ($ notification-toast)
-         ($ fixed-header
-            ($ header)
+         ($ header)
+         ($ sticky-wrapper
             ($ leaflet-map
                {:div-id "map-container"
                 :stands filtered-stands
