@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 html {
   font-size: 18px; /* Define 1rem as 18px */
   width: 100%;
@@ -19,22 +23,21 @@ body {
 }
 
 .header {
-  background-color: #f8f8f8;
-  padding: 10px 20px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   display: flex;
   align-items: center;
   gap: 1rem;
   flex-shrink: 0;
   position: relative;
+  margin: 0.5rem 1rem;
+  padding: 10px 1rem;
 }
 
 .sticky-wrapper {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background-color: #f8f8f8;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  margin: 0 1rem;
+  background-color: white; /* Ensure content doesn't show through the sticky area */
 }
 
 .logo {
@@ -54,7 +57,12 @@ body {
 
 .content {
   flex-grow: 1; /* Take remaining space */
-  padding: 0.5em 1rem;
+  padding: 0.5em 0;
+}
+
+.main-actions, .product-list, .stands-list, .bottom-actions {
+  margin-left: 1rem;
+  margin-right: 1rem;
 }
 
 .main-actions {
@@ -63,7 +71,6 @@ body {
   align-items: center;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
-  padding: 0;
 }
 
 .main-buttons {
@@ -79,8 +86,10 @@ body {
 #map-container {
   height: 30vh;
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
   margin-bottom: 0.5rem; /* Add some space below the map */
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 #map-form {
@@ -876,6 +885,11 @@ body {
 }
   padding: 1rem;
   font-size: 0.75rem;
+  color: #888;
+  text-align: center;
+  border-top: 1px solid #eee;
+}
+ font-size: 0.75rem;
   color: #888;
   text-align: center;
   border-top: 1px solid #eee;
