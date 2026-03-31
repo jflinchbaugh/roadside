@@ -149,13 +149,13 @@
           (d/div
            {:class "bottom-actions"}
            (d/button
-            {:class "upload-all-btn"
-             :onClick #(controller/upload-all-stands! app-state dispatch)}
-            "\u21E7")
-           (d/button
             {:class "settings-btn"
              :onClick #(set-show-settings-dialog true)}
-            "\u2699"))
+            "\u2699")
+           (d/button
+            {:class "upload-all-btn"
+             :onClick #(controller/upload-all-stands! app-state dispatch)}
+            "\u21E7"))
           (when show-settings-dialog ($ settings-dialog))))))))
 
 (defn init []
