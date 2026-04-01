@@ -18,6 +18,7 @@ body {
 .app-container {
   max-width: 800px;
   margin: 0 auto;
+  padding: 0 1rem;
   display: flex;
   flex-direction: column; /* Arrange children vertically */
 }
@@ -28,14 +29,13 @@ body {
   gap: 1rem;
   flex-shrink: 0;
   position: relative;
-  padding: 10px 1rem;
+  padding: 10px 0;
 }
 
 .sticky-wrapper {
   position: sticky;
   top: 0;
   z-index: 1000;
-  margin: 0 1rem;
   background-color: white; /* Ensure content doesn't show through the sticky area */
 }
 
@@ -57,11 +57,6 @@ body {
 .content {
   flex-grow: 1; /* Take remaining space */
   padding: 0.5em 0;
-}
-
-.main-actions, .product-list, .stands-list, .bottom-actions {
-  margin-left: 1rem;
-  margin-right: 1rem;
 }
 
 .main-actions {
@@ -761,7 +756,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0;
   margin-top: 0.5rem;
   border-top: 1px solid #eee;
 }
