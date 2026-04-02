@@ -3,6 +3,7 @@
             [server.geocoding :as geo]
             [server.utils :as utils]
             [clojure.data.json :as json]
+            [clojure.data.csv :as csv]
             [clojure.string :as str]
             [ring.util.request :as rur]
             [buddy.hashers :as hashers]
@@ -20,20 +21,20 @@
    :headers {"Content-Type" "application/json"}
    :body (json/write-str document)})
 
-(defn- escape-csv-field [field]
-  (let [s (str field)]
-    (if (or (str/includes? s ",") (str/includes? s "\"") (str/includes? s "\n"))
-      (str "\"" (str/replace s "\"" "\"\"") "\"")
-      s)))
-
-(defn- stand->csv-row [stand]
-  (let [{:keys [name lat lon address products notes town state]} stand]
-    (str/join "," (map escape-csv-field
-                       [name lat lon address town state (str/join "; " products) notes]))))
-
 (defn- stands->csv [stands]
-  (let [header "Name,Latitude,Longitude,Address,Town,State,Products,Notes"]
-    (str/join "\n" (into [header] (map stand->csv-row stands)))))
+  (let [header ["Name" "Latitude" "Longitude" "Address" "Town" "State" "Products" "Notes"]
+        rows (map (fn [{:keys [name lat lon address products notes town state]}]
+                    [name
+                     (str lat)
+                     (str lon)
+                     address
+                     town
+                     state
+                     (str/join "; " products)
+                     notes])
+                  stands)]
+    (with-out-str
+      (csv/write-csv *out* (into [header] rows)))))
 
 (defn get-stands-csv-handler [req]
   (let [identity (:identity req)
