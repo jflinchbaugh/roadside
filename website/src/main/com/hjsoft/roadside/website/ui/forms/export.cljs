@@ -52,11 +52,4 @@
            {:class "download-link"
             :href "api/stands.csv" ;; relative to the current base
             :download "stands.csv"}
-           "Download CSV")))))
-      (d/div
-       {:class "settings-actions"}
-       (d/button
-        {:type "button"
-         :class "button secondary"
-         :onClick #(set-show-export-dialog false)}
-        "Close"))))))
+           "Download CSV")))))))))
