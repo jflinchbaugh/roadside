@@ -172,7 +172,33 @@
         (testing "Delete non-existent stand"
           (let [del-resp (handlers/delete-stand-handler {:path-params {:id "non-existent"} :identity "alice"})]
             (is (= 200 (:status del-resp)))
-            (is (= "'non-existent' deleted" (:message (json/read-str (:body del-resp) :key-fn keyword))))))))))
+            (is (= "'non-existent' deleted" (:message (json/read-str (:body del-resp) :key-fn keyword))))))))
+
+    (testing "CSV export"
+      (let [stand-doc {:name "CSV Stand" :address "CSV St" :lat 40.0 :lon -76.0 :products ["Apples" "Bananas"]}
+            create-req {:body (ByteArrayInputStream. (.getBytes (json/write-str stand-doc)))
+                        :identity "alice"}
+            _ (handlers/create-stand-handler create-req)
+            resp (handlers/get-stands-csv-handler {:identity "alice"})
+            csv (:body resp)]
+        (is (= 200 (:status resp)))
+        (is (str/includes? csv "Name,Latitude,Longitude,Address,Town,State,Products,Notes"))
+        (is (str/includes? csv "CSV Stand,40.0,-76.0,CSV St,,,Apples; Bananas,"))))
+
+    (testing "KML export"
+      (let [stand-doc {:name "KML Stand" :address "KML St" :lat 40.0 :lon -76.0 :products ["Cherries"] :notes "Sweet"}
+            create-req {:body (ByteArrayInputStream. (.getBytes (json/write-str stand-doc)))
+                        :identity "alice"}
+            _ (handlers/create-stand-handler create-req)
+            resp (handlers/get-stands-kml-handler {:identity "alice"})
+            kml (:body resp)]
+        (is (= 200 (:status resp)))
+        (is (str/includes? kml "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
+        (is (str/includes? kml "<kml xmlns=\"http://www.opengis.net/kml/2.2\">"))
+        (is (str/includes? kml "<name>KML Stand</name>"))
+        (is (str/includes? kml "-76.000000,40.000000,0"))
+        (is (str/includes? kml "Cherries"))
+        (is (str/includes? kml "Sweet"))))))
 
 (deftest stands-visibility-test
   (testing "Stands visibility filtering"

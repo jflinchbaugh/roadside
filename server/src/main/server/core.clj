@@ -23,6 +23,10 @@
         ["/reverse-geocode" {:middleware [auth/wrap-auth auth/identity-required-wrapper]
                              :get handlers/reverse-geocode-handler}]
         ["/register" {:post handlers/register-handler}]
+        ["/stands.csv" {:middleware [auth/wrap-auth]
+                        :get handlers/get-stands-csv-handler}]
+        ["/stands.kml" {:middleware [auth/wrap-auth]
+                        :get handlers/get-stands-kml-handler}]
         ["/stands" {:middleware [auth/wrap-auth auth/identity-required-wrapper]
                     :get handlers/get-stands-handler
                     :post handlers/create-stand-handler}]

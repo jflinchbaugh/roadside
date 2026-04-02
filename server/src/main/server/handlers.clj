@@ -9,6 +9,7 @@
             [malli.core :as m]
             [malli.error :as me]
             [taoensso.telemere :as tel]
+            [hiccup2.core :as h]
             [com.hjsoft.roadside.common.logic :as logic]
             [com.hjsoft.roadside.common.utils :as common-utils]
             [com.hjsoft.roadside.common.domain.stand :as common-stand]))
@@ -18,6 +19,58 @@
   {:status code
    :headers {"Content-Type" "application/json"}
    :body (json/write-str document)})
+
+(defn- escape-csv-field [field]
+  (let [s (str field)]
+    (if (or (str/includes? s ",") (str/includes? s "\"") (str/includes? s "\n"))
+      (str "\"" (str/replace s "\"" "\"\"") "\"")
+      s)))
+
+(defn- stand->csv-row [stand]
+  (let [{:keys [name lat lon address products notes town state]} stand]
+    (str/join "," (map escape-csv-field
+                       [name lat lon address town state (str/join "; " products) notes]))))
+
+(defn- stands->csv [stands]
+  (let [header "Name,Latitude,Longitude,Address,Town,State,Products,Notes"]
+    (str/join "\n" (into [header] (map stand->csv-row stands)))))
+
+(defn get-stands-csv-handler [req]
+  (let [identity (:identity req)
+        stands (db/list-stands identity)
+        csv (stands->csv stands)]
+    {:status 200
+     :headers {"Content-Type" "text/csv"
+               "Content-Disposition" "attachment; filename=\"stands.csv\""}
+     :body csv}))
+
+(defn- stand->placemark [stand]
+  (let [{:keys [name lat lon address products notes]} stand]
+    [:Placemark
+     [:name (or name "Roadside Stand")]
+     [:description (str "Address: " address "\n"
+                        "Products: " (str/join ", " products) "\n"
+                        "Notes: " (or notes ""))]
+     [:Point
+      [:coordinates (format "%f,%f,0" lon lat)]]]))
+
+(defn- stands->kml [stands]
+  (str (h/html
+         {:mode :xml}
+         (h/raw "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+         [:kml {:xmlns "http://www.opengis.net/kml/2.2"}
+          [:Document
+           [:name "Roadside Stands"]
+           (map stand->placemark stands)]])))
+
+(defn get-stands-kml-handler [req]
+  (let [identity (:identity req)
+        stands (db/list-stands identity)
+        kml (stands->kml stands)]
+    {:status 200
+     :headers {"Content-Type" "application/vnd.google-earth.kml+xml"
+               "Content-Disposition" "attachment; filename=\"stands.kml\""}
+     :body kml}))
 
 (defn not-found [& _]
   (api-response 404 {:error "Not Found"}))
