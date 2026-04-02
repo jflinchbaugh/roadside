@@ -11,7 +11,7 @@
             [com.hjsoft.roadside.website.ui.stands
              :refer [stands-list product-list]]
             [com.hjsoft.roadside.website.ui.forms
-             :refer [stand-form settings-dialog]]
+             :refer [stand-form settings-dialog export-dialog]]
             [com.hjsoft.roadside.website.ui.layout
              :refer [header fixed-header sticky-wrapper notification-toast loading-indicator]]
             [goog.object :as gobj]
@@ -73,6 +73,7 @@
         [show-form set-show-form] (hooks/use-state false)
         [editing-stand set-editing-stand] (hooks/use-state nil)
         [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
+        [show-export-dialog set-show-export-dialog] (hooks/use-state false)
 
         user-location (use-user-location
                        dispatch
@@ -111,7 +112,9 @@
                       :editing-stand editing-stand
                       :set-editing-stand set-editing-stand
                       :show-settings-dialog show-settings-dialog
-                      :set-show-settings-dialog set-show-settings-dialog}}}
+                      :set-show-settings-dialog set-show-settings-dialog
+                      :show-export-dialog show-export-dialog
+                      :set-show-export-dialog set-show-export-dialog}}}
         (<>
          ($ notification-toast)
          ($ header)
@@ -149,15 +152,25 @@
           ($ stands-list {:stands filtered-stands})
           (d/div
            {:class "bottom-actions"}
-           (d/button
-            {:class "settings-btn"
-             :onClick #(set-show-settings-dialog true)}
-            "\u2699")
+           (d/div
+            {:class "left-bottom-actions"}
+            (d/button
+             {:class "settings-btn"
+              :onClick #(set-show-settings-dialog true)
+              :title "Settings"}
+             "\u2699")
+            (d/button
+             {:class "export-btn"
+              :onClick #(set-show-export-dialog true)
+              :title "Google Maps Integration"}
+             "\u2913")) ;; Downwards arrow to bar
            (d/button
             {:class "upload-all-btn"
-             :onClick #(controller/upload-all-stands! app-state dispatch)}
+             :onClick #(controller/upload-all-stands! app-state dispatch)
+             :title "Upload all local stands to server"}
             "\u21E7"))
-          (when show-settings-dialog ($ settings-dialog))))))))
+          (when show-settings-dialog ($ settings-dialog))
+          (when show-export-dialog ($ export-dialog))))))))
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]

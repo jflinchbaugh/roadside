@@ -48,3 +48,14 @@
     (fn [& args]
       (when @timer (js/clearTimeout @timer))
       (reset! timer (js/setTimeout #(apply f args) ms)))))
+
+(defn copy-to-clipboard! [text]
+  (.writeText (.-clipboard js/navigator) text))
+
+(defn get-app-base-url []
+  (let [pathname (.. js/window -location -pathname)
+        ;; Assuming index.html is at the base
+        base (if (str/ends-with? pathname "/")
+               pathname
+               (str (str/join "/" (butlast (str/split pathname #"/"))) "/"))]
+    (str (.. js/window -location -origin) base)))
