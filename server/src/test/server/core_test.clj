@@ -209,7 +209,7 @@
         (is (str/includes? kml "Sweet"))))
 
     (testing "RSS export"
-      (let [stand-doc {:name "RSS Stand" :address "RSS St" :lat 40.0 :lon -76.0 :products ["Peaches"] :notes "Juicy"}
+      (let [stand-doc {:name "RSS Stand" :address "RSS St" :town "Lancaster" :state "PA" :lat 40.0 :lon -76.0 :products ["Peaches"] :notes "Juicy"}
             create-req {:body (ByteArrayInputStream. (.getBytes (json/write-str stand-doc)))
                         :identity "alice"}
             _ (handlers/create-stand-handler create-req)
@@ -220,7 +220,8 @@
         (is (str/includes? rss "<rss version=\"2.0\""))
         (is (str/includes? rss "<title>Roadside Stands</title>"))
         (is (str/includes? rss "<title>RSS Stand</title>"))
-        (is (str/includes? rss "RSS St"))
+        (is (str/includes? rss "Address: RSS St, Lancaster, PA"))
+        (is (str/includes? rss "Coordinates: 40.0, -76.0"))
         (is (str/includes? rss "Peaches"))
         (is (str/includes? rss "Juicy"))
         (is (str/includes? rss config/external-base-url))))))

@@ -73,17 +73,26 @@
       (.format formatter zdt))
     (catch Exception _
       nil)))
-
 (defn- stand->rss-item [base-url stand]
-  (let [{:keys [name address products notes updated xt/id]} stand]
+  (let [{:keys [name address town state products expiration notes updated xt/id lat lon shared? creator]} stand
+        full-address (str/join ", " (remove str/blank? [address town state]))
+        description (str/join "\n"
+                              (remove nil?
+                                      [(when (seq full-address) (str "Address: " full-address))
+                                       (when (seq products) (str "Products: " (str/join ", " products)))
+                                       (when (seq expiration) (str "Expires: " expiration))
+                                       (when (seq notes) (str "Notes: " notes))
+                                       (str "Coordinates: " lat ", " lon)
+                                       (when (some? shared?) (str "Shared: " (if shared? "Yes" "No")))
+                                       (when (seq creator) (str "Creator: " creator))]))]
     [:item
      [:title (or name "Roadside Stand")]
      [:link (str base-url "#stand=" id)]
-     [:description (str "Products: " (str/join ", " products) "\n"
-                        "Notes: " (or notes ""))]
+     [:description description]
      (when-let [pub-date (format-rfc822 updated)]
        [:pubDate pub-date])
      [:guid {:isPermaLink "false"} id]]))
+
 
 (defn- stands->rss [stands base-url]
   (str (h/html
