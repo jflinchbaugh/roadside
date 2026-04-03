@@ -27,6 +27,8 @@
                         :get handlers/get-stands-csv-handler}]
         ["/stands.kml" {:middleware [auth/wrap-auth]
                         :get handlers/get-stands-kml-handler}]
+        ["/stands.rss" {:middleware [auth/wrap-auth]
+                        :get handlers/get-stands-rss-handler}]
         ["/stands" {:middleware [auth/wrap-auth]
                     :get handlers/get-stands-handler
                     :post {:middleware [auth/identity-required-wrapper]

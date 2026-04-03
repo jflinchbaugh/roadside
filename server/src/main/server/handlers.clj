@@ -64,6 +64,54 @@
            [:name "Roadside Stands"]
            (map stand->placemark stands)]])))
 
+(defn- format-rfc822 [iso-str]
+  (try
+    (let [inst (java.time.Instant/parse iso-str)
+          zdt (java.time.ZonedDateTime/ofInstant inst (java.time.ZoneId/of "UTC"))
+          formatter java.time.format.DateTimeFormatter/RFC_1123_DATE_TIME]
+      (.format formatter zdt))
+    (catch Exception _
+      nil)))
+
+(defn- stand->rss-item [stand base-url]
+  (let [{:keys [name address products notes updated xt/id]} stand]
+    [:item
+     [:title (or name "Roadside Stand")]
+     [:link (str base-url "#stand=" id)]
+     [:description (str "Address: " address "\n"
+                        "Products: " (str/join ", " products) "\n"
+                        "Notes: " (or notes ""))]
+     (when-let [pub-date (format-rfc822 updated)]
+       [:pubDate pub-date])
+     [:guid {:isPermaLink "false"} id]]))
+
+(defn- stands->rss [stands base-url]
+  (str (h/html
+         {:mode :xml}
+         (h/raw "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+         [:rss {:version "2.0"
+                :xmlns:atom "http://www.w3.org/2005/Atom"}
+          [:channel
+           [:title "Roadside Stands"]
+           [:link base-url]
+           [:description "Latest roadside stands"]
+           [:atom:link {:href (str base-url "api/stands.rss") :rel "self" :type "application/rss+xml"}]
+           (map #(stand->rss-item % base-url) stands)]])))
+
+(defn get-stands-rss-handler [req]
+  (let [identity (:identity req)
+        stands (db/list-stands identity)
+        scheme (name (:scheme req))
+        server-name (:server-name req)
+        server-port (:server-port req)
+        ;; We assume the app is hosted at /roadside/
+        base-url (str scheme "://" server-name (if (#{80 443} server-port) "" (str ":" server-port)) "/roadside/")
+        rss (stands->rss stands base-url)]
+    {:status 200
+     :headers {"Content-Type" "application/rss+xml"
+               "Content-Disposition" "inline"}
+     :body rss}))
+
 (defn get-stands-kml-handler [req]
   (let [identity (:identity req)
         stands (db/list-stands identity)

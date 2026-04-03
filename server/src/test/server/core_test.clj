@@ -205,7 +205,24 @@
         (is (str/includes? kml "<name>KML Stand</name>"))
         (is (str/includes? kml "-76.000000,40.000000,0"))
         (is (str/includes? kml "Cherries"))
-        (is (str/includes? kml "Sweet"))))))
+        (is (str/includes? kml "Sweet"))))
+
+    (testing "RSS export"
+      (let [stand-doc {:name "RSS Stand" :address "RSS St" :lat 40.0 :lon -76.0 :products ["Peaches"] :notes "Juicy"}
+            create-req {:body (ByteArrayInputStream. (.getBytes (json/write-str stand-doc)))
+                        :identity "alice"}
+            _ (handlers/create-stand-handler create-req)
+            resp (handlers/get-stands-rss-handler {:identity "alice" :scheme :http :server-name "localhost" :server-port 3000})
+            rss (:body resp)]
+        (is (= 200 (:status resp)))
+        (is (str/includes? rss "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
+        (is (str/includes? rss "<rss version=\"2.0\""))
+        (is (str/includes? rss "<title>Roadside Stands</title>"))
+        (is (str/includes? rss "<title>RSS Stand</title>"))
+        (is (str/includes? rss "RSS St"))
+        (is (str/includes? rss "Peaches"))
+        (is (str/includes? rss "Juicy"))
+        (is (str/includes? rss "http://localhost:3000/roadside/"))))))
 
 (deftest stands-visibility-test
   (testing "Stands visibility filtering"

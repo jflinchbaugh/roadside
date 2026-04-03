@@ -47,6 +47,20 @@
               "Copy"))))
          (d/div
           {:class "export-link-item"}
+          (d/label "RSS Feed (Live):")
+          (let [rss-url (str base-url "api/stands.rss")]
+            (d/div
+             {:class "export-url-container"}
+             (d/input
+              {:class "export-url-input"
+               :value rss-url
+               :readOnly true})
+             (d/button
+              {:class "copy-btn"
+               :onClick #(utils/copy-to-clipboard! rss-url)}
+              "Copy"))))
+         (d/div
+          {:class "export-link-item"}
           (d/label "KML for Import:")
           (d/a
            {:class "download-link"

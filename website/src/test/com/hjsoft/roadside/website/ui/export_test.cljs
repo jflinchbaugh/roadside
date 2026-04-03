@@ -39,6 +39,17 @@
           (is (some? kml-label))
           (is (some? kml-input))))
 
+      (testing "displays RSS feed URL"
+        (let [rss-label (tlr/getByText container "RSS Feed (Live):")
+              rss-input (tlr/getByDisplayValue
+                          container
+                          (re-pattern
+                            (str
+                              (.. js/window -location -origin)
+                              ".*/api/stands.rss")))]
+          (is (some? rss-label))
+          (is (some? rss-input))))
+
       (testing "displays KML download link"
         (let [kml-link (tlr/getByText container "Download KML")]
           (is (some? kml-link))
