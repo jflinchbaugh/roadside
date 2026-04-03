@@ -4,6 +4,7 @@
             [server.db :as db]
             [server.auth :as auth]
             [server.handlers :as handlers]
+            [server.config :as config]
             [buddy.hashers :as hashers]
             [xtdb.api :as xt]
             [server.xtdb-container :as xtn]
@@ -222,7 +223,7 @@
         (is (str/includes? rss "RSS St"))
         (is (str/includes? rss "Peaches"))
         (is (str/includes? rss "Juicy"))
-        (is (str/includes? rss "http://localhost:3000/roadside/"))))))
+        (is (str/includes? rss config/external-base-url))))))
 
 (deftest stands-visibility-test
   (testing "Stands visibility filtering"

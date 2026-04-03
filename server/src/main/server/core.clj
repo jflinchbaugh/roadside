@@ -7,15 +7,14 @@
             [server.db :as db]
             [server.auth :as auth]
             [server.handlers :as handlers]
+            [server.config :as config]
             [xtdb.api :as xt]
             [taoensso.telemere :as tel]))
 
 (tel/set-min-level! :debug)
 
-(def ^:const base-url "/roadside")
-
 (def app
-  (-> [base-url
+  (-> [config/base-url
        ["/api"
         ["/ping" handlers/ping-handler]
         ["/geocode" {:middleware [auth/wrap-auth auth/identity-required-wrapper]
@@ -42,7 +41,7 @@
       (ring/router)
       (ring/ring-handler
        (ring/routes
-        (ring/create-resource-handler {:path base-url})
+        (ring/create-resource-handler {:path config/base-url})
         handlers/not-found))
       (rmc/wrap-cors
        :access-control-allow-origin [#".*"]

@@ -2,6 +2,7 @@
   (:require [server.db :as db]
             [server.geocoding :as geo]
             [server.utils :as utils]
+            [server.config :as config]
             [clojure.data.json :as json]
             [clojure.data.csv :as csv]
             [clojure.string :as str]
@@ -101,11 +102,7 @@
 (defn get-stands-rss-handler [req]
   (let [identity (:identity req)
         stands (db/list-stands identity)
-        scheme (name (:scheme req))
-        server-name (:server-name req)
-        server-port (:server-port req)
-        ;; We assume the app is hosted at /roadside/
-        base-url (str scheme "://" server-name (if (#{80 443} server-port) "" (str ":" server-port)) "/roadside/")
+        base-url config/external-base-url
         rss (stands->rss stands base-url)]
     {:status 200
      :headers {"Content-Type" "application/rss+xml"
