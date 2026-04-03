@@ -47,6 +47,14 @@
               "Copy"))))
          (d/div
           {:class "export-link-item"}
+          (d/label "KML for Import:")
+          (d/a
+           {:class "download-link"
+            :href (str base-url "api/stands.kml")
+            :download "stands.kml"}
+           "Download KML"))
+         (d/div
+          {:class "export-link-item"}
           (d/label "CSV for Import:")
           (d/a
            {:class "download-link"
