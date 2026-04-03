@@ -54,17 +54,23 @@
     (let [req {:params {:login "bob" :password "secret-pass"}}
           response (handlers/register-handler req)]
       (is (= 400 (:status response)))
-      (is (some #{"should match regex"} (get-in (json/read-str (:body response) :key-fn keyword) [:errors :email])))))
+      (is (some #{"should match regex"}
+            (get-in (json/read-str (:body response) :key-fn keyword)
+              [:errors :email])))))
   (testing "Register handler requires login"
     (let [req {:params {:email "bob@example.com" :password "secret-pass"}}
           response (handlers/register-handler req)]
       (is (= 400 (:status response)))
-      (is (some #{"should match regex"} (get-in (json/read-str (:body response) :key-fn keyword) [:errors :login])))))
+      (is (some #{"should match regex"}
+            (get-in (json/read-str (:body response) :key-fn keyword)
+              [:errors :login])))))
   (testing "Register handler requires password"
     (let [req {:params {:login "bob" :email "bob@example.com"}}
           response (handlers/register-handler req)]
       (is (= 400 (:status response)))
-      (is (some #{"should be a string"} (get-in (json/read-str (:body response) :key-fn keyword) [:errors :password])))))
+      (is (some #{"should be a string"}
+            (get-in (json/read-str (:body response) :key-fn keyword)
+              [:errors :password])))))
   (testing "Register handler requires all fields"
     (let [req {:params {}}
           response (handlers/register-handler req)]
@@ -87,7 +93,8 @@
                         :email "alice2@example.com"}}
           response (handlers/register-handler req)]
       (is (= 403 (:status response)))
-      (is (= ["login not available"] (:errors (json/read-str (:body response) :key-fn keyword))))
+      (is (= {:login ["not available"]}
+            (:errors (json/read-str (:body response) :key-fn keyword))))
       (let [user (db/get-user "alice")]
         (is (= "alice" (:login user)))
         (is (:valid (hashers/verify "secret-password" (:password user))) "password not touched")))))

@@ -1,14 +1,17 @@
 (ns com.hjsoft.roadside.website.api
   (:require [cljs-http.client :as http]
             [cljs.core.async :refer [go <!]]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [taoensso.telemere :as tel]))
 
 (def ^:private stands-url "api/stands")
 
 (defn- with-auth-opts
   ([user password] (with-auth-opts user password {}))
   ([user password opts]
-   (assoc opts :basic-auth {:username user :password password})))
+   (if (and user password)
+     (assoc opts :basic-auth {:username user :password password})
+     opts)))
 
 (def default-http-deps
   {:get http/get
@@ -21,9 +24,9 @@
     (if (and (map? body) (:errors body))
       (let [errors (:errors body)]
         (if (map? errors)
-          (str/join ", " (map (fn [[k v]] (str (name k) ": " (str/join "; " v))) errors))
-          (str/join ", " errors)))
-      (or (:status-text response) default-msg))))
+          (map (fn [[k v]] (str (name k) ": " (str/join "; " v))) errors)
+          [errors]))
+      [(or (:status-text response) default-msg)])))
 
 (defn fetch-stands
   ([user password]
@@ -123,11 +126,8 @@
                    :password password
                    :email email}
            response (<! (post url {:form-params params}))]
+       (tel/log! :info {:register-user {:params params :response response}})
        (if (= 201 (:status response))
          {:success true :data (:body response)}
          {:success false
-          :error (let [body (:body response)]
-                   (if (map? body)
-                     (or (:errors body) [(:message body)])
-                     [(or (:status-text response)
-                          (str "Error: " (:status response)))]))})))))
+          :error (extract-error response (str "HTTP Error: " (:status response)))})))))

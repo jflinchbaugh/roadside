@@ -27,13 +27,16 @@
                         :get handlers/get-stands-csv-handler}]
         ["/stands.kml" {:middleware [auth/wrap-auth]
                         :get handlers/get-stands-kml-handler}]
-        ["/stands" {:middleware [auth/wrap-auth auth/identity-required-wrapper]
+        ["/stands" {:middleware [auth/wrap-auth]
                     :get handlers/get-stands-handler
-                    :post handlers/create-stand-handler}]
-        ["/stands/:id" {:middleware [auth/wrap-auth auth/identity-required-wrapper]
+                    :post {:middleware [auth/identity-required-wrapper]
+                           :handler handlers/create-stand-handler}}]
+        ["/stands/:id" {:middleware [auth/wrap-auth]
                         :get handlers/get-stand-handler
-                        :put handlers/update-stand-handler
-                        :delete handlers/delete-stand-handler}]]]
+                        :put {:middleware [auth/identity-required-wrapper]
+                              :handler handlers/update-stand-handler}
+                        :delete {:middleware [auth/identity-required-wrapper]
+                                 :handler handlers/delete-stand-handler}}]]]
       (ring/router)
       (ring/ring-handler
        (ring/routes

@@ -169,8 +169,8 @@
              :onClick #(controller/upload-all-stands! app-state dispatch)
              :title "Upload all local stands to server"}
             "\u21E7"))
-          (when show-settings-dialog ($ settings-dialog))
-          (when show-export-dialog ($ export-dialog))))))))
+          (when show-settings-dialog ($ settings-dialog {:key "settings"}))
+          (when show-export-dialog ($ export-dialog {:key "export"}))))))))
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]

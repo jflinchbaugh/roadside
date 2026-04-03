@@ -112,7 +112,7 @@
       (api-response 400 {:status "failed"
                          :errors (me/humanize (m/explain UserSchema user-data))})
       (if (db/get-user login)
-        (api-response 403 {:status "failed" :errors ["login not available"]})
+        (api-response 403 {:status "failed" :errors {:login ["not available"]}})
         (do
           (db/save-user {:xt/id id
                          :login login

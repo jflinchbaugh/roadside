@@ -47,7 +47,7 @@
              (go
                (let [result (<! (sut/fetch-stands "user" "pass" 1.0 2.0 nil deps))]
                  (is (not (:success result)))
-                 (is (= "Internal Server Error" (:error result)))
+                 (is (= ["Internal Server Error"] (:error result)))
                  (done)))))))
 
 (deftest create-stand-test

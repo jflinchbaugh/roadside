@@ -26,35 +26,46 @@
   (and (seq (:user settings))
        (seq (:password settings))))
 
+(defn- format-error [message]
+  (cond
+    (string? message) message
+    (seq message) (str/join ", " message)
+    :else (str " else " message)))
+
 (defn- notify!
   ([dispatch type message]
    (notify! dispatch type message nil))
   ([dispatch type message stand-id]
-   (dispatch [:set-notification {:type type :message message :stand-id stand-id}])))
+   (dispatch [:set-notification {:type type
+                                 :message message
+                                 :stand-id stand-id}])))
 
 (defn fetch-remote-stands!
   ([app-state dispatch]
    (fetch-remote-stands! app-state dispatch default-deps))
   ([{:keys [settings map-center last-sync]} dispatch {:keys [fetch-stands]}]
-   (when (has-credentials? settings)
-     (dispatch [:set-loading-stands true])
-     (go
-       (let [[lat lng] map-center
-             {:keys [success data error]} (<! (fetch-stands
-                                               (:user settings)
-                                               (:password settings)
-                                               lat lng
-                                               last-sync))]
-         (dispatch [:set-loading-stands false])
-         (if success
-           (do
-             (dispatch [:sync-stands {:stands (:stands data)
-                                      :deleted-ids (:deleted-ids data)
-                                      :last-sync (:new-sync data)}])
-             (dispatch [:set-is-synced true]))
-           (do
-             (tel/log! :error {:msg "Failed to fetch stands" :error error})
-             (notify! dispatch :error (str "Sync failed: " error)))))))))
+   (dispatch [:set-loading-stands true])
+   (go
+     (let [[lat lng] map-center
+           {:keys [success data error]} (<! (fetch-stands
+                                             (:user settings)
+                                             (:password settings)
+                                             lat lng
+                                             last-sync))]
+       (dispatch [:set-loading-stands false])
+       (if success
+         (do
+           (dispatch [:sync-stands {:stands (:stands data)
+                                    :deleted-ids (:deleted-ids data)
+                                    :last-sync (:new-sync data)}])
+           (dispatch [:set-is-synced true]))
+         (do
+           (tel/log! :error {:msg "Failed to fetch stands" :error error})
+           (when (has-credentials? settings)
+             (notify!
+               dispatch
+               :error
+               (str "Sync failed: " (format-error error))))))))))
 
 (defn- remote-create-stand!
   [{:keys [settings]} dispatch stand {:keys [create-stand]}]
@@ -68,7 +79,11 @@
           (notify! dispatch :success "Stand added!" (:id stand))
           (do
             (tel/log! :error {:msg "Failed to create stand" :error error})
-            (notify! dispatch :error (str "Create failed: " error) (:id stand))))))))
+            (notify!
+              dispatch
+              :error
+              (str "Create failed: " (format-error error))
+              (:id stand))))))))
 
 (defn- remote-update-stand!
   [{:keys [settings]} dispatch stand {:keys [update-stand]}]
@@ -82,7 +97,10 @@
           (notify! dispatch :success "Stand updated!" (:id stand))
           (do
             (tel/log! :error {:msg "Failed to update stand" :error error})
-            (notify! dispatch :error (str "Update failed: " error) (:id stand))))))))
+            (notify!
+              dispatch
+              :error
+              (str "Update failed: " (format-error error)) (:id stand))))))))
 
 (defn- remote-delete-stand!
   [{:keys [settings]} dispatch stand-id {:keys [delete-stand]}]
@@ -96,7 +114,10 @@
           (notify! dispatch :success "Stand deleted!")
           (do
             (tel/log! :error {:msg "Failed to delete stand" :error error})
-            (notify! dispatch :error (str "Delete failed: " error))))))))
+            (notify!
+              dispatch
+              :error
+              (str "Delete failed: " (format-error error)))))))))
 
 (defn upload-all-stands!
   ([app-state dispatch]
@@ -113,8 +134,22 @@
          (let [success-count (count (filter :success @results))
                fail-count (- (count stands) success-count)]
            (if (pos? fail-count)
-             (notify! dispatch :error (str "Upload finished: " success-count " successes, " fail-count " failures."))
-             (notify! dispatch :success (str "Successfully uploaded " success-count " stands!")))))))))
+             (notify!
+               dispatch
+               :error
+               (str
+                 "Upload finished: "
+                 success-count
+                 " successes, "
+                 fail-count
+                 " failures."))
+             (notify!
+               dispatch
+               :success
+               (str
+                 "Successfully uploaded "
+                 success-count
+                 " stands!")))))))))
 
 ;; Controller Intent Functions
 
@@ -138,7 +173,7 @@
          (remote-create-stand! app-state dispatch processed-data deps)
          true)
        (do
-         (notify! dispatch :error error)
+         (notify! dispatch :error (format-error error))
          false)))))
 
 (defn update-stand!
@@ -162,7 +197,7 @@
          (remote-update-stand! app-state dispatch processed-data deps)
          true)
        (do
-         (notify! dispatch :error error (:id editing-stand))
+         (notify! dispatch :error (format-error error) (:id editing-stand))
          false)))))
 
 (defn delete-stand!
@@ -188,13 +223,20 @@
          (notify! dispatch :error "Address is empty!")
          (go
            (notify! dispatch :info "Looking up address...")
-           (let [{:keys [success lat lng error]} (<! (geocode-address user password address))]
+           (let [{:keys [success lat lng error]} (<!
+                                                   (geocode-address
+                                                     user
+                                                     password
+                                                     address))]
              (if success
                (do
                  (on-update [:update-field [:coordinate (str lat ", " lng)]])
                  (dispatch [:set-map-center [lat lng]])
                  (notify! dispatch :success "Address found!"))
-               (notify! dispatch :error (str "Geocoding failed: " error))))))))))
+               (notify!
+                 dispatch
+                 :error
+                 (str "Geocoding failed: " (format-error error)))))))))))
 
 (defn reverse-lookup!
   ([app-state dispatch on-update lat lng]
@@ -222,4 +264,7 @@
                (when state
                  (on-update [:update-field [:state state]]))
                (notify! dispatch :success "Address determined!"))
-             (notify! dispatch :error (str "Reverse geocoding failed: " error)))))))))
+             (notify!
+               dispatch
+               :error
+               (str "Reverse geocoding failed: " (format-error error))))))))))
