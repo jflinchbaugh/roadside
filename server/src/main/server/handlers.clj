@@ -74,13 +74,12 @@
     (catch Exception _
       nil)))
 
-(defn- stand->rss-item [stand base-url]
+(defn- stand->rss-item [base-url stand]
   (let [{:keys [name address products notes updated xt/id]} stand]
     [:item
      [:title (or name "Roadside Stand")]
      [:link (str base-url "#stand=" id)]
-     [:description (str "Address: " address "\n"
-                        "Products: " (str/join ", " products) "\n"
+     [:description (str "Products: " (str/join ", " products) "\n"
                         "Notes: " (or notes ""))]
      (when-let [pub-date (format-rfc822 updated)]
        [:pubDate pub-date])
@@ -97,7 +96,7 @@
            [:link base-url]
            [:description "Latest roadside stands"]
            [:atom:link {:href (str base-url "api/stands.rss") :rel "self" :type "application/rss+xml"}]
-           (map #(stand->rss-item % base-url) stands)]])))
+           (map (partial stand->rss-item base-url) stands)]])))
 
 (defn get-stands-rss-handler [req]
   (let [identity (:identity req)
