@@ -1,5 +1,5 @@
 (ns com.hjsoft.roadside.website.ui.stands
-  (:require [helix.core :refer [defnc $]]
+  (:require [helix.core :refer [defnc $ <>]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
             [com.hjsoft.roadside.website.utils :as utils]
@@ -149,7 +149,7 @@
      {:class "stands-list"}
      (if (empty? stands)
        (d/p "No stands added yet.")
-       (d/div
+       (<>
         (map
          (fn [stand]
            (let [key (stand-domain/stand-key stand)]
