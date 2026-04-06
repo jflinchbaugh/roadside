@@ -17,26 +17,26 @@
         {:keys [settings]} app-state
         [registering? set-registering] (hooks/use-state false)
         [register-error set-register-error] (hooks/use-state nil)
-        form-data (merge {:user "" :password "" :email ""} settings)
+        form-data (merge {:user "" :password "" :email "" :local-only? false} settings)
         [form-data set-form-data] (hooks/use-state form-data)
-        can-save? (and (not (str/blank? (:user form-data)))
-                       (not (str/blank? (:password form-data))))
         handle-register (fn []
-                          (go
-                            (let [register (or register-fn api/register-user)
-                                  res (<! (register
-                                           (:user form-data)
-                                           (:password form-data)
-                                           (:email form-data)))]
-                              (if (:success res)
-                                (do
-                                  (dispatch [:set-notification
-                                             {:type :success
-                                              :message "Registered successfully!"}])
-                                  (set-register-error nil)
-                                  (dispatch [:set-settings (dissoc form-data :email)])
-                                  (set-show-settings-dialog false))
-                                (set-register-error (:error res))))))]
+                          (if (:local-only? form-data)
+                            (set-register-error ["Registration disabled in Local Only mode"])
+                            (go
+                              (let [register (or register-fn api/register-user)
+                                    res (<! (register
+                                             (:user form-data)
+                                             (:password form-data)
+                                             (:email form-data)))]
+                                (if (:success res)
+                                  (do
+                                    (dispatch [:set-notification
+                                               {:type :success
+                                                :message "Registered successfully!"}])
+                                    (set-register-error nil)
+                                    (dispatch [:set-settings (dissoc form-data :email)])
+                                    (set-show-settings-dialog false))
+                                  (set-register-error (:error res)))))))]
 
     (ui-hooks/use-escape-key #(set-show-settings-dialog false))
 
@@ -88,6 +88,13 @@
                            (set-register-error nil)
                            (set-form-data
                             (assoc form-data :email (.. % -target -value))))}))
+       ($ form-field
+          {:label "Local Only:"
+           :id "settings-local-only"
+           :type "checkbox"
+           :checked (:local-only? form-data)
+           :on-change #(set-form-data
+                        (assoc form-data :local-only? (.. % -target -checked)))})
        (d/div
         {:class "register-toggle"}
         (if registering?
@@ -117,7 +124,6 @@
           (d/button
            {:type "submit"
             :class "button primary"
-            :disabled (not can-save?)
             :onClick #(do
                         (dispatch [:set-settings (dissoc form-data :email)])
                         (set-show-settings-dialog false))}

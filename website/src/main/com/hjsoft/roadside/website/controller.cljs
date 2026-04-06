@@ -26,6 +26,9 @@
   (and (seq (:user settings))
        (seq (:password settings))))
 
+(defn- remote-allowed? [settings]
+  (not (:local-only? settings)))
+
 (defn- format-error [message]
   (cond
     (string? message) message
@@ -44,32 +47,33 @@
   ([app-state dispatch]
    (fetch-remote-stands! app-state dispatch default-deps))
   ([{:keys [settings map-center last-sync]} dispatch {:keys [fetch-stands]}]
-   (dispatch [:set-loading-stands true])
-   (go
-     (let [[lat lng] map-center
-           {:keys [success data error]} (<! (fetch-stands
-                                             (:user settings)
-                                             (:password settings)
-                                             lat lng
-                                             last-sync))]
-       (dispatch [:set-loading-stands false])
-       (if success
-         (do
-           (dispatch [:sync-stands {:stands (:stands data)
-                                    :deleted-ids (:deleted-ids data)
-                                    :last-sync (:new-sync data)}])
-           (dispatch [:set-is-synced true]))
-         (do
-           (tel/log! :error {:msg "Failed to fetch stands" :error error})
-           (when (has-credentials? settings)
-             (notify!
-               dispatch
-               :error
-               (str "Sync failed: " (format-error error))))))))))
+   (when (remote-allowed? settings)
+     (dispatch [:set-loading-stands true])
+     (go
+       (let [[lat lng] map-center
+             {:keys [success data error]} (<! (fetch-stands
+                                               (:user settings)
+                                               (:password settings)
+                                               lat lng
+                                               last-sync))]
+         (dispatch [:set-loading-stands false])
+         (if success
+           (do
+             (dispatch [:sync-stands {:stands (:stands data)
+                                      :deleted-ids (:deleted-ids data)
+                                      :last-sync (:new-sync data)}])
+             (dispatch [:set-is-synced true]))
+           (do
+             (tel/log! :error {:msg "Failed to fetch stands" :error error})
+             (when (has-credentials? settings)
+               (notify!
+                 dispatch
+                 :error
+                 (str "Sync failed: " (format-error error)))))))))))
 
 (defn- remote-create-stand!
   [{:keys [settings]} dispatch stand {:keys [create-stand]}]
-  (when (has-credentials? settings)
+  (when (and (remote-allowed? settings) (has-credentials? settings))
     (go
       (let [{:keys [success error]} (<! (create-stand
                                          (:user settings)
@@ -87,7 +91,7 @@
 
 (defn- remote-update-stand!
   [{:keys [settings]} dispatch stand {:keys [update-stand]}]
-  (when (has-credentials? settings)
+  (when (and (remote-allowed? settings) (has-credentials? settings))
     (go
       (let [{:keys [success error]} (<! (update-stand
                                          (:user settings)
@@ -104,7 +108,7 @@
 
 (defn- remote-delete-stand!
   [{:keys [settings]} dispatch stand-id {:keys [delete-stand]}]
-  (when (has-credentials? settings)
+  (when (and (remote-allowed? settings) (has-credentials? settings))
     (go
       (let [{:keys [success error]} (<! (delete-stand
                                          (:user settings)
@@ -123,8 +127,14 @@
   ([app-state dispatch]
    (upload-all-stands! app-state dispatch default-deps))
   ([{:keys [stands settings]} dispatch {:keys [create-stand]}]
-   (if-not (has-credentials? settings)
+   (cond
+     (not (remote-allowed? settings))
+     (notify! dispatch :error "Remote operations disabled by settings")
+
+     (not (has-credentials? settings))
      (notify! dispatch :error "Authentication required to upload!")
+
+     :else
      (go
        (notify! dispatch :info (str "Uploading " (count stands) " stands..."))
        (let [results (atom [])]
@@ -217,26 +227,33 @@
          address (str/join ", " (remove empty? [(:address address-data)
                                                 (:town address-data)
                                                 (:state address-data)]))]
-     (if (or (empty? user) (empty? password))
+     (cond
+       (not (remote-allowed? settings))
+       (notify! dispatch :error "Remote operations disabled by settings")
+
+       (or (empty? user) (empty? password))
        (notify! dispatch :error "Authentication required for address lookup!")
-       (if (empty? address)
-         (notify! dispatch :error "Address is empty!")
-         (go
-           (notify! dispatch :info "Looking up address...")
-           (let [{:keys [success lat lng error]} (<!
-                                                   (geocode-address
-                                                     user
-                                                     password
-                                                     address))]
-             (if success
-               (do
-                 (on-update [:update-field [:coordinate (str lat ", " lng)]])
-                 (dispatch [:set-map-center [lat lng]])
-                 (notify! dispatch :success "Address found!"))
-               (notify!
-                 dispatch
-                 :error
-                 (str "Geocoding failed: " (format-error error)))))))))))
+
+       (empty? address)
+       (notify! dispatch :error "Address is empty!")
+
+       :else
+       (go
+         (notify! dispatch :info "Looking up address...")
+         (let [{:keys [success lat lng error]} (<!
+                                                 (geocode-address
+                                                   user
+                                                   password
+                                                   address))]
+           (if success
+             (do
+               (on-update [:update-field [:coordinate (str lat ", " lng)]])
+               (dispatch [:set-map-center [lat lng]])
+               (notify! dispatch :success "Address found!"))
+             (notify!
+               dispatch
+               :error
+               (str "Geocoding failed: " (format-error error))))))))))
 
 (defn reverse-lookup!
   ([app-state dispatch on-update lat lng]
@@ -245,8 +262,14 @@
    (let [settings (:settings app-state)
          user (:user settings)
          password (:password settings)]
-     (if (or (empty? user) (empty? password))
+     (cond
+       (not (remote-allowed? settings))
+       (notify! dispatch :error "Remote operations disabled by settings")
+
+       (or (empty? user) (empty? password))
        (notify! dispatch :error "Authentication required for address lookup!")
+
+       :else
        (go
          (notify! dispatch :info "Determining address...")
          (let [{:keys [success data error]} (<! (reverse-geocode user password lat lng))]

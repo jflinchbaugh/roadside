@@ -8,7 +8,7 @@
     :or {type "text"
          value ""}}]
   (d/div
-   {:class "form-group"}
+   {:class (str "form-group" (when (= type "checkbox") " checkbox"))}
    (when label
      (d/label {:htmlFor id} label))
    (if (= type "textarea")
