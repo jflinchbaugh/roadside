@@ -37,7 +37,7 @@ $ curl -s -v http://localhost:8080/css/style.css
 
 run the tests:
 ```
-$ make test
+$ clj -T:build run-test
 ```
 
 run a single test:
