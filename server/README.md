@@ -35,6 +35,11 @@ static content, like the stylesheet, is available as well:
 $ curl -s -v http://localhost:8080/css/style.css
 ```
 
+run the tests:
+```
+$ make test
+```
+
 build the container image:
 ```
 $ make
