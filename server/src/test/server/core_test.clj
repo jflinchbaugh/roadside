@@ -372,7 +372,7 @@
 (deftest auth-test
   (testing "authfn"
     (reset! db/node @db/node) ;; ensure atom is initialized if needed
-    (xt/submit-tx @db/node [[:put-docs :users {:xt/id "u1" :login "bob" :password (hashers/derive "pass")}]])
+    (xt/submit-tx @db/node [[:put-docs :users {:xt/id "u1" :login "bob" :password (hashers/derive "pass") :enabled? true}]])
     (let [user (db/get-user "bob")]
       (is (= "bob" (:login user)))
       (is (:valid (hashers/verify "pass" (:password user)))))))

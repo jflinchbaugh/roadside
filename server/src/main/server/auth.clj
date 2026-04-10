@@ -18,7 +18,7 @@
   [_req {:keys [username password]}]
   (let [user (db/get-user username)]
     (when (and user
-               (not= false (:enabled? user))
+               (:enabled? user)
                (:valid (hashers/verify password (:password user))))
       (:login user))))
 

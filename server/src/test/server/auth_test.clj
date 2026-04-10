@@ -25,8 +25,8 @@
     (testing "Disabled user cannot login"
       (is (nil? (#'auth/authfn nil {:username "user2" :password "pass"}))))
 
-    (testing "User without flag can login (default to enabled)"
-      (is (= "user3" (#'auth/authfn nil {:username "user3" :password "pass"}))))
+    (testing "User without flag cannot login (now fails as it's not explicitly enabled)"
+      (is (nil? (#'auth/authfn nil {:username "user3" :password "pass"}))))
 
     (testing "Wrong password fails even for enabled user"
       (is (nil? (#'auth/authfn nil {:username "user1" :password "wrong-pass"}))))))

@@ -39,7 +39,7 @@
    [:login [:re #"^[a-zA-Z0-9_]{3,20}$"]]
    [:password [:string {:min 8}]]
    [:email [:re #".+@.+\..+"]]
-   [:enabled? {:optional true} :boolean]
+   [:enabled? :boolean]
    [:updated {:optional true} [:maybe :string]]])
 
 (def StandSchema
