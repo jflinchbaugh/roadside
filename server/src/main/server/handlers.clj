@@ -160,18 +160,14 @@
         login (get-in req [:params :login])
         password (get-in req [:params :password])
         email (get-in req [:params :email])
-        user-data {:login login :password password :email email}]
+        user-data {:login login :password password :email email :enabled? true}]
     (if-not (m/validate UserSchema user-data)
       (api-response 400 {:status "failed"
                          :errors (me/humanize (m/explain UserSchema user-data))})
       (if (db/get-user login)
         (api-response 403 {:status "failed" :errors {:login ["not available"]}})
         (do
-          (db/save-user {:xt/id id
-                         :login login
-                         :password (hashers/derive password)
-                         :email email
-                         :enabled? true})
+          (db/save-user (assoc user-data :xt/id id :password (hashers/derive password)))
           (api-response 201 {:login login}))))))
 
 (def ^:const search-radius-km 500.0)
