@@ -13,7 +13,7 @@
   (first
    (xt/q @node
          ['(fn [u]
-             (-> (from :users [login password email])
+             (-> (from :users [login password email enabled?])
                  (where (= login u))))
           username])))
 

@@ -17,7 +17,9 @@
 (defn- authfn
   [_req {:keys [username password]}]
   (let [user (db/get-user username)]
-    (when (and user (:valid (hashers/verify password (:password user))))
+    (when (and user
+               (not= false (:enabled? user))
+               (:valid (hashers/verify password (:password user))))
       (:login user))))
 
 (def backend (backends/basic {:realm realm :authfn authfn}))

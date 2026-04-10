@@ -170,7 +170,8 @@
           (db/save-user {:xt/id id
                          :login login
                          :password (hashers/derive password)
-                         :email email})
+                         :email email
+                         :enabled? true})
           (api-response 201 {:login login}))))))
 
 (def ^:const search-radius-km 500.0)

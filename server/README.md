@@ -40,6 +40,11 @@ run the tests:
 $ make test
 ```
 
+run a single test:
+```
+$ clj -T:build run-test -n server.auth-test
+```
+
 build the container image:
 ```
 $ make
