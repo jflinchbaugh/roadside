@@ -106,7 +106,7 @@
                                            (first coords)
                                            (second coords))
                 :title "Lookup address from map coordinates"}
-               "Find Address")))
+               "From Map")))
           ($ form-field
              {:label "Address:"
               :value (:address stand-form-data)
@@ -127,7 +127,7 @@
              {:type "button"
               :class "button secondary lookup-btn"
               :onClick #(lookup-address! local-dispatch stand-form-data)}
-             "Show Location"))))
+             "To Map"))))
        ($ form-field
           {:label "Expiration Date:"
            :type "date"
