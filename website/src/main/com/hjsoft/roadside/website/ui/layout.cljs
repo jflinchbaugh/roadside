@@ -13,18 +13,26 @@
        (d/div {:class "mini-spinner"})
        (d/span "Refreshing...")))))
 
+(def info-icon "\u24d8")
+
 (defnc header []
-  (d/header
-   {:class "header"}
-   (d/img
-    {:src "images/apples.png"
-     :alt "Apple Logo"
-     :class "logo"})
-   (d/h1
-    {:class "main-header"}
-    "Roadside Stands"
-    " "
-    (d/span {:style {:font-size "0.5em"}} "beta"))))
+  (let [{:keys [set-show-about-dialog]} (state/use-ui)]
+    (d/header
+     {:class "header"}
+     (d/img
+      {:src "images/apples.png"
+       :alt "Apple Logo"
+       :class "logo"})
+     (d/h1
+      {:class "main-header"}
+      "Roadside Stands"
+      " "
+      (d/span {:style {:font-size "0.5em"}} "beta"))
+     (d/button
+      {:class "about-btn"
+       :onClick #(set-show-about-dialog true)
+       :title "About this application"}
+      info-icon)))) ;; Circled Information Source
 
 (defnc fixed-header [{:keys [children]}]
   (d/div

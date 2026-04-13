@@ -11,7 +11,7 @@
         base-url (utils/get-app-base-url)]
     (ui-hooks/use-escape-key #(set-show-export-dialog false))
     (d/div
-     {:class "settings-overlay"
+     {:class "dialog-overlay"
       :onClick #(set-show-export-dialog false)}
      (d/div
       {:class "settings-dialog"

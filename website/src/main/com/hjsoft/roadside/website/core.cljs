@@ -11,7 +11,7 @@
             [com.hjsoft.roadside.website.ui.stands
              :refer [stands-list product-list]]
             [com.hjsoft.roadside.website.ui.forms
-             :refer [stand-form settings-dialog export-dialog]]
+             :refer [stand-form settings-dialog export-dialog about-dialog]]
             [com.hjsoft.roadside.website.ui.layout
              :refer [header fixed-header sticky-wrapper notification-toast loading-indicator]]
             [goog.object :as gobj]
@@ -74,6 +74,7 @@
         [editing-stand set-editing-stand] (hooks/use-state nil)
         [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
         [show-export-dialog set-show-export-dialog] (hooks/use-state false)
+        [show-about-dialog set-show-about-dialog] (hooks/use-state false)
 
         user-location (use-user-location
                        dispatch
@@ -114,7 +115,9 @@
                       :show-settings-dialog show-settings-dialog
                       :set-show-settings-dialog set-show-settings-dialog
                       :show-export-dialog show-export-dialog
-                      :set-show-export-dialog set-show-export-dialog}}}
+                      :set-show-export-dialog set-show-export-dialog
+                      :show-about-dialog show-about-dialog
+                      :set-show-about-dialog set-show-about-dialog}}}
         (<>
          ($ notification-toast)
          ($ header)
@@ -170,7 +173,8 @@
              :title "Upload all local stands to server"}
             "\u21E7"))
           (when show-settings-dialog ($ settings-dialog {:key "settings"}))
-          (when show-export-dialog ($ export-dialog {:key "export"}))))))))
+          (when show-export-dialog ($ export-dialog {:key "export"}))
+          (when show-about-dialog ($ about-dialog {:key "about"}))))))))
 
 (defn init []
   (let [root (.createRoot rdom (js/document.getElementById "app"))]

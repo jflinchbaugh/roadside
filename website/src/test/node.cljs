@@ -10,6 +10,7 @@
             [com.hjsoft.roadside.website.ui.hooks-test]
             [com.hjsoft.roadside.website.ui.map-test]
             [com.hjsoft.roadside.website.ui.forms-test]
+            [com.hjsoft.roadside.website.ui.about-test]
             [com.hjsoft.roadside.website.ui.stands-test]
             [com.hjsoft.roadside.website.controller-test]
             [com.hjsoft.roadside.website.local-only-test]

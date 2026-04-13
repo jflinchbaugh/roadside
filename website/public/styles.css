@@ -50,6 +50,23 @@ body {
   font-size: 1.5rem;
 }
 
+.about-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #6c757d;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.about-btn:hover {
+  color: #333;
+}
+
 .ready-message {
   text-align: center;
 }
@@ -778,7 +795,7 @@ body {
   gap: 0.5rem;
 }
 
-.settings-overlay {
+.dialog-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -828,6 +845,38 @@ body {
   gap: 0.5rem;
   padding: 0;
   border-top: 1px solid #eee;
+}
+
+.about-dialog {
+  background: white;
+  border-radius: 8px;
+  box-sizing: border-box;
+  min-width: 300px;
+  max-width: 400px;
+  width: 90%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.about-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.about-header h3 {
+  margin: 0;
+}
+
+.about-content {
+  padding: 1rem;
+  color: darkred;
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-bottom: 50vh;
 }
 
 .register-toggle {

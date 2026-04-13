@@ -41,7 +41,7 @@
     (ui-hooks/use-escape-key #(set-show-settings-dialog false))
 
     (d/div
-     {:class "settings-overlay"
+     {:class "dialog-overlay"
       :onClick #(set-show-settings-dialog false)}
      (d/div
       {:class "settings-dialog"
