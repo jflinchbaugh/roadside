@@ -24,14 +24,12 @@
          "Lots of places are too small to be on the big maps,
           but this is your map to add, share, and find
           those small stands along the road
-          where you get local produce, crafts, or firewood
-          from neighbors.")
+          where you get local produce, baked goods,
+          crafts, firewood, or whatever from neighbors.")
+       (d/ul
+         (d/li "Create an account in settings.")
+         (d/li "Place stands and their products on the map.")
+         (d/li "Find your favorite stands."))
        (d/p
-         "Create an account (in settings),
-          and share stands with the public.
-          Place the stand on the map with a list of its products,
-          so everyone can search for the things they want.
-          Stands automatically expire, because most products are seasonal,
-          so pay attention to that expiration date.")
-       (d/p
-         "Feedback and suggestions are welcome."))))))
+         "Feedback and suggestions are welcome. "
+         (d/a {:href "mailto:john@hjsoft.com"} "john@hjsoft.com")))))))
