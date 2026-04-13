@@ -7,7 +7,8 @@
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]
             [com.hjsoft.roadside.website.ui.forms.field :refer [form-field]]
-            [com.hjsoft.roadside.website.ui.forms.inputs :refer [location-input product-input]]))
+            [com.hjsoft.roadside.website.ui.forms.inputs :refer [location-input product-input]]
+            [com.hjsoft.roadside.website.ui.forms.buttons :refer [close-button]]))
 
 (goog-define NODE_TEST false)
 
@@ -48,12 +49,7 @@
        {:class "form-header-actions"}
        (d/h3 (if editing-stand "Edit Stand" "Add New Stand"))
        (d/div {:class "form-header-buttons"}
-              (d/button
-               {:type "button"
-                :class "button icon-button"
-                :onClick #(cancel-form!)
-                :title "Cancel"}
-               "\u2715")
+              ($ close-button {:onClick #(cancel-form!) :title "Cancel"})
               (d/button
                {:type "submit"
                 :class "button icon-button primary"

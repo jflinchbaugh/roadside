@@ -4,7 +4,8 @@
             [com.hjsoft.roadside.website.ui.forms.export :as export]
             [com.hjsoft.roadside.website.ui.forms.about :as about]
             [com.hjsoft.roadside.website.ui.forms.field :as field]
-            [com.hjsoft.roadside.website.ui.forms.inputs :as inputs]))
+            [com.hjsoft.roadside.website.ui.forms.inputs :as inputs]
+            [com.hjsoft.roadside.website.ui.forms.buttons :as buttons]))
 
 ;; Re-export components for backward compatibility
 (def stand-form stand/stand-form)
@@ -14,3 +15,4 @@
 (def form-field field/form-field)
 (def location-input inputs/location-input)
 (def product-input inputs/product-input)
+(def close-button buttons/close-button)

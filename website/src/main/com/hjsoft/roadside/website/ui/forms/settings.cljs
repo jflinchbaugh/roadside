@@ -7,6 +7,7 @@
             [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]
             [com.hjsoft.roadside.website.api :as api]
             [com.hjsoft.roadside.website.ui.forms.field :refer [form-field]]
+            [com.hjsoft.roadside.website.ui.forms.buttons :refer [close-button]]
             [cljs.core.async :refer [go <!]]
             [clojure.string :as str]))
 
@@ -49,11 +50,7 @@
       (d/div
        {:class "settings-header"}
        (d/h3 "Settings")
-       (d/button
-        {:class "button icon-button"
-         :onClick #(set-show-settings-dialog false)
-         :title "Close"}
-        "\u2715"))
+       ($ close-button {:onClick #(set-show-settings-dialog false)}))
       (d/div
        {:class "settings-content"}
        (when (and registering? (seq register-error))

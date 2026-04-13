@@ -4,7 +4,8 @@
             [helix.dom :as d]
             [com.hjsoft.roadside.website.state :as state]
             [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]
-            [com.hjsoft.roadside.website.utils :as utils]))
+            [com.hjsoft.roadside.website.utils :as utils]
+            [com.hjsoft.roadside.website.ui.forms.buttons :refer [close-button]]))
 
 (defnc export-dialog []
   (let [{:keys [set-show-export-dialog]} (state/use-ui)
@@ -19,11 +20,7 @@
       (d/div
        {:class "settings-header"}
        (d/h3 "Google Maps Integration")
-       (d/button
-        {:class "button icon-button"
-         :onClick #(set-show-export-dialog false)
-         :title "Close"}
-        "\u2715"))
+       ($ close-button {:onClick #(set-show-export-dialog false)}))
       (d/div
        {:class "settings-content"}
        (d/div

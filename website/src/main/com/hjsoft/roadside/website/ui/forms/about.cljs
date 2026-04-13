@@ -2,7 +2,8 @@
   (:require [helix.core :refer [defnc $]]
             [helix.dom :as d]
             [com.hjsoft.roadside.website.state :as state]
-            [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]))
+            [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]
+            [com.hjsoft.roadside.website.ui.forms.buttons :refer [close-button]]))
 
 (defnc about-dialog []
   (let [{:keys [set-show-about-dialog]} (state/use-ui)]
@@ -16,11 +17,7 @@
       (d/div
        {:class "about-header"}
        (d/h3 "About Roadside Stands")
-       (d/button
-        {:class "button icon-button"
-         :onClick #(set-show-about-dialog false)
-         :title "Close"}
-        "\u2715"))
+       ($ close-button {:onClick #(set-show-about-dialog false)}))
       (d/div
        {:class "about-content"}
        (d/p
