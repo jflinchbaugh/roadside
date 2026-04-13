@@ -24,7 +24,7 @@
       (d/div
        {:class "about-content"}
        (d/p
-         "Lots places are too small to be on the big maps,
+         "Lots of places are too small to be on the big maps,
           but this is your map to add, share, and find
           those small stands along the road
           where you get local produce, crafts, or firewood
