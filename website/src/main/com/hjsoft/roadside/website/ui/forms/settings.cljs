@@ -129,4 +129,4 @@
        {:class "build-date"}
        "Build: " version/build-date
        (d/br)
-       (d/a {:href "mailto:john@hjsoft.com"} "john@hjsoft.com"))))))
+       (d/a {:href "mailto:roadside@hjsoft.com"} "roadside@hjsoft.com"))))))
