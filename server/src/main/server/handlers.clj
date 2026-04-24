@@ -73,6 +73,7 @@
       (.format formatter zdt))
     (catch Exception _
       nil)))
+
 (defn- stand->rss-item [base-url stand]
   (let [{:keys [name address town state products expiration notes updated xt/id lat lon shared? creator]} stand
         full-address (str/join ", " (remove str/blank? [address town state]))
