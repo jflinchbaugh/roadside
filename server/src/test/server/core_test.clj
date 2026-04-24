@@ -22,6 +22,11 @@
 
 (use-fixtures :each with-xtdb-container)
 
+(defn- create-stand [stand-doc]
+  (handlers/create-stand-handler
+    {:body (ByteArrayInputStream. (.getBytes (json/write-str stand-doc)))
+     :identity "alice"}))
+
 (deftest empty-stands-test
   (testing "Get stands when none exist and no lat/lon"
     (let [resp (handlers/get-stands-handler {:identity "alice"})]
@@ -183,15 +188,19 @@
             (is (= "'non-existent' deleted" (:message (json/read-str (:body del-resp) :key-fn keyword))))))))
 
     (testing "CSV export"
-      (let [stand-doc {:name "CSV Stand" :address "CSV St" :lat 40.0 :lon -76.0 :products ["Apples" "Bananas"]}
-            create-req {:body (ByteArrayInputStream. (.getBytes (json/write-str stand-doc)))
-                        :identity "alice"}
-            _ (handlers/create-stand-handler create-req)
+      (let [stand-doc {:name "CSV Stand"
+                       :address "CSV St"
+                       :town "CSV Town"
+                       :state "CS"
+                       :lat 40.0
+                       :lon -76.0
+                       :products ["Apples" "Bananas"]}
+            _ (create-stand stand-doc)
             resp (handlers/get-stands-csv-handler {:identity "alice"})
             csv (:body resp)]
         (is (= 200 (:status resp)))
         (is (str/includes? csv "Name,Latitude,Longitude,Address,Town,State,Products,Notes"))
-        (is (str/includes? csv "CSV Stand,40.0,-76.0,CSV St,,,Apples; Bananas,"))))
+        (is (str/includes? csv "CSV Stand,40.0,-76.0,CSV St,CSV Town,CS,Apples; Bananas,"))))
 
     (testing "KML export"
       (let [stand-doc {:name "KML Stand" :address "KML St" :lat 40.0 :lon -76.0 :products ["Cherries"] :notes "Sweet"}
@@ -209,10 +218,22 @@
         (is (str/includes? kml "Sweet"))))
 
     (testing "RSS export"
-      (let [stand-doc {:name "RSS Stand" :address "RSS St" :town "Lancaster" :state "PA" :lat 40.0 :lon -76.0 :products ["Peaches"] :notes "Juicy"}
-            create-req {:body (ByteArrayInputStream. (.getBytes (json/write-str stand-doc)))
-                        :identity "alice"}
-            _ (handlers/create-stand-handler create-req)
+      (let [stand-docs [
+                        {:name "RSS Stand"
+                         :address "RSS St"
+                         :town "Lancaster"
+                         :state "PA"
+                         :products ["Peaches"]
+                         :expiration "2026-01-01"
+                         :notes "Juicy"
+                         :updated "2026-01-01"
+                         :xt/id "uuid-1"
+                         :lat 40.0
+                         :lon -76.0
+                         :shared? true
+                         :creator "user"}
+                        ]
+            _ (doall (map create-stand stand-docs))
             resp (handlers/get-stands-rss-handler {:identity "alice" :scheme :http :server-name "localhost" :server-port 3000})
             rss (:body resp)]
         (is (= 200 (:status resp)))

@@ -57,7 +57,8 @@
              ['(fn [u]
                  (-> (from :stands [creator shared? updated *])
                      (where (or (= creator u)
-                                (= shared? true)))))
+                                (= shared? true)))
+                     (order-by {:val updated :dir :desc})))
               user-id])]
      (tel/log! :info {:list-stands q})
      (vec (xt/q @node q)))))
