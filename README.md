@@ -3,6 +3,7 @@
 ## Modules
 - website - single-page application
 - server - backend for sync and sharing
+- common - code used by both server and website
 
 ## License
 
