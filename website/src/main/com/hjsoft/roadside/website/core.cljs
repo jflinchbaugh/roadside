@@ -46,6 +46,21 @@
        (controller/fetch-remote-stands! (.-current app-state-ref) dispatch)
        (set-last-fetched-center map-center)))
 
+    ;; Automatic upload on login info change
+    (let [prev-settings-ref (hooks/use-ref settings)]
+      (hooks/use-effect
+       [settings]
+       (let [prev-settings (.-current prev-settings-ref)
+             login-info-keys [:user :password :local-only?]
+             login-info-changed? (not= (select-keys settings login-info-keys)
+                                       (select-keys prev-settings login-info-keys))
+             can-upload? (and (seq (:user settings))
+                              (seq (:password settings))
+                              (not (:local-only? settings)))]
+         (when (and login-info-changed? can-upload? (seq stands))
+           (controller/upload-all-stands! (.-current app-state-ref) dispatch))
+         (set! (.-current prev-settings-ref) settings))))
+
     ;; Fetch from Remote API on map-center change beyond threshold
     (hooks/use-effect
      [map-center]

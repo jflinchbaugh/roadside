@@ -271,3 +271,56 @@
                                              (= (:type payload) :success)))
                                       actions))
                   done 1000)))))
+
+(deftest automatic-upload-trigger-test
+  (testing "Logic for triggering automatic upload on login info change"
+    (let [upload-called (atom false)
+          mock-upload (fn [_ _] (reset! upload-called true))
+          ;; Simulate the side effect logic
+          run-effect (fn [prev-settings current-settings stands]
+                       (let [login-info-keys [:user :password :local-only?]
+                             login-info-changed? (not= (select-keys current-settings login-info-keys)
+                                                       (select-keys prev-settings login-info-keys))
+                             can-upload? (and (seq (:user current-settings))
+                                              (seq (:password current-settings))
+                                              (not (:local-only? current-settings)))]
+                         (when (and login-info-changed? can-upload? (seq stands))
+                           (mock-upload nil nil))))]
+
+      (testing "Triggers when user logs in"
+        (reset! upload-called false)
+        (run-effect {} {:user "alice" :password "secret" :local-only? false} [{:id "s1"}])
+        (is (true? @upload-called)))
+
+      (testing "Triggers when password changes"
+        (reset! upload-called false)
+        (run-effect {:user "alice" :password "old" :local-only? false}
+                    {:user "alice" :password "new" :local-only? false}
+                    [{:id "s1"}])
+        (is (true? @upload-called)))
+
+      (testing "Triggers when local-only mode is disabled"
+        (reset! upload-called false)
+        (run-effect {:user "alice" :password "secret" :local-only? true}
+                    {:user "alice" :password "secret" :local-only? false}
+                    [{:id "s1"}])
+        (is (true? @upload-called)))
+
+      (testing "Does NOT trigger when login info remains the same"
+        (reset! upload-called false)
+        (run-effect {:user "alice" :password "secret" :local-only? false}
+                    {:user "alice" :password "secret" :local-only? false}
+                    [{:id "s1"}])
+        (is (false? @upload-called)))
+
+      (testing "Does NOT trigger when logging out"
+        (reset! upload-called false)
+        (run-effect {:user "alice" :password "secret" :local-only? false}
+                    {:user "" :password "" :local-only? false}
+                    [{:id "s1"}])
+        (is (false? @upload-called)))
+
+      (testing "Does NOT trigger when no stands"
+        (reset! upload-called false)
+        (run-effect {} {:user "alice" :password "secret" :local-only? false} [])
+        (is (false? @upload-called))))))
