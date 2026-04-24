@@ -13,9 +13,9 @@
 (def stand-keys (get-map-keys logic/StandSchema))
 
 (defn select-stand-fields
-  "Returns a map containing only the keys defined in StandSchema (plus :xt/id)."
+  "Returns a map containing only the keys defined in StandSchema (plus :xt/id, :score, :user-vote)."
   [stand]
-  (let [valid-keys (conj stand-keys :xt/id)]
+  (let [valid-keys (conj stand-keys :xt/id :score :user-vote)]
     (select-keys stand valid-keys)))
 
 (defn stand-key

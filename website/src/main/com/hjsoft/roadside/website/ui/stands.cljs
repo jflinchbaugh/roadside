@@ -9,8 +9,36 @@
             [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]
             [com.hjsoft.roadside.website.ui.layout :refer [stand-notification-toast]]))
 
+(def icon-up-arrow "\u25B2")
+(def icon-down-arrow "\u25BC")
+
+(defnc stand-voting
+  [{:keys [stand on-vote]}]
+  (let [{:keys [score user-vote]} stand
+        score (or score 0)
+        user-vote (or user-vote 0)]
+    (d/div
+     {:class "stand-voting"
+      :onClick #(.stopPropagation %)}
+     (d/button
+      {:class (str "vote-btn upvote" (when (= user-vote 1) " active"))
+       :onClick #(on-vote 1)
+       :title "Upvote"}
+      icon-up-arrow)
+     (d/span
+      {:class (str "vote-score"
+                   (cond (pos? score) " positive"
+                         (neg? score) " negative"
+                         :else ""))}
+      score)
+     (d/button
+      {:class (str "vote-btn downvote" (when (= user-vote -1) " active"))
+       :onClick #(on-vote -1)
+       :title "Downvote"}
+      icon-down-arrow))))
+
 (defnc stand-item
-  [{:keys [stand selected? on-click on-edit on-delete item-ref]}]
+  [{:keys [stand selected? on-click on-edit on-delete on-vote item-ref]}]
   (let [[confirming? set-confirming] (hooks/use-state false)
         app-state (state/use-app-state)
         current-user (get-in app-state [:settings :user])
@@ -70,27 +98,30 @@
       (when selected?
         (d/div
          {:class "stand-extra-info"}
-         (when (and (:lat stand) (:lon stand))
-           (d/p {:class "coordinate-text"} (str (:lat stand) ", " (:lon stand))))
-         (when (seq (:expiration stand))
-           (d/p
-            {:class "expiration-date"}
-            (d/strong (if expired? "Expired: " "Expires: "))
-            (:expiration stand)))
-         (when (seq (:updated stand))
-           (d/p
-            {:class "stand-updated"}
-            (d/strong "Last Updated: ")
-            (utils/format-timestamp (:updated stand))))
-         (when (seq (:creator stand))
-           (d/p
-            {:class "stand-creator"}
-            (d/strong "Created By: ")
-            (:creator stand)))
-         (d/p
-          {:class "stand-shared"}
-          (d/strong "Shared: ")
-          (if (:shared? stand) "Yes" "No")))))
+         ($ stand-voting {:stand stand :on-vote on-vote})
+         (d/div
+          {:class "stand-extra-fields"}
+          (when (and (:lat stand) (:lon stand))
+            (d/p {:class "coordinate-text"} (str (:lat stand) ", " (:lon stand))))
+          (when (seq (:expiration stand))
+            (d/p
+             {:class "expiration-date"}
+             (d/strong (if expired? "Expired: " "Expires: "))
+             (:expiration stand)))
+          (when (seq (:updated stand))
+            (d/p
+             {:class "stand-updated"}
+             (d/strong "Last Updated: ")
+             (utils/format-timestamp (:updated stand))))
+          (when (seq (:creator stand))
+            (d/p
+             {:class "stand-creator"}
+             (d/strong "Created By: ")
+             (:creator stand)))
+          (d/p
+           {:class "stand-shared"}
+           (d/strong "Shared: ")
+           (if (:shared? stand) "Yes" "No"))))))
      (d/div
       {:class "stand-actions"}
 
@@ -135,7 +166,7 @@
         selected-stand (:selected-stand app-state)
         dispatch (state/use-dispatch)
         {:keys [set-editing-stand set-show-form]} (state/use-ui)
-        {:keys [delete-stand!]} (ui-hooks/use-actions)
+        {:keys [delete-stand! vote-stand!]} (ui-hooks/use-actions)
         stand-refs (hooks/use-ref {})]
     (hooks/use-effect
      [selected-stand]
@@ -162,6 +193,7 @@
                              (set-editing-stand %)
                              (set-show-form true))
                  :on-delete #(delete-stand! %)
+                 :on-vote #(vote-stand! stand %)
                  :item-ref (fn [el] (swap! stand-refs assoc key el))})))
          stands))))))
 

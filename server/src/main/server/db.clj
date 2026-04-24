@@ -25,15 +25,21 @@
                  (where (= xt/id id-param))))
           id])))
 
-(defn get-stand [id user-id]
+(defn get-stand [id-param user-id]
   (first
    (xt/q @node
-         ['(fn [id-param u]
-             (-> (from :stands [xt/id *])
-                 (where (and (= xt/id id-param)
+         ['(fn [id-val u]
+             (-> (unify
+                  (from :stands [{:xt/id id} creator name address town state products expiration notes shared? updated lat lon])
+                  (left-join (from :votes [{:stand-id id} value {:user-id vote-user}]) [value vote-user]))
+                 (where (and (= id id-val)
                              (or (= creator u)
-                                 (= shared? true))))))
-          id user-id])))
+                                 (= shared? true))))
+                 (with {:v (if (= vote-user u) value 0)})
+                 (aggregate id creator name address town state products expiration notes shared? updated lat lon
+                            {:score (sum value)
+                             :user-vote (sum v)})))
+          id-param user-id])))
 
 (defn list-stands
   ([user-id] (list-stands user-id nil))
@@ -44,7 +50,9 @@
                    lon1-rad (* lon rad)
                    R 6371.0]
                ['(fn [u lat1-rad lon1-rad rad R r]
-                   (-> (from :stands [lat lon creator shared? updated *])
+                   (-> (unify
+                        (from :stands [{:xt/id id} creator name address town state products expiration notes shared? updated lat lon])
+                        (left-join (from :votes [{:stand-id id} value {:user-id vote-user}]) [value vote-user]))
                        (where (and (or (= creator u)
                                        (= shared? true))
                                    (<= (* R (* 2.0 (asin (sqrt (+ (* (sin (/ (- (* lat rad) lat1-rad) 2.0))
@@ -52,12 +60,22 @@
                                                                   (* (cos lat1-rad) (cos (* lat rad))
                                                                      (sin (/ (- (* lon rad) lon1-rad) 2.0))
                                                                      (sin (/ (- (* lon rad) lon1-rad) 2.0))))))))
-                                       r)))))
+                                       r)))
+                       (with {:v (if (= vote-user u) value 0)})
+                       (aggregate id creator name address town state products expiration notes shared? updated lat lon
+                                  {:score (sum value)
+                                   :user-vote (sum v)})))
                 user-id lat1-rad lon1-rad rad R radius])
              ['(fn [u]
-                 (-> (from :stands [creator shared? updated *])
+                 (-> (unify
+                      (from :stands [{:xt/id id} creator name address town state products expiration notes shared? updated lat lon])
+                      (left-join (from :votes [{:stand-id id} value {:user-id vote-user}]) [value vote-user]))
                      (where (or (= creator u)
                                 (= shared? true)))
+                     (with {:v (if (= vote-user u) value 0)})
+                     (aggregate id creator name address town state products expiration notes shared? updated lat lon
+                                {:score (sum value)
+                                 :user-vote (sum v)})
                      (order-by {:val updated :dir :desc})))
               user-id])]
      (tel/log! :info {:list-stands q})
@@ -75,15 +93,15 @@
           ;; Find all versions that ended (were deleted or updated) since 'since'
           ;; and were in the requested radius.
           q ['(fn [u s lat1-rad lon1-rad rad R r]
-               (-> (from :stands {:for-valid-time :all-time, :bind [xt/id lat lon xt/valid-to creator shared?]} )
-                   (where (and (>= xt/valid-to s)
-                               (or (= creator u) (= shared? true))
-                               (<= (* R (* 2.0 (asin (sqrt (+ (* (sin (/ (- (* lat rad) lat1-rad) 2.0))
-                                                                 (sin (/ (- (* lat rad) lat1-rad) 2.0)))
-                                                              (* (cos lat1-rad) (cos (* lat rad))
-                                                                 (sin (/ (- (* lon rad) lon1-rad) 2.0))
-                                                                 (sin (/ (- (* lon rad) lon1-rad) 2.0))))))))
-                                   r)))))
+                (-> (from :stands {:for-valid-time :all-time, :bind [xt/id lat lon xt/valid-to creator shared?]})
+                    (where (and (>= xt/valid-to s)
+                                (or (= creator u) (= shared? true))
+                                (<= (* R (* 2.0 (asin (sqrt (+ (* (sin (/ (- (* lat rad) lat1-rad) 2.0))
+                                                                  (sin (/ (- (* lat rad) lat1-rad) 2.0)))
+                                                               (* (cos lat1-rad) (cos (* lat rad))
+                                                                  (sin (/ (- (* lon rad) lon1-rad) 2.0))
+                                                                  (sin (/ (- (* lon rad) lon1-rad) 2.0))))))))
+                                    r)))))
              user-id since-inst lat1-rad lon1-rad rad R radius]
 
           ended (xt/q @node q)
@@ -115,3 +133,9 @@
 
 (defn delete-stand [id]
   (xt/submit-tx @node [[:delete-docs :stands id]]))
+
+(defn vote-stand [stand-id user-id value]
+  (let [vote-id (str stand-id "-" user-id)]
+    (if (zero? value)
+      (xt/submit-tx @node [[:delete-docs :votes vote-id]])
+      (xt/submit-tx @node [[:put-docs :votes {:xt/id vote-id :stand-id stand-id :user-id user-id :value value}]]))))

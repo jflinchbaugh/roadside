@@ -37,7 +37,9 @@
                         :put {:middleware [auth/identity-required-wrapper]
                               :handler handlers/update-stand-handler}
                         :delete {:middleware [auth/identity-required-wrapper]
-                                 :handler handlers/delete-stand-handler}}]]]
+                                 :handler handlers/delete-stand-handler}}]
+        ["/stands/:id/vote" {:middleware [auth/wrap-auth auth/identity-required-wrapper]
+                             :post handlers/vote-stand-handler}]]]
       (ring/router)
       (ring/ring-handler
        (ring/routes

@@ -26,6 +26,7 @@
    :create-stand (fn [& _] (go {:success true}))
    :update-stand (fn [& _] (go {:success true}))
    :delete-stand (fn [& _] (go {:success true}))
+   :vote-stand (fn [_ _ _ _] (go {:success true}))
    :geocode-address (fn [& _] (go {:success true :lat 1.0 :lng 2.0}))
    :reverse-geocode (fn [& _] (go {:success true
                                    :data {:address {:road
@@ -242,3 +243,31 @@
                               @dispatched))
                     (done))
                   1000)))))
+
+(deftest vote-stand-test
+  (async done
+    (testing "vote-stand! updates score/vote and calls remote vote"
+      (let [dispatched (atom [])
+            dispatch (fn [action] (swap! dispatched conj action))
+            stand {:id "s1" :name "Target" :score 5 :user-vote 0}
+            app-state {:settings {:user "alice" :password "secret"}
+                       :selected-stand stand}]
+        (sut/vote-stand! app-state dispatch stand 1 mock-deps)
+
+        ;; Check optimistic update
+        (let [update-action (some #(when (= (first %) :update-stand) %) @dispatched)]
+          (is (some? update-action))
+          (is (= 6 (:score (second update-action))))
+          (is (= 1 (:user-vote (second update-action)))))
+
+        ;; Check selected stand update
+        (let [set-selected (some #(when (= (first %) :set-selected-stand) %) @dispatched)]
+          (is (some? set-selected))
+          (is (= 6 (:score (second set-selected)))))
+
+        (wait-for dispatched
+                  (fn [actions] (some (fn [[type payload]]
+                                        (and (= type :set-notification)
+                                             (= (:type payload) :success)))
+                                      actions))
+                  done 1000)))))

@@ -12,6 +12,7 @@
    :create-stand api/create-stand
    :update-stand api/update-stand
    :delete-stand api/delete-stand
+   :vote-stand api/vote-stand
    :geocode-address api/geocode-address
    :reverse-geocode api/reverse-geocode})
 
@@ -123,6 +124,25 @@
               :error
               (str "Delete failed: " (format-error error)))))))))
 
+(defn- remote-vote-stand!
+  [{:keys [settings]} dispatch stand-id value {:keys [vote-stand]}]
+  (when (and (remote-allowed? settings) (has-credentials? settings))
+    (go
+      (let [{:keys [success error]} (<! (vote-stand
+                                         (:user settings)
+                                         (:password settings)
+                                         stand-id
+                                         value))]
+        (if success
+          (notify! dispatch :success "Vote recorded!" stand-id)
+          (do
+            (tel/log! :error {:msg "Failed to vote for stand" :error error})
+            (notify!
+              dispatch
+              :error
+              (str "Vote failed: " (format-error error))
+              stand-id)))))))
+
 (defn upload-all-stands!
   ([app-state dispatch]
    (upload-all-stands! app-state dispatch default-deps))
@@ -216,6 +236,21 @@
   ([app-state dispatch stand deps]
    (dispatch [:remove-stand stand])
    (remote-delete-stand! app-state dispatch (:id stand) deps)))
+
+(defn vote-stand!
+  ([app-state dispatch stand value]
+   (vote-stand! app-state dispatch stand value default-deps))
+  ([app-state dispatch stand value deps]
+   (let [old-vote (or (:user-vote stand) 0)
+         new-vote (if (= old-vote value) 0 value) ;; Toggle vote if same value
+         score-diff (- new-vote old-vote)
+         updated-stand (-> stand
+                           (assoc :user-vote new-vote)
+                           (update :score (fnil + 0) score-diff))]
+     (dispatch [:update-stand updated-stand])
+     (when (= (:id (:selected-stand app-state)) (:id stand))
+       (dispatch [:set-selected-stand updated-stand]))
+     (remote-vote-stand! app-state dispatch (:id stand) new-vote deps))))
 
 (defn lookup-address!
   ([app-state dispatch on-update address-data]

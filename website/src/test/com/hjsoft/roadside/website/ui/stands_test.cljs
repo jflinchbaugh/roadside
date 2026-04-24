@@ -122,3 +122,21 @@
           "Should NOT have incomplete-stand class when not owner")
       (is (tlr/queryByText item-div "(no details)")
         "the item shows (no details)"))))
+
+(deftest stand-item-voting-visibility-test
+  (testing "Voting widget is visible when stand is selected"
+    (let [state {:settings {:user "alice"}}
+          stand {:id "s1" :name "Alice's Stand" :creator "alice" :score 5}
+          res (render-stand-item state stand {:selected? true})
+          container (.-container res)]
+      (is (some? (.querySelector container ".stand-voting"))
+          "Voting widget should be visible when selected")
+      (is (tlr/queryByText container "5") "Score should be visible")))
+
+  (testing "Voting widget is HIDDEN when stand is NOT selected"
+    (let [state {:settings {:user "alice"}}
+          stand {:id "s1" :name "Alice's Stand" :creator "alice" :score 5}
+          res (render-stand-item state stand {:selected? false})
+          container (.-container res)]
+      (is (nil? (.querySelector container ".stand-voting"))
+          "Voting widget should be hidden when not selected"))))

@@ -459,3 +459,71 @@
                 resp (handlers/reverse-geocode-handler req)]
             (is (= 502 (:status resp)))
             (is (str/includes? (:body resp) "Nominatim error"))))))))
+
+(deftest vote-test
+  (testing "Voting for a stand"
+    (let [stand-id "vote-stand-1"
+          _ (xt/submit-tx @db/node [[:put-docs :stands {:xt/id stand-id :name "Vote Stand" :shared? true :creator "bob" :lat 40.0 :lon -76.0}]])
+          ;; Wait for tx
+          _ (Thread/sleep 100)]
+
+      (testing "Initial score is 0"
+        (let [resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "alice"})
+              stand (json/read-str (:body resp) :key-fn keyword)]
+          (is (= 200 (:status resp)))
+          (is (= 0 (or (:score stand) 0)))
+          (is (= 0 (or (:user-vote stand) 0)))))
+
+      (testing "Alice upvotes"
+        (let [req {:path-params {:id stand-id}
+                   :identity "alice"
+                   :body (ByteArrayInputStream. (.getBytes (json/write-str {:value 1})))}
+              resp (handlers/vote-stand-handler req)]
+          (is (= 200 (:status resp)))
+          (let [get-resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "alice"})
+                stand (json/read-str (:body get-resp) :key-fn keyword)]
+            (is (= 1 (:score stand)))
+            (is (= 1 (:user-vote stand))))))
+
+      (testing "Bob downvotes"
+        (let [req {:path-params {:id stand-id}
+                   :identity "bob"
+                   :body (ByteArrayInputStream. (.getBytes (json/write-str {:value -1})))}
+              resp (handlers/vote-stand-handler req)]
+          (is (= 200 (:status resp)))
+          (let [get-resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "alice"})
+                stand (json/read-str (:body get-resp) :key-fn keyword)]
+            (is (= 0 (:score stand)) "1 (alice) + -1 (bob) = 0")
+            (is (= 1 (:user-vote stand)) "Alice still sees her upvote"))
+          (let [get-resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "bob"})
+                stand (json/read-str (:body get-resp) :key-fn keyword)]
+            (is (= -1 (:user-vote stand)) "Bob sees his downvote"))))
+
+      (testing "Alice changes vote to downvote"
+        (let [req {:path-params {:id stand-id}
+                   :identity "alice"
+                   :body (ByteArrayInputStream. (.getBytes (json/write-str {:value -1})))}
+              resp (handlers/vote-stand-handler req)]
+          (is (= 200 (:status resp)))
+          (let [get-resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "alice"})
+                stand (json/read-str (:body get-resp) :key-fn keyword)]
+            (is (= -2 (:score stand)) "-1 (alice) + -1 (bob) = -2")
+            (is (= -1 (:user-vote stand))))))
+
+      (testing "Alice clears vote"
+        (let [req {:path-params {:id stand-id}
+                   :identity "alice"
+                   :body (ByteArrayInputStream. (.getBytes (json/write-str {:value 0})))}
+              resp (handlers/vote-stand-handler req)]
+          (is (= 200 (:status resp)))
+          (let [get-resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "alice"})
+                stand (json/read-str (:body get-resp) :key-fn keyword)]
+            (is (= -1 (:score stand)) "0 (alice) + -1 (bob) = -1")
+            (is (= 0 (:user-vote stand))))))
+
+      (testing "Invalid vote value"
+        (let [req {:path-params {:id stand-id}
+                   :identity "alice"
+                   :body (ByteArrayInputStream. (.getBytes (json/write-str {:value 2})))}
+              resp (handlers/vote-stand-handler req)]
+          (is (= 400 (:status resp))))))))

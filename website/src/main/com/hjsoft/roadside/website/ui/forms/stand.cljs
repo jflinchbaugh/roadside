@@ -12,6 +12,10 @@
 
 (goog-define NODE_TEST false)
 
+(def icon-check "\u2713")
+(def icon-expand "\u25BE")
+(def icon-collapse "\u25B4")
+
 (defnc stand-form []
   (let [app-state (state/use-app-state)
         settings (:settings app-state)
@@ -54,7 +58,7 @@
                {:type "submit"
                 :class "button icon-button primary"
                 :title "Save"}
-               "\u2713")))
+               icon-check)))
       (d/div
        {:class "form-content-wrapper"}
        (when-not NODE_TEST
@@ -87,8 +91,8 @@
           :class "toggle-address-btn"
           :onClick #(local-dispatch [:toggle-address])}
          (if (:show-address? stand-form-data)
-           "Collapse Address \u25B4"
-           "Expand Address \u25BE")))
+           (str "Collapse Address " icon-collapse)
+           (str "Expand Address " icon-expand))))
        (when (:show-address? stand-form-data)
          (d/div
           {:class "address-fields-wrapper"}

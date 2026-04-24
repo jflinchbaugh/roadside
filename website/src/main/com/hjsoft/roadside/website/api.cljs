@@ -85,6 +85,20 @@
            {:success false
             :error (extract-error response (str "HTTP Error: " (:status response)))}))))))
 
+(defn vote-stand
+  ([user password stand-id value]
+   (vote-stand user password stand-id value default-http-deps))
+  ([user password stand-id value {:keys [post]}]
+   (let [resource-url (str stands-url "/" stand-id "/vote")]
+     (go
+       (let [response (<! (post resource-url
+                                (with-auth-opts user password
+                                  {:json-params {:value value}})))]
+         (if (:success response)
+           {:success true}
+           {:success false
+            :error (extract-error response (str "HTTP Error: " (:status response)))}))))))
+
 (defn geocode-address
   ([user password address]
    (geocode-address user password address default-http-deps))

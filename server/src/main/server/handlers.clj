@@ -243,3 +243,17 @@
       (do
         (db/delete-stand id)
         (api-response 200 {:message (format "'%s' deleted" id)})))))
+
+(defn vote-stand-handler [req]
+  (tel/log! :info {:vote-stand req})
+  (let [id (get-in req [:path-params :id])
+        identity (:identity req)
+        body (json/read-str (rur/body-string req) :key-fn keyword)
+        value (:value body)]
+    (if (not identity)
+      (api-response 401 {:error "Unauthorized"})
+      (if (not (contains? #{1 -1 0} value))
+        (api-response 400 {:error "Invalid vote value"})
+        (do
+          (db/vote-stand id identity value)
+          (api-response 200 {:status "success"}))))))

@@ -10,6 +10,10 @@
 
 (def add-zoom-level 14)
 
+(def icon-reset "\u21BA")
+(def icon-location "\u2316")
+(def icon-remove "\u2715")
+
 (defnc location-input
   [{:keys
     [stand-form-data
@@ -50,7 +54,7 @@
           :onClick #(on-update
                      [:update-field [:coordinate original-coordinate]])
           :title "Reset to original location"}
-         "\u21BA"))
+         icon-reset))
       (d/button
        {:type "button"
         :class "location-btn"
@@ -58,7 +62,7 @@
                    (fn [[lat lng]]
                      (on-update
                       [:update-field [:coordinate (str lat ", " lng)]])))}
-       "\u2316"))
+       icon-location))
      (when error
        (d/p
         {:class "error-message"}
@@ -107,5 +111,5 @@
                 {:type "button"
                  :class "remove-tag"
                  :onClick #(on-update [:remove-product product])}
-                "\u2715")))
+                icon-remove)))
             (filter string? (:products stand-form-data))))))))

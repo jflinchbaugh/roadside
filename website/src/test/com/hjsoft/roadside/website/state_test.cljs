@@ -50,7 +50,22 @@
   (testing "remove-stand"
     (is (= {:stands []}
              (sut/app-reducer {:stands [{:id "1" :name "A"}]}
-                              [:remove-stand {:id "1" :name "A"}])))))
+                              [:remove-stand {:id "1" :name "A"}]))))
+
+  (testing "update-stand"
+    (let [initial-state {:stands [{:id "1" :name "Old Name"}]}
+          result (sut/app-reducer initial-state [:update-stand {:id "1" :name "New Name"}])]
+      (is (= [{:id "1" :name "New Name"}] (:stands result)))))
+
+  (testing "vote preservation"
+    (testing "merge preserves local score and user-vote"
+      (let [initial-state {:stands [{:id "1" :name "Old Name" :score 5 :user-vote 1}]}
+            result (sut/app-reducer initial-state [:set-stands [{:id "1" :name "New Name"}]])]
+        (is (= [{:id "1" :name "New Name" :score 5 :user-vote 1}] (:stands result)))))
+    (testing "sync preserves local score and user-vote"
+      (let [initial-state {:stands [{:id "1" :name "Old Name" :score 5 :user-vote 1}]}
+            result (sut/app-reducer initial-state [:sync-stands {:stands [{:id "1" :name "New Name"}]}])]
+        (is (= [{:id "1" :name "New Name" :score 5 :user-vote 1}] (:stands result)))))))
 
 (deftest select-stands-by-expiry-test
   (let [active-stand {:name "Active" :expiration (utils/in-days 7)}

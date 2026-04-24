@@ -52,7 +52,13 @@
         new-data (if (coll? data) (vec data) [])
         existing-map (into {} (map (juxt :id identity) (:stands state)))
         new-map (into {} (map (juxt :id identity) new-data))
-        merged-map (merge existing-map new-map)]
+        merged-map (reduce-kv
+                    (fn [m id new-stand]
+                      (if-let [old-stand (get m id)]
+                        (assoc m id (merge old-stand new-stand))
+                        (assoc m id new-stand)))
+                    existing-map
+                    new-map)]
     (assoc state :stands (vec (vals merged-map)))))
 
 (defn- handle-remove-stand [state payload]
@@ -63,11 +69,24 @@
      (filterv #(not= (:id %) (:id payload))
               stands))))
 
+(defn- handle-update-stand [state payload]
+  (update
+   state
+   :stands
+   (fn [stands]
+     (mapv #(if (= (:id %) (:id payload)) payload %) stands))))
+
 (defn- handle-sync-stands [state {:keys [stands deleted-ids last-sync]}]
   (let [new-stands (if (coll? stands) stands [])
         existing-map (into {} (map (juxt :id identity) (:stands state)))
         new-map (into {} (map (juxt :id identity) new-stands))
-        merged-map (merge existing-map new-map)
+        merged-map (reduce-kv
+                    (fn [m id new-stand]
+                      (if-let [old-stand (get m id)]
+                        (assoc m id (merge old-stand new-stand))
+                        (assoc m id new-stand)))
+                    existing-map
+                    new-map)
         final-map (apply dissoc merged-map deleted-ids)]
     (cond-> state
       true (assoc :stands (vec (vals final-map)))
@@ -77,6 +96,7 @@
   {:set-stands handle-set-stands
    :sync-stands handle-sync-stands
    :remove-stand handle-remove-stand
+   :update-stand handle-update-stand
    :set-notification #(set-value %1 :notification %2)
    :set-is-synced #(set-value %1 :is-synced %2)
    :set-loading-stands #(set-value %1 :loading-stands? %2)

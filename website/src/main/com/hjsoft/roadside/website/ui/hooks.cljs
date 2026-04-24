@@ -18,6 +18,8 @@
                         (set-show-form false)))
      :delete-stand! (fn [stand]
                       (controller/delete-stand! app-state dispatch stand))
+     :vote-stand! (fn [stand value]
+                    (controller/vote-stand! app-state dispatch stand value))
      :lookup-address! (fn [on-update address-data]
                         (controller/lookup-address! app-state dispatch on-update address-data))
      :reverse-lookup! (fn [on-update lat lng]

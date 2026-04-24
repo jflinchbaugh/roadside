@@ -411,6 +411,12 @@ body {
   border-top: 1px solid #eee;
   font-size: 0.85rem;
   color: #888;
+  display: flex;
+  align-items: flex-start;
+}
+
+.stand-extra-fields {
+  flex-grow: 1;
 }
 
 .stand-extra-info p {
@@ -1017,3 +1023,53 @@ body {
   background-color: #0056b3;
 }
 
+
+/* Voting Styles */
+.stand-voting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-right: 12px;
+  min-width: 32px;
+}
+
+.vote-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #ccc;
+  font-size: 1.1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.vote-btn:hover {
+  color: #999;
+}
+
+.vote-btn.active.upvote {
+  color: #28a745;
+}
+
+.vote-btn.active.downvote {
+  color: #dc3545;
+}
+
+.vote-score {
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.vote-score.positive {
+  color: #28a745;
+}
+
+.vote-score.negative {
+  color: #dc3545;
+}
