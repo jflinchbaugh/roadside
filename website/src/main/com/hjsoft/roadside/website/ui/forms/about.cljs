@@ -32,4 +32,9 @@
          (d/li "Find your favorite stands."))
        (d/p
          "Feedback and suggestions are welcome. "
-         (d/a {:href "mailto:roadside@hjsoft.com"} "roadside@hjsoft.com")))))))
+         (d/a {:href "mailto:roadside@hjsoft.com"} "roadside@hjsoft.com"))
+       (d/p
+         "Source on "
+         (d/a {:href "https://github.com/jflinchbaugh/roadside/"
+               :target "_blank"} "GitHub")
+         "."))))))

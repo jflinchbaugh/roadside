@@ -24,6 +24,8 @@
           container (.-container res)]
       (is (some? (tlr/queryByText container "About Roadside Stands"))
           "Header should be visible")
+      (is (some? (tlr/queryByText container #"GitHub"))
+        "source link")
       (is (some? (tlr/queryByText container #"suggestions"))
           "Copy should be visible")))
 
