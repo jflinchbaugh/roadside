@@ -467,12 +467,12 @@
           ;; Wait for tx
           _ (Thread/sleep 100)]
 
-      (testing "Initial score is 0"
+      (testing "Initial score is exactly 0 (not nil)"
         (let [resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "alice"})
               stand (json/read-str (:body resp) :key-fn keyword)]
           (is (= 200 (:status resp)))
-          (is (= 0 (or (:score stand) 0)))
-          (is (= 0 (or (:user-vote stand) 0)))))
+          (is (= 0 (:score stand)) "Score should be exactly 0 for a stand with no votes")
+          (is (= 0 (:user-vote stand)) "User vote should be exactly 0 for a stand with no votes")))
 
       (testing "Alice upvotes"
         (let [req {:path-params {:id stand-id}

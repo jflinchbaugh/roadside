@@ -35,9 +35,10 @@
                  (where (and (= id id-val)
                              (or (= creator u)
                                  (= shared? true))))
-                 (with {:v (if (= vote-user u) value 0)})
+                 (with {:v (if (= vote-user u) (if (nil? value) 0 value) 0)
+                        :val (if (nil? value) 0 value)})
                  (aggregate id creator name address town state products expiration notes shared? updated lat lon
-                            {:score (sum value)
+                            {:score (sum val)
                              :user-vote (sum v)})))
           id-param user-id])))
 
@@ -61,9 +62,10 @@
                                                                      (sin (/ (- (* lon rad) lon1-rad) 2.0))
                                                                      (sin (/ (- (* lon rad) lon1-rad) 2.0))))))))
                                        r)))
-                       (with {:v (if (= vote-user u) value 0)})
+                       (with {:v (if (= vote-user u) (if (nil? value) 0 value) 0)
+                              :val (if (nil? value) 0 value)})
                        (aggregate id creator name address town state products expiration notes shared? updated lat lon
-                                  {:score (sum value)
+                                  {:score (sum val)
                                    :user-vote (sum v)})))
                 user-id lat1-rad lon1-rad rad R radius])
              ['(fn [u]
@@ -72,9 +74,10 @@
                       (left-join (from :votes [{:stand-id id} value {:user-id vote-user}]) [value vote-user]))
                      (where (or (= creator u)
                                 (= shared? true)))
-                     (with {:v (if (= vote-user u) value 0)})
+                     (with {:v (if (= vote-user u) (if (nil? value) 0 value) 0)
+                            :val (if (nil? value) 0 value)})
                      (aggregate id creator name address town state products expiration notes shared? updated lat lon
-                                {:score (sum value)
+                                {:score (sum val)
                                  :user-vote (sum v)})
                      (order-by {:val updated :dir :desc})))
               user-id])]
