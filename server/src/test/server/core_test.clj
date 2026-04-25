@@ -10,7 +10,8 @@
             [server.xtdb-container :as xtn]
             [org.httpkit.client :as hkc]
             [clojure.string :as str]
-            [clojure.data.json :as json])
+            [clojure.data.json :as json]
+            [clojure.pprint :refer [pprint]])
   (:import [java.io ByteArrayInputStream]))
 
 (defn with-xtdb-container [f]
@@ -24,8 +25,8 @@
 
 (defn- create-stand [stand-doc]
   (handlers/create-stand-handler
-    {:body (ByteArrayInputStream. (.getBytes (json/write-str stand-doc)))
-     :identity "alice"}))
+   {:body (ByteArrayInputStream. (.getBytes (json/write-str stand-doc)))
+    :identity "alice"}))
 
 (deftest empty-stands-test
   (testing "Get stands when none exist and no lat/lon"
@@ -34,8 +35,8 @@
       (is (= [] (:stands (json/read-str (:body resp) :key-fn keyword))))))
   (testing "Get stands by lat/lon when none exist"
     (let [resp (handlers/get-stands-handler
-                 {:identity "alice"
-                  :params {:lat "-74.333", :lon "40.1234"}})]
+                {:identity "alice"
+                 :params {:lat "-74.333", :lon "40.1234"}})]
       (is (= 200 (:status resp)))
       (is (= [] (:stands (json/read-str (:body resp) :key-fn keyword)))))))
 
@@ -61,22 +62,22 @@
           response (handlers/register-handler req)]
       (is (= 400 (:status response)))
       (is (some #{"should match regex"}
-            (get-in (json/read-str (:body response) :key-fn keyword)
-              [:errors :email])))))
+                (get-in (json/read-str (:body response) :key-fn keyword)
+                        [:errors :email])))))
   (testing "Register handler requires login"
     (let [req {:params {:email "bob@example.com" :password "secret-pass"}}
           response (handlers/register-handler req)]
       (is (= 400 (:status response)))
       (is (some #{"should match regex"}
-            (get-in (json/read-str (:body response) :key-fn keyword)
-              [:errors :login])))))
+                (get-in (json/read-str (:body response) :key-fn keyword)
+                        [:errors :login])))))
   (testing "Register handler requires password"
     (let [req {:params {:login "bob" :email "bob@example.com"}}
           response (handlers/register-handler req)]
       (is (= 400 (:status response)))
       (is (some #{"should be a string"}
-            (get-in (json/read-str (:body response) :key-fn keyword)
-              [:errors :password])))))
+                (get-in (json/read-str (:body response) :key-fn keyword)
+                        [:errors :password])))))
   (testing "Register handler requires all fields"
     (let [req {:params {}}
           response (handlers/register-handler req)]
@@ -92,7 +93,7 @@
       (let [errors (:errors (json/read-str (:body response) :key-fn keyword))]
         (is (some #{"should match regex"} (:email errors)))
         (is (some #{"should match regex"} (:login errors)))
-        (is (some #{"should be at least 8 characters"} (:password errors))))) )
+        (is (some #{"should be at least 8 characters"} (:password errors))))))
   (testing "Register handler with a duplicate"
     (let [req {:params {:login "alice"
                         :password "again-secret"
@@ -100,7 +101,7 @@
           response (handlers/register-handler req)]
       (is (= 403 (:status response)))
       (is (= {:login ["not available"]}
-            (:errors (json/read-str (:body response) :key-fn keyword))))
+             (:errors (json/read-str (:body response) :key-fn keyword))))
       (let [user (db/get-user "alice")]
         (is (= "alice" (:login user)))
         (is (:valid (hashers/verify "secret-password" (:password user))) "password not touched")))))
@@ -218,8 +219,7 @@
         (is (str/includes? kml "Sweet"))))
 
     (testing "RSS export"
-      (let [stand-docs [
-                        {:name "RSS Stand"
+      (let [stand-docs [{:name "RSS Stand"
                          :address "RSS St"
                          :town "Lancaster"
                          :state "PA"
@@ -231,8 +231,7 @@
                          :lat 40.0
                          :lon -76.0
                          :shared? true
-                         :creator "user"}
-                        ]
+                         :creator "user"}]
             _ (doall (map create-stand stand-docs))
             resp (handlers/get-stands-rss-handler {:identity "alice" :scheme :http :server-name "localhost" :server-port 3000})
             rss (:body resp)]
@@ -463,24 +462,63 @@
 (deftest vote-test
   (testing "Voting for a stand"
     (let [stand-id "vote-stand-1"
-          _ (xt/submit-tx @db/node [[:put-docs :stands {:xt/id stand-id :name "Vote Stand" :shared? true :creator "bob" :lat 40.0 :lon -76.0}]])
+          _ (xt/submit-tx
+             @db/node
+             [[:delete-docs {:from :votes} "v1"]
+              [:delete-docs {:from :votes} "v2"]
+              [:delete-docs {:from :votes} "vote-stand-1-bob"]
+              [:delete-docs :stands stand-id]
+              [:put-docs :stands
+               {:xt/id stand-id
+                :name "Vote Stand"
+                :shared? true
+                :creator "bob"
+                :lat 40.0
+                :lon -76.0}]])
           ;; Wait for tx
-          _ (Thread/sleep 100)]
+          _ (Thread/sleep 200)]
+
+      ;; Verification assertion: ensure stand is actually in XTDB
+      (is (seq (xt/q
+                  @db/node
+                  ['(fn [id]
+                      (->
+                       (from :stands [xt/id])
+                       (where (= xt/id id))))
+                   stand-id]))
+          "Stand should be present in XTDB before testing votes")
+      (is (empty? (xt/q
+                   @db/node
+                   ['(fn []
+                       (->
+                        (from :votes [xt/id])))]))
+          "No votes should be present in XTDB before testing votes")
 
       (testing "Initial score is exactly 0 (not nil)"
-        (let [resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "alice"})
+        (let [resp (handlers/get-stand-handler
+                    {:path-params {:id stand-id}
+                     :identity "alice"})
               stand (json/read-str (:body resp) :key-fn keyword)]
           (is (= 200 (:status resp)))
-          (is (= 0 (:score stand)) "Score should be exactly 0 for a stand with no votes")
-          (is (= 0 (:user-vote stand)) "User vote should be exactly 0 for a stand with no votes")))
+          (is (= 0 (:score stand))
+              "Score should be exactly 0 for a stand with no votes")
+          (is (= 0 (:user-vote stand))
+              "User vote should be exactly 0 for a stand with no votes")
+          (is (= 0 (:score stand))
+              "Overall score should be exactly 0 for a stand with no votes")))
 
       (testing "Alice upvotes"
         (let [req {:path-params {:id stand-id}
                    :identity "alice"
-                   :body (ByteArrayInputStream. (.getBytes (json/write-str {:value 1})))}
+                   :body (-> {:value 1}
+                             json/write-str
+                             .getBytes
+                             ByteArrayInputStream.)}
               resp (handlers/vote-stand-handler req)]
           (is (= 200 (:status resp)))
-          (let [get-resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "alice"})
+          (let [get-resp (handlers/get-stand-handler
+                          {:path-params {:id stand-id}
+                           :identity "alice"})
                 stand (json/read-str (:body get-resp) :key-fn keyword)]
             (is (= 1 (:score stand)))
             (is (= 1 (:user-vote stand))))))
@@ -526,4 +564,98 @@
                    :identity "alice"
                    :body (ByteArrayInputStream. (.getBytes (json/write-str {:value 2})))}
               resp (handlers/vote-stand-handler req)]
-          (is (= 400 (:status resp))))))))
+          (is (= 400 (:status resp)))))
+      (testing "cleanup"
+        (xt/submit-tx @db/node
+          [[:delete-docs :stands stand-id]
+           [:delete-docs {:from :votes} "v1"]
+           [:delete-docs {:from :votes} "vote-stand-1-bob"]]))
+      )
+
+    (testing "Multiple stands with one vote"
+      (let [s1-id "stand-a"
+            s2-id "stand-b"
+            _ (xt/submit-tx @db/node
+                 [[:put-docs :stands
+                  {:xt/id s1-id
+                   :name "Stand A"
+                   :shared? true
+                   :creator "bob"
+                   :lat 40.0
+                   :lon -76.0}
+                  {:xt/id s2-id
+                   :name "Stand B"
+                   :shared? true
+                   :creator "bob"
+                   :lat 40.0
+                   :lon -76.0}]
+                  [:put-docs :votes
+                   {:xt/id "v1"
+                    :stand-id s1-id
+                    :user-id "alice"
+                    :value 1}]
+                  [:put-docs :votes
+                  {:xt/id "v2"
+                   :stand-id s1-id
+                   :user-id "bob"
+                   :value 1}]])
+          ;; Wait for indexing
+            _ (Thread/sleep 500)]
+
+      ;; Verification assertions: ensure data is present in XTDB
+        (is (seq (xt/q
+                     @db/node
+                     ['(fn [id]
+                         (->
+                           (from :stands [xt/id])
+                           (where (= xt/id id))))
+                      s1-id]))
+          "Stand A should be in XTDB")
+        (is (seq (xt/q
+                     @db/node
+                     ['(fn [id]
+                         (->
+                           (from :stands [xt/id])
+                           (where (= xt/id id))))
+                      s2-id]))
+          "Stand B should be in XTDB")
+        (is (seq (xt/q
+                     @db/node
+                     ['(fn [id]
+                         (->
+                           (from :votes [xt/id])
+                           (where (= xt/id id))))
+                      "v1"]))
+          "Vote should be in XTDB")
+
+        (let [resp (handlers/get-stands-handler
+                     {:identity "alice"
+                      :params {:lat "40.0" :lon "-76.0"}})
+              body (json/read-str (:body resp) :key-fn keyword)
+              stands (:stands body)
+              s1 (some #(when (= (:id %) s1-id) %) stands)
+              s2 (some #(when (= (:id %) s2-id) %) stands)]
+          (is (= 200 (:status resp)))
+          (is (= "Stand A" (:name s1)) "Stand A")
+          (is (= 2 (:score s1)) "Stand A should have score 2")
+          (is (= 1 (:user-vote s1)) "Stand A should have user-vote 1")
+          (is (= "Stand B" (:name s2)) "Stand B")
+          (is (= 0 (:score s2)) "Stand B should have score 0")
+          (is (= 0 (:user-vote s2)) "Stand B should have user-vote 0")
+          )
+
+        (let [resp (handlers/get-stands-handler
+                     {:identity "alice"
+                      :params {}})
+              body (json/read-str (:body resp) :key-fn keyword)
+              stands (:stands body)
+              s1 (some #(when (= (:id %) s1-id) %) stands)
+              s2 (some #(when (= (:id %) s2-id) %) stands)]
+          (is (= 200 (:status resp)))
+          (is (= "Stand A" (:name s1)) "Stand A")
+          (is (= 2 (:score s1)) "Stand A should have score 2")
+          (is (= 1 (:user-vote s1)) "Stand A should have user-vote 1")
+          (is (= "Stand B" (:name s2)) "Stand B")
+          (is (= 0 (:score s2)) "Stand B should have score 0")
+          (is (= 0 (:user-vote s2)) "Stand B should have user-vote 0")
+          )))))

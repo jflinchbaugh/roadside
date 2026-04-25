@@ -324,3 +324,26 @@
         (reset! upload-called false)
         (run-effect {} {:user "alice" :password "secret" :local-only? false} [])
         (is (false? @upload-called))))))
+
+(deftest registration-upload-trigger-test
+  (testing "Registration success triggers automatic upload"
+    (let [upload-called (atom false)
+          mock-upload (fn [_ _] (reset! upload-called true))
+          ;; Simulate the transition from empty settings to registered settings
+          initial-settings {}
+          registered-settings {:user "newuser" :password "newpass" :local-only? false}
+          stands [{:id "local-1" :name "Local Stand"}]
+
+          ;; Logic from use-app-side-effects
+          run-effect (fn [prev current stands]
+                       (let [login-info-keys [:user :password :local-only?]
+                             login-info-changed? (not= (select-keys current login-info-keys)
+                                                       (select-keys prev login-info-keys))
+                             can-upload? (and (seq (:user current))
+                                              (seq (:password current))
+                                              (not (:local-only? current)))]
+                         (when (and login-info-changed? can-upload? (seq stands))
+                           (mock-upload nil nil))))]
+
+      (run-effect initial-settings registered-settings stands)
+      (is (true? @upload-called) "Upload should be triggered after registration"))))
