@@ -29,6 +29,7 @@
        (mapcat :products)
        (filter string?)
        (map str/trim)
+       (map str/lower-case)
        (filter (complement str/blank?))
        distinct
        sort

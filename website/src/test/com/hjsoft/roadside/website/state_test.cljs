@@ -6,6 +6,20 @@
 
 (def ^:const one-day (* 24 60 60 1000))
 
+(deftest migrate-stands-test
+  (testing "migrates products to lowercase"
+    (let [input [{:id "1" :products ["Apples" "CORN"]}
+                 {:id "2" :products ["peaches"]}]
+          expected [{:id "1" :products ["apples" "corn"]}
+                    {:id "2" :products ["peaches"]}]
+          result (sut/migrate-stands input)]
+      (is (= expected result))))
+  (testing "assigns IDs to stands without them"
+    (let [input [{:products ["apples"]}]
+          result (sut/migrate-stands input)]
+      (is (string? (:id (first result))))
+      (is (= ["apples"] (:products (first result)))))))
+
 (deftest app-reducer-test
   (testing "set-stands"
     (testing "initial set"

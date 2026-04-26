@@ -40,7 +40,7 @@
   (case action-type
     :update-field (assoc state (first payload) (second payload))
     :update-current-product (assoc state :current-product payload)
-    :add-product (let [product (str/trim (or (:current-product state) ""))]
+    :add-product (let [product (str/trim (str/lower-case (or (:current-product state) "")))]
                    (if (or (empty? product)
                            (some #(= % product) (:products state)))
                      (assoc state :current-product "")
@@ -52,10 +52,12 @@
     state))
 
 (defn prepare-submit-data [state]
-  (let [with-products (stand-form-reducer state [:add-product])
-        [lat lon] (utils/parse-coordinates (:coordinate with-products))]
-    (-> with-products
-        (assoc :lat lat :lon lon)
+  (let [with-pending (stand-form-reducer state [:add-product])
+        [lat lon] (utils/parse-coordinates (:coordinate with-pending))
+        ;; Final normalization of all products
+        normalized-products (utils/get-all-unique-products [{:products (:products with-pending)}])]
+    (-> with-pending
+        (assoc :lat lat :lon lon :products normalized-products)
         (dissoc :coordinate)
         common-stand/select-stand-fields)))
 

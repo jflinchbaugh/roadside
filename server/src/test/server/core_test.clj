@@ -195,16 +195,16 @@
                        :state "CS"
                        :lat 40.0
                        :lon -76.0
-                       :products ["Apples" "Bananas"]}
+                       :products ["apples" "bananas"]}
             _ (create-stand stand-doc)
             resp (handlers/get-stands-csv-handler {:identity "alice"})
             csv (:body resp)]
         (is (= 200 (:status resp)))
         (is (str/includes? csv "Name,Latitude,Longitude,Address,Town,State,Products,Notes"))
-        (is (str/includes? csv "CSV Stand,40.0,-76.0,CSV St,CSV Town,CS,Apples; Bananas,"))))
+        (is (str/includes? csv "CSV Stand,40.0,-76.0,CSV St,CSV Town,CS,apples; bananas,"))))
 
     (testing "KML export"
-      (let [stand-doc {:name "KML Stand" :address "KML St" :lat 40.0 :lon -76.0 :products ["Cherries"] :notes "Sweet"}
+      (let [stand-doc {:name "KML Stand" :address "KML St" :lat 40.0 :lon -76.0 :products ["cherries"] :notes "Sweet"}
             create-req {:body (ByteArrayInputStream. (.getBytes (json/write-str stand-doc)))
                         :identity "alice"}
             _ (handlers/create-stand-handler create-req)
@@ -215,7 +215,7 @@
         (is (str/includes? kml "<kml xmlns=\"http://www.opengis.net/kml/2.2\">"))
         (is (str/includes? kml "<name>KML Stand</name>"))
         (is (str/includes? kml "-76.000000,40.000000,0"))
-        (is (str/includes? kml "Cherries"))
+        (is (str/includes? kml "cherries"))
         (is (str/includes? kml "Sweet"))))
 
     (testing "RSS export"
@@ -223,7 +223,7 @@
                          :address "RSS St"
                          :town "Lancaster"
                          :state "PA"
-                         :products ["Peaches"]
+                         :products ["peaches"]
                          :expiration "2026-01-01"
                          :notes "Juicy"
                          :updated "2026-01-01"
@@ -242,7 +242,7 @@
         (is (str/includes? rss "<title>RSS Stand</title>"))
         (is (str/includes? rss "Address: RSS St, Lancaster, PA"))
         (is (str/includes? rss "Coordinates: 40.0, -76.0"))
-        (is (str/includes? rss "Peaches"))
+        (is (str/includes? rss "peaches"))
         (is (str/includes? rss "Juicy"))
         (is (str/includes? rss config/external-base-url))))))
 

@@ -28,7 +28,7 @@
         (str name "|" lat "," lon "|" address "|" town "|" state "|" (str/join "," products))))))
 
 (defn- product-matches-name? [name-lower current-set product]
-  (and (str/includes? name-lower (str/lower-case product))
+  (and (str/includes? name-lower product)
        (not (contains? current-set product))))
 
 (defn infer-products
@@ -36,10 +36,11 @@
    if they already exist in other stands."
   [stand-name current-products all-products]
   (let [name-lower (str/lower-case (or stand-name ""))
-        current-set (set current-products)]
+        current-set (set (map str/lower-case current-products))]
     (->> all-products
          (filter #(product-matches-name? name-lower current-set %))
          (into (or current-products []))
+         (map str/lower-case)
          (vec))))
 
 (defn- ensure-id [stand]

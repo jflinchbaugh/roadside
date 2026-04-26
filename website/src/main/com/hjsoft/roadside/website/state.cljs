@@ -1,6 +1,7 @@
 (ns com.hjsoft.roadside.website.state
   (:require [com.hjsoft.roadside.website.storage :as storage]
             [com.hjsoft.roadside.website.utils :as utils]
+            [clojure.string :as str]
             [helix.core :refer [create-context]]
             [helix.hooks :as hooks]))
 
@@ -23,12 +24,16 @@
 (defn use-ui [] (:ui (use-app)))
 (defn use-user-location-state [] (:user-location (use-app)))
 
+(defn migrate-stands [stands]
+  (->> (or stands [])
+       (mapv (fn [s]
+               (let [s (if (:id s)
+                         s
+                         (assoc s :id (utils/random-uuid-str)))]
+                 (update s :products (fn [ps] (mapv str/lower-case ps))))))))
+
 (def initial-app-state
-  {:stands (->> (or (storage/get-item "roadside-stands") [])
-                (mapv (fn [s]
-                        (if (:id s)
-                          s
-                          (assoc s :id (utils/random-uuid-str))))))
+  {:stands (migrate-stands (storage/get-item "roadside-stands"))
    :product-filter nil
    :selected-stand nil
    :map-center (or (storage/get-item "roadside-map-center") map-home)

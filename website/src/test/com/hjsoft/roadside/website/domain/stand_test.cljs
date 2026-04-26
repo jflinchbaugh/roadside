@@ -21,13 +21,15 @@
                            :products ["prod" "thing"]})))))
 
 (deftest infer-products-test
-  (let [all-products ["Apples" "Corn" "Peaches"]]
+  (let [all-products ["apples" "corn" "peaches"]]
     (testing "detects products from name"
-      (is (= ["Apples"] (sut/infer-products "Fresh Apples" [] all-products)))
-      (is (= ["Corn" "Peaches"] (sut/infer-products "Corn and Peaches" [] all-products))))
+      (is (= ["apples"] (sut/infer-products "Fresh Apples" [] all-products)))
+      (is (= ["corn" "peaches"] (sut/infer-products "Corn and Peaches" [] all-products))))
 
     (testing "doesn't duplicate existing products"
-      (is (= ["Apples"] (sut/infer-products "Fresh Apples" ["Apples"] all-products))))
+      (is (= ["apples"] (sut/infer-products "Fresh Apples" ["Apples"] all-products)))
+      (is (= ["apples"] (sut/infer-products "Fresh Apples" ["apples"] all-products))
+          "should not add Apples if apples already exists"))
 
     (testing "handles nil or empty names"
       (is (= [] (sut/infer-products nil [] all-products)))
@@ -72,13 +74,17 @@
   (testing "add-product"
     (let [state {:products [] :current-product "  Apples  "}
           state1 (sut/stand-form-reducer state [:add-product])]
-      (is (= ["Apples"] (:products state1)))
+      (is (= ["apples"] (:products state1)))
       (is (= "" (:current-product state1)))))
 
   (testing "prevent duplicate products"
-    (let [state {:products ["Apples"] :current-product "Apples"}
+    (let [state {:products ["apples"] :current-product "Apples"}
           next-state (sut/stand-form-reducer state [:add-product])]
-      (is (= ["Apples"] (:products next-state)))
+      (is (= ["apples"] (:products next-state)))
+      (is (= "" (:current-product next-state))))
+    (let [state {:products ["apples"] :current-product "apples"}
+          next-state (sut/stand-form-reducer state [:add-product])]
+      (is (= ["apples"] (:products next-state)))
       (is (= "" (:current-product next-state)))))
 
   (testing "toggle-address"
@@ -90,17 +96,17 @@
 
 (deftest prepare-submit-data-test
   (testing "adds pending current product"
-    (let [state {:products ["Corn"]
+    (let [state {:products ["corn"]
                  :current-product "Apples"}
           final (sut/prepare-submit-data state)]
-      (is (= ["Corn" "Apples"] (:products final)))
+      (is (= ["apples" "corn"] (:products final)))
       (is (nil? (:current-product final)))))
 
   (testing "empty current-product adds nothing to products"
-    (let [state {:products ["Corn"]
+    (let [state {:products ["corn"]
                  :current-product ""}
           final (sut/prepare-submit-data state)]
-      (is (= ["Corn"] (:products final)))
+      (is (= ["corn"] (:products final)))
       (is (nil? (:current-product final)))))
 
   (testing "coordinates are parsed correctly"
@@ -126,7 +132,7 @@
                     "test-user")]
         (is (:success result))
         (is (some #(= "apples" %) (:products (:processed-data result)))
-            "Automatically added Apples
+            "Automatically added apples
                because it was in the name and exists
                in other stands")
         (is (= "test-user" (:creator (:processed-data result))))))

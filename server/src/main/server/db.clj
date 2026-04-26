@@ -4,6 +4,7 @@
             [taoensso.telemere :as tel]
             [malli.core :as m]
             [malli.error :as me]
+            [clojure.string :as str]
             [com.hjsoft.roadside.common.logic :as logic]
             [com.hjsoft.roadside.common.domain.stand :as common-stand]))
 
@@ -179,20 +180,25 @@
 (defn migrate-stands! []
   (let [stands (xt/q @node '(from :stands [xt/id *]))]
     (doseq [stand stands]
-      (when (and (:coordinate stand) (not (and (:lat stand) (:lon stand))))
-        (tel/log! :info {:migrating-stand (:xt/id stand)})
-        (if-let [[lat lon] (logic/parse-coordinate (:coordinate stand))]
-          (let [updated-stand (-> stand
-                                  (assoc :lat lat :lon lon)
-                                  (dissoc :coordinate))]
-            (xt/submit-tx @node [[:put-docs :stands updated-stand]]))
-          (tel/log! :error {:migration-failed (:xt/id stand) :msg "Could not parse coordinate"}))))))
+      (let [needs-coord-migration (and (:coordinate stand) (not (and (:lat stand) (:lon stand))))
+            products (:products stand)
+            needs-product-migration (some #(not= % (str/lower-case %)) products)]
+        (when (or needs-coord-migration needs-product-migration)
+          (tel/log! :info {:migrating-stand (:xt/id stand)})
+          (let [updated-stand (cond-> stand
+                                needs-coord-migration (as-> s (if-let [[lat lon] (logic/parse-coordinate (:coordinate s))]
+                                                                (-> s (assoc :lat lat :lon lon) (dissoc :coordinate))
+                                                                (do (tel/log! :error {:migration-failed (:xt/id s) :msg "Could not parse coordinate"}) s)))
+                                needs-product-migration (update :products #(mapv str/lower-case %)))]
+            (xt/submit-tx @node [[:put-docs :stands updated-stand]])))))))
 
 (defn save-user [user]
   (xt/submit-tx @node [[:put-docs :users (assoc user :updated (str (t/now)))]]))
 
 (defn save-stand [stand]
-  (let [stand (assoc stand :updated (str (t/now)))]
+  (let [stand (-> stand
+                  (assoc :updated (str (t/now)))
+                  (update :products #(mapv str/lower-case %)))]
     (if-not (m/validate logic/StandSchema (dissoc stand :xt/id))
       (throw (ex-info "Invalid stand data"
                       {:errors (me/humanize (m/explain logic/StandSchema (dissoc stand :xt/id)))}))

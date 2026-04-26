@@ -55,7 +55,13 @@
       (sut/get-all-unique-products
        [{:products [" thing " "thing"]}
         {:products ["thing" "other"]}]))
-   "unique products trimmed and sorted"))
+   "unique products trimmed and sorted")
+  (is
+   (= ["apples" "corn"]
+      (sut/get-all-unique-products
+       [{:products ["Apples" "corn"]}
+        {:products ["apples" "Corn"]}]))
+   "unique products should be all lowercase"))
 
 (deftest parse-coordinates
   (are
