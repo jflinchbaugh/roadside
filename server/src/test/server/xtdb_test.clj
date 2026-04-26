@@ -11,7 +11,7 @@
       (binding [*node* n]
         (f)))))
 
-(use-fixtures :once with-xtdb-container)
+(use-fixtures :each with-xtdb-container)
 
 (deftest container-node-test
   (testing "Using an XTDB node in a container"

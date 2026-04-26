@@ -464,11 +464,7 @@
     (let [stand-id "vote-stand-1"
           _ (xt/submit-tx
              @db/node
-             [[:delete-docs {:from :votes} "v1"]
-              [:delete-docs {:from :votes} "v2"]
-              [:delete-docs {:from :votes} "vote-stand-1-bob"]
-              [:delete-docs :stands stand-id]
-              [:put-docs :stands
+             [[:put-docs :stands
                {:xt/id stand-id
                 :name "Vote Stand"
                 :shared? true
@@ -565,11 +561,6 @@
                    :body (ByteArrayInputStream. (.getBytes (json/write-str {:value 2})))}
               resp (handlers/vote-stand-handler req)]
           (is (= 400 (:status resp)))))
-      (testing "cleanup"
-        (xt/submit-tx @db/node
-          [[:delete-docs :stands stand-id]
-           [:delete-docs {:from :votes} "v1"]
-           [:delete-docs {:from :votes} "vote-stand-1-bob"]]))
       )
 
     (testing "Multiple stands with one vote"
