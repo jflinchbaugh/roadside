@@ -1,6 +1,9 @@
 (ns com.hjsoft.roadside.common.logic
   (:require [clojure.string :as str]))
 
+(def ^:const search-radius-km 200.0)
+(def ^:const fetch-threshold-ratio 0.5)
+
 (defn parse-coordinate [coord-str]
   (try
     (when (string? coord-str)

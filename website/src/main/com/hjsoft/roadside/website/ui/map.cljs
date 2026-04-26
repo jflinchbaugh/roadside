@@ -5,6 +5,7 @@
             [com.hjsoft.roadside.website.state :as state]
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
             [com.hjsoft.roadside.website.utils :as utils]
+            [com.hjsoft.roadside.common.logic :as logic]
             [goog.object :as gobj]))
 
 (defonce ^:private leaflet-ref (atom nil))
@@ -137,7 +138,7 @@
            (.addTo ^js marker stand-map)
            (reset! current-location-marker-ref marker)))))))
 
-(def ^:const search-radius-m 200000)
+(def ^:const search-radius-m (* logic/search-radius-km 1000))
 
 (defn- get-map-width-m [stand-map]
   (let [center (.getCenter ^js stand-map)

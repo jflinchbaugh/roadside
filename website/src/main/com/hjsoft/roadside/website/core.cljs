@@ -15,12 +15,13 @@
             [com.hjsoft.roadside.website.ui.layout
              :refer [header fixed-header sticky-wrapper notification-toast loading-indicator]]
             [goog.object :as gobj]
+            [com.hjsoft.roadside.common.logic :as logic]
             [taoensso.telemere :as tel]))
 
 (tel/set-min-level! :debug)
 
 (def initial-zoom-level 11)
-(def fetch-stands-threshold-km 100.0)
+(def fetch-stands-threshold-km (* logic/search-radius-km logic/fetch-threshold-ratio))
 
 (defn use-app-side-effects
   [app-state dispatch user-location show-form editing-stand]

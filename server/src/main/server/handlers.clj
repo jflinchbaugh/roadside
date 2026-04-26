@@ -58,12 +58,12 @@
 
 (defn- stands->kml [stands]
   (str (h/html
-         {:mode :xml}
-         (h/raw "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-         [:kml {:xmlns "http://www.opengis.net/kml/2.2"}
-          [:Document
-           [:name "Roadside Stands"]
-           (map stand->placemark stands)]])))
+        {:mode :xml}
+        (h/raw "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+        [:kml {:xmlns "http://www.opengis.net/kml/2.2"}
+         [:Document
+          [:name "Roadside Stands"]
+          (map stand->placemark stands)]])))
 
 (defn- format-rfc822 [iso-str]
   (try
@@ -94,19 +94,18 @@
        [:pubDate pub-date])
      [:guid {:isPermaLink "false"} id]]))
 
-
 (defn- stands->rss [stands base-url]
   (str (h/html
-         {:mode :xml}
-         (h/raw "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-         [:rss {:version "2.0"
-                :xmlns:atom "http://www.w3.org/2005/Atom"}
-          [:channel
-           [:title "Roadside Stands"]
-           [:link base-url]
-           [:description "Latest roadside stands"]
-           [:atom:link {:href (str base-url "api/stands.rss") :rel "self" :type "application/rss+xml"}]
-           (map (partial stand->rss-item base-url) stands)]])))
+        {:mode :xml}
+        (h/raw "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+        [:rss {:version "2.0"
+               :xmlns:atom "http://www.w3.org/2005/Atom"}
+         [:channel
+          [:title "Roadside Stands"]
+          [:link base-url]
+          [:description "Latest roadside stands"]
+          [:atom:link {:href (str base-url "api/stands.rss") :rel "self" :type "application/rss+xml"}]
+          (map (partial stand->rss-item base-url) stands)]])))
 
 (defn get-stands-rss-handler [req]
   (let [identity (:identity req)
@@ -168,23 +167,27 @@
       (if (db/get-user login)
         (api-response 403 {:status "failed" :errors {:login ["not available"]}})
         (do
-          (db/save-user (assoc user-data :xt/id id :password (hashers/derive password)))
+          (db/save-user (assoc
+                          user-data
+                          :xt/id id
+                          :password (hashers/derive password)))
           (api-response 201 {:login login}))))))
 
-(def ^:const search-radius-km 200.0)
-
-(defn get-stands-handler [req]
+ (defn get-stands-handler
+  [req]
   (tel/log! :info {:get-stands req})
   (let [identity (:identity req)
         params (:params req)
         lat (some-> (get params :lat) Double/parseDouble)
         lon (some-> (get params :lon) Double/parseDouble)
         since (get params :since)
-        stands (db/list-stands identity {:lat lat :lon lon :radius search-radius-km})
+        stands (db/list-stands identity {:lat lat
+                                         :lon lon
+                                         :radius logic/search-radius-km})
         results (mapv common-stand/select-stand-fields stands)
         now (common-utils/get-current-timestamp)
         deleted-ids (if since
-                      (db/list-deletions identity since {:lat lat :lon lon :radius search-radius-km})
+                      (db/list-deletions identity since {:lat lat :lon lon :radius logic/search-radius-km})
                       [])]
     (api-response 200 {:stands results :deleted-ids deleted-ids :new-sync now})))
 
@@ -207,7 +210,9 @@
     (if-not (m/validate StandSchema stand-to-validate)
       (api-response 400 {:status "failed"
                          :errors (me/humanize (m/explain StandSchema stand-to-validate))})
-      (let [stand (assoc stand :xt/id id
+      (let [stand (assoc
+                    stand
+                    :xt/id id
                     :creator (:identity req))
             stand (dissoc stand :id)]
         (db/save-stand stand)
@@ -215,10 +220,10 @@
 
 (defn update-stand-handler [req]
   (let [id (or (get-in req [:path-params :id])
-             (get-in req [:params :id]))
+               (get-in req [:params :id]))
         stand (-> (json/read-str (rur/body-string req) :key-fn keyword)
-                common-stand/select-stand-fields
-                (dissoc :creator))
+                  common-stand/select-stand-fields
+                  (dissoc :creator))
         existing-stand (when id (db/get-stand-unfiltered id))]
     (tel/log! :info {:update-stand stand})
     (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
@@ -227,9 +232,12 @@
         (if-not (m/validate StandSchema stand-to-validate)
           (api-response 400 {:status "failed"
                              :errors (me/humanize (m/explain StandSchema stand-to-validate))})
-          (let [final-id (or id (:id stand) (:xt/id stand) (common-utils/random-uuid-str))
-                stand (assoc stand :xt/id final-id
-                             :creator (or (:creator existing-stand) (:identity req)))
+          (let [final-id (or id (:id stand) (:xt/id stand)
+                           (common-utils/random-uuid-str))
+                stand (assoc
+                        stand
+                        :xt/id final-id
+                        :creator (or (:creator existing-stand) (:identity req)))
                 stand (dissoc stand :id)]
             (db/save-stand stand)
             (api-response 200 (assoc stand :id final-id))))))))
