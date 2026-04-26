@@ -1073,3 +1073,8 @@ body {
 .vote-score.negative {
   color: #dc3545;
 }
+
+.search-radius-circle {
+  transition: opacity 0.5s ease-out, fill-opacity 0.5s ease-out;
+  pointer-events: none;
+}

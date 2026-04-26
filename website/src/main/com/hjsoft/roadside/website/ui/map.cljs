@@ -137,6 +137,76 @@
            (.addTo ^js marker stand-map)
            (reset! current-location-marker-ref marker)))))))
 
+(def ^:const search-radius-m 200000)
+
+(defn- get-map-width-m [stand-map]
+  (let [center (.getCenter ^js stand-map)
+        bounds (.getBounds ^js stand-map)
+        east (.getEast ^js bounds)
+        ;; Distance from center to the right edge (semi-width)
+        half-width-m (.distanceTo ^js center (clj->js {:lat (.-lat ^js center) :lng east}))]
+    (* 2 half-width-m)))
+
+(defn- view-wider-than-diameter? [stand-map radius-m]
+  (> (get-map-width-m stand-map) (* radius-m 2)))
+
+(defn- use-search-radius-marker
+  [stand-map loading?]
+  (let [marker-ref (hooks/use-ref nil)
+        linger-timeout-ref (hooks/use-ref nil)
+        fade-timeout-ref (hooks/use-ref nil)]
+    (hooks/use-effect
+     [stand-map loading?]
+     (when stand-map
+       (if loading?
+         (do
+           (when @linger-timeout-ref (js/clearTimeout @linger-timeout-ref))
+           (when @fade-timeout-ref (js/clearTimeout @fade-timeout-ref))
+           (when @marker-ref (.removeLayer ^js stand-map @marker-ref))
+           (if (view-wider-than-diameter? stand-map search-radius-m)
+             (let [l ^js @L
+                   circle-fn (gobj/get l "circle")
+                   marker (circle-fn
+                           (.getCenter ^js stand-map)
+                           (clj->js {:radius search-radius-m
+                                     :color "#666"
+                                     :weight 1
+                                     :fill true
+                                     :fillColor "#666"
+                                     :fillOpacity 0.1
+                                     :dashArray "5, 10"
+                                     :interactive false
+                                     :className "search-radius-circle"}))]
+               (.addTo ^js marker stand-map)
+               (reset! marker-ref marker))
+             (reset! marker-ref nil)))
+         (when @marker-ref
+           (let [m @marker-ref]
+             (reset! linger-timeout-ref
+                     (js/setTimeout
+                      (fn []
+                        (when-let [path (.-_path ^js m)]
+                          (gobj/set (.-style path) "opacity" "0")
+                          (gobj/set (.-style path) "fill-opacity" "0"))
+                        (reset! fade-timeout-ref
+                                (js/setTimeout
+                                 (fn []
+                                   (when (and stand-map m)
+                                     (.removeLayer ^js stand-map m))
+                                   (reset! marker-ref nil))
+                                 500)))
+                      1000))))))
+     (fn []
+       (when @linger-timeout-ref (js/clearTimeout @linger-timeout-ref))
+       (when @fade-timeout-ref (js/clearTimeout @fade-timeout-ref))))
+
+    (hooks/use-effect
+     [stand-map]
+     (fn []
+       (when (and stand-map @marker-ref)
+         (.removeLayer ^js stand-map @marker-ref)
+         (reset! marker-ref nil))))))
+
 (defn use-leaflet-map
   [{:keys [div-id center stands selected-stand zoom-level
            set-coordinate-form-data auto-pan?]
@@ -187,6 +257,7 @@
     (use-map-center stand-map center reported-center-ref)
     (use-map-markers stand-map stands selected-stand auto-pan? dispatch)
     (use-user-location-marker stand-map location)
+    (use-search-radius-marker stand-map (:loading-stands? app-state))
     {:stand-map stand-map
      :zoom current-zoom}))
 
