@@ -9,7 +9,7 @@ test: $(SRC_FILES) $(TEST_FILES)
 	clj -T:build test
 
 uber: target/.uberjar-built
-target/.uberjar-built: target/.test-passed $(SRC_FILES)
+target/.uberjar-built: $(SRC_FILES)
 	clj -T:build uber
 	touch target/.uberjar-built
 
