@@ -5,17 +5,15 @@ all: container
 
 .PHONY: clean run-server run-xtdb test uber container
 
-test: target/.test-passed
+test: $(SRC_FILES) $(TEST_FILES)
+	clj -T:build test
+
 uber: target/.uberjar-built
-
-target/.test-passed: $(SRC_FILES) $(TEST_FILES)
-	clj -T:build run-test && mkdir -p target && touch target/.test-passed
-
 target/.uberjar-built: target/.test-passed $(SRC_FILES)
 	clj -T:build uber
 	touch target/.uberjar-built
 
-container: target/.uberjar-built Containerfile
+container: test target/.uberjar-built Containerfile
 	podman build -t roadside-server:latest .
 
 clean:

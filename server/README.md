@@ -37,12 +37,12 @@ $ curl -s -v http://localhost:8080/css/style.css
 
 run the tests:
 ```
-$ clj -T:build run-test
+$ clj -T:build test
 ```
 
 run a single test:
 ```
-$ clj -T:build run-test -n server.auth-test
+$ clj -T:build test -n server.auth-test
 ```
 
 build the container image:

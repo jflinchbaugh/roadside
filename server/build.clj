@@ -1,4 +1,5 @@
 (ns build
+  (:refer-clojure :exclude [test])
   (:require [clojure.tools.build.api :as b]))
 
 (def lib 'com.hjsoft/server)
@@ -12,12 +13,14 @@
 (defn clean [_]
   (b/delete {:path "target"}))
 
-(defn run-test [opts]
+(defn test [opts]
   (let [basis (b/create-basis {:project "deps.edn" :aliases [:test]})
         cmds (b/java-command
               {:basis basis
                :main "clojure.main"
-               :jvm-opts ["--enable-preview"]
+               :jvm-opts ["--enable-preview"
+                          "--add-opens=java.base/java.nio=ALL-UNNAMED"
+                          "--enable-native-access=ALL-UNNAMED"]
                :main-args (into ["-m" "cognitect.test-runner" "-d" "src/test"]
                             (mapcat (fn [[k v]] [(str k) (str v)]) opts))})
         {:keys [exit]} (b/process cmds)]
