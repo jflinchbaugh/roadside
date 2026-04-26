@@ -171,7 +171,7 @@
           (db/save-user (assoc user-data :xt/id id :password (hashers/derive password)))
           (api-response 201 {:login login}))))))
 
-(def ^:const search-radius-km 500.0)
+(def ^:const search-radius-km 200.0)
 
 (defn get-stands-handler [req]
   (tel/log! :info {:get-stands req})
