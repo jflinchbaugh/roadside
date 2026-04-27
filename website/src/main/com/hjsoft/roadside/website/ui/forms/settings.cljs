@@ -6,6 +6,7 @@
             [com.hjsoft.roadside.website.version :as version]
             [com.hjsoft.roadside.website.ui.hooks :as ui-hooks]
             [com.hjsoft.roadside.website.api :as api]
+            [com.hjsoft.roadside.website.controller :as controller]
             [com.hjsoft.roadside.website.ui.forms.field :refer [form-field]]
             [com.hjsoft.roadside.website.ui.forms.buttons :refer [close-button]]
             [cljs.core.async :refer [go <!]]
@@ -35,7 +36,11 @@
                                                {:type :success
                                                 :message "Registered successfully!"}])
                                     (set-register-error nil)
-                                    (dispatch [:set-settings (dissoc form-data :email)])
+                                    (let [new-settings (dissoc form-data :email)]
+                                      (dispatch [:set-settings new-settings])
+                                      (controller/upload-all-stands!
+                                       (assoc app-state :settings new-settings)
+                                       dispatch))
                                     (set-show-settings-dialog false))
                                   (set-register-error (:error res)))))))]
 

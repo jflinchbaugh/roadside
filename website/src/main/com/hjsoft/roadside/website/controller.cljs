@@ -147,39 +147,49 @@
   ([app-state dispatch]
    (upload-all-stands! app-state dispatch default-deps))
   ([{:keys [stands settings]} dispatch {:keys [create-stand]}]
-   (cond
-     (not (remote-allowed? settings))
-     (notify! dispatch :error "Remote operations disabled by settings")
+   (let [user (:user settings)
+         stands-to-upload (filter (fn [s]
+                                    (let [creator (:creator s)]
+                                      (or (nil? creator)
+                                          (empty? (str creator))
+                                          (= creator user))))
+                                  stands)]
+     (cond
+       (not (remote-allowed? settings))
+       (notify! dispatch :error "Remote operations disabled by settings")
 
-     (not (has-credentials? settings))
-     (notify! dispatch :error "Authentication required to upload!")
+       (not (has-credentials? settings))
+       (notify! dispatch :error "Authentication required to upload!")
 
-     :else
-     (go
-       (notify! dispatch :info (str "Uploading " (count stands) " stands..."))
-       (let [results (atom [])]
-         (doseq [stand stands]
-           (let [res (<! (create-stand (:user settings) (:password settings) stand))]
-             (swap! results conj res)))
-         (let [success-count (count (filter :success @results))
-               fail-count (- (count stands) success-count)]
-           (if (pos? fail-count)
-             (notify!
-               dispatch
-               :error
-               (str
-                 "Upload finished: "
-                 success-count
-                 " successes, "
-                 fail-count
-                 " failures."))
-             (notify!
-               dispatch
-               :success
-               (str
-                 "Successfully uploaded "
-                 success-count
-                 " stands!")))))))))
+       (empty? stands-to-upload)
+       nil
+
+       :else
+       (go
+         (notify! dispatch :info (str "Uploading " (count stands-to-upload) " stands..."))
+         (let [results (atom [])]
+           (doseq [stand stands-to-upload]
+             (let [res (<! (create-stand (:user settings) (:password settings) stand))]
+               (swap! results conj res)))
+           (let [success-count (count (filter :success @results))
+                 fail-count (- (count stands-to-upload) success-count)]
+             (if (pos? fail-count)
+               (notify!
+                 dispatch
+                 :error
+                 (str
+                   "Upload finished: "
+                   success-count
+                   " successes, "
+                   fail-count
+                   " failures."))
+               (notify!
+                 dispatch
+                 :success
+                 (str
+                   "Successfully uploaded "
+                   success-count
+                   " stands!"))))))))))
 
 ;; Controller Intent Functions
 
@@ -210,32 +220,45 @@
   ([app-state dispatch form-data editing-stand]
    (update-stand! app-state dispatch form-data editing-stand default-deps))
   ([app-state dispatch form-data editing-stand deps]
-   (let [creator (get-in app-state [:settings :user])
-         {:keys [success
-                 stands
-                 error
-                 processed-data]} (stand-domain/edit-stand
-                                    form-data
-                                    (:stands app-state)
-                                    editing-stand
-                                    creator)]
-     (if success
+   (let [user (get-in app-state [:settings :user])
+         editing-creator (:creator editing-stand)]
+     (if (and (seq (str editing-creator)) (not= user editing-creator))
        (do
-         (dispatch [:set-stands stands])
-         (dispatch [:set-selected-stand processed-data])
-         (dispatch [:set-map-center [(:lat processed-data) (:lon processed-data)]])
-         (remote-update-stand! app-state dispatch processed-data deps)
-         true)
-       (do
-         (notify! dispatch :error (format-error error) (:id editing-stand))
-         false)))))
+         (notify! dispatch :error "Forbidden: You do not own this stand")
+         false)
+       (let [{:keys [success
+                     stands
+                     error
+                     processed-data]} (stand-domain/edit-stand
+                                        form-data
+                                        (:stands app-state)
+                                        editing-stand
+                                        user)]
+         (if success
+           (do
+             (dispatch [:set-stands stands])
+             (dispatch [:set-selected-stand processed-data])
+             (dispatch [:set-map-center [(:lat processed-data) (:lon processed-data)]])
+             (remote-update-stand! app-state dispatch processed-data deps)
+             true)
+           (do
+             (notify! dispatch :error (format-error error) (:id editing-stand))
+             false)))))))
 
 (defn delete-stand!
   ([app-state dispatch stand]
    (delete-stand! app-state dispatch stand default-deps))
   ([app-state dispatch stand deps]
-   (dispatch [:remove-stand stand])
-   (remote-delete-stand! app-state dispatch (:id stand) deps)))
+   (let [user (get-in app-state [:settings :user])
+         creator (:creator stand)]
+     (if (and (seq (str creator)) (not= user creator))
+       (do
+         (notify! dispatch :error "Forbidden: You do not own this stand")
+         false)
+       (do
+         (dispatch [:remove-stand stand])
+         (remote-delete-stand! app-state dispatch (:id stand) deps)
+         true)))))
 
 (defn vote-stand!
   ([app-state dispatch stand value]
