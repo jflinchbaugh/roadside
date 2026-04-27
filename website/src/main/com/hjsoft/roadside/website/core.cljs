@@ -13,7 +13,8 @@
             [com.hjsoft.roadside.website.ui.forms
              :refer [stand-form settings-dialog export-dialog about-dialog]]
             [com.hjsoft.roadside.website.ui.layout
-             :refer [header fixed-header sticky-wrapper notification-toast loading-indicator]]
+             :refer [header fixed-header sticky-wrapper
+                     notification-toast loading-indicator]]
             [goog.object :as gobj]
             [com.hjsoft.roadside.common.logic :as logic]
             [taoensso.telemere :as tel]))
@@ -21,10 +22,12 @@
 (tel/set-min-level! :debug)
 
 (def initial-zoom-level 11)
-(def fetch-stands-threshold-km (* logic/search-radius-km logic/fetch-threshold-ratio))
+(def fetch-stands-threshold-km (* logic/search-radius-km
+                                 logic/fetch-threshold-ratio))
 
 (defn handle-initial-url-params!
-  "Parses URL parameters on startup to set initial map center and form visibility."
+  "Parses URL parameters on startup to set initial map center
+   and show the add form."
   [dispatch get-location set-show-form]
   (let [params (js/URLSearchParams. (.. js/window -location -search))
         action (.get params "action")
@@ -39,7 +42,7 @@
       (set-show-form true))))
 
 (defn sync-form-state-to-url!
-  "Synchronizes the browser URL and page title based on the form's visibility."
+  "Synchronizes the browser URL and page title when showing the Add form."
   [show-form]
   (let [params (js/URLSearchParams. (.. js/window -location -search))
         current-action (.get params "action")]
@@ -54,7 +57,9 @@
         (when (= current-action "add")
           (.delete params "action")
           (let [query (.toString params)
-                new-url (if (seq query) (str "?" query) (.. js/window -location -pathname))]
+                new-url (if (seq query)
+                          (str "?" query)
+                          (.. js/window -location -pathname))]
             (js/window.history.replaceState #js {} "" new-url)))))))
 
 (defn use-app-side-effects
