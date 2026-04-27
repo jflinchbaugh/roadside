@@ -1,0 +1,37 @@
+{
+  "name": "Roadside Stands",
+  "short_name": "Roadside",
+  "description": "Find and share roadside produce stands",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4a7c44",
+  "icons": [
+    {
+      "src": "images/apples.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "images/apples.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Stand",
+      "short_name": "Add",
+      "description": "Open the form to add a new roadside stand",
+      "url": "./?action=add",
+      "icons": [
+        {
+          "src": "images/apples.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

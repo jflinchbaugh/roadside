@@ -143,6 +143,16 @@
            [show-form]
            (sync-form-state-to-url! show-form))
 
+        ;; Handle browser back/forward buttons
+        _ (hooks/use-effect
+           :once
+           (let [handler (fn [_]
+                           (let [params (js/URLSearchParams. (.. js/window -location -search))
+                                 action (.get params "action")]
+                             (set-show-form (= action "add"))))]
+             (js/window.addEventListener "popstate" handler)
+             #(js/window.removeEventListener "popstate" handler)))
+
         stands-by-expiry (hooks/use-memo
                           [stands (:show-expired? app-state) (:location user-location)]
                           (state/select-stands-by-expiry app-state (:location user-location)))
