@@ -44,3 +44,19 @@
             "Header title should be present")
           (is (some? (tlr/queryByText container "Add Stand"))
             "Add Stand button should be present"))))))
+
+(deftest app-url-action-add-test
+  (testing "app component opens add stand form when ?action=add is present"
+    (let [mock-l (create-mock-leaflet)
+          _ (ui-map/set-leaflet! mock-l)]
+      (with-redefs [controller/fetch-remote-stands! (fn
+                                                      ([_ _] nil)
+                                                      ([_ _ _] nil))
+                    controller/save-local-data! (fn [_ _ _ _] nil)]
+        (let [mock-geo #js {:getCurrentPosition (fn [success _ _])}]
+          (js/window.history.pushState #js {} "" "?action=add")
+          (let [res (tlr/render ($ sut/app {:geolocation mock-geo}))
+                container (.-container res)]
+            (is (some? (tlr/queryByText container "Add New Stand"))
+              "Add New Stand form should be present"))
+          (js/window.history.pushState #js {} "" "/"))))))
