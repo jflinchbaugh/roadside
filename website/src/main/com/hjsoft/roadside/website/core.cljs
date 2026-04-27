@@ -23,6 +23,40 @@
 (def initial-zoom-level 11)
 (def fetch-stands-threshold-km (* logic/search-radius-km logic/fetch-threshold-ratio))
 
+(defn handle-initial-url-params!
+  "Parses URL parameters on startup to set initial map center and form visibility."
+  [dispatch get-location set-show-form]
+  (let [params (js/URLSearchParams. (.. js/window -location -search))
+        action (.get params "action")
+        lat (js/parseFloat (.get params "lat"))
+        lon (js/parseFloat (.get params "lon"))]
+    (if (and (not (js/isNaN lat)) (not (js/isNaN lon)))
+      (dispatch [:set-map-center [lat lon]])
+      (get-location (fn [loc] (dispatch [:set-map-center loc]))))
+    (when (= action "add")
+      ;; Use replaceState if already there to avoid back-button loop
+      (js/window.history.replaceState #js {} "" (.. js/window -location -href))
+      (set-show-form true))))
+
+(defn sync-form-state-to-url!
+  "Synchronizes the browser URL and page title based on the form's visibility."
+  [show-form]
+  (let [params (js/URLSearchParams. (.. js/window -location -search))
+        current-action (.get params "action")]
+    (if show-form
+      (do
+        (set! (.-title js/document) "Add Stand - Roadside Stands")
+        (when (not= current-action "add")
+          (.set params "action" "add")
+          (js/window.history.pushState #js {} "" (str "?" (.toString params)))))
+      (do
+        (set! (.-title js/document) "Roadside Stands")
+        (when (= current-action "add")
+          (.delete params "action")
+          (let [query (.toString params)
+                new-url (if (seq query) (str "?" query) (.. js/window -location -pathname))]
+            (js/window.history.replaceState #js {} "" new-url)))))))
+
 (defn use-app-side-effects
   [app-state dispatch user-location show-form set-show-form editing-stand]
   (let [{:keys [stands settings map-center map-zoom last-sync]} app-state
@@ -78,17 +112,7 @@
     ;; Initial location fetch, center map, and handle URL parameters
     (hooks/use-effect
      :once
-     (let [params (js/URLSearchParams. (.. js/window -location -search))
-           action (.get params "action")
-           lat (js/parseFloat (.get params "lat"))
-           lon (js/parseFloat (.get params "lon"))]
-       (if (and (not (js/isNaN lat)) (not (js/isNaN lon)))
-         (dispatch [:set-map-center [lat lon]])
-         (get-location (fn [loc] (dispatch [:set-map-center loc]))))
-       (when (= action "add")
-         ;; Use replaceState if already there to avoid back-button loop
-         (js/window.history.replaceState #js {} "" (.. js/window -location -href))
-         (set-show-form true))))))
+     (handle-initial-url-params! dispatch get-location set-show-form))))
 
 (defnc app [{:keys [geolocation]}]
   (let [[app-state dispatch] (hooks/use-reducer
@@ -112,21 +136,7 @@
         ;; Synchronize show-form state with URL and Page Title
         _ (hooks/use-effect
            [show-form]
-           (let [params (js/URLSearchParams. (.. js/window -location -search))
-                 current-action (.get params "action")]
-             (if show-form
-               (do
-                 (set! (.-title js/document) "Add Stand - Roadside Stands")
-                 (when (not= current-action "add")
-                   (.set params "action" "add")
-                   (js/window.history.pushState #js {} "" (str "?" (.toString params)))))
-               (do
-                 (set! (.-title js/document) "Roadside Stands")
-                 (when (= current-action "add")
-                   (.delete params "action")
-                   (let [query (.toString params)
-                         new-url (if (seq query) (str "?" query) (.. js/window -location -pathname))]
-                     (js/window.history.replaceState #js {} "" new-url)))))))
+           (sync-form-state-to-url! show-form))
 
         stands-by-expiry (hooks/use-memo
                           [stands (:show-expired? app-state) (:location user-location)]
