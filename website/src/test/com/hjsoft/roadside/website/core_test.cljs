@@ -5,8 +5,7 @@
             [com.hjsoft.roadside.website.leaflet-init]
             [com.hjsoft.roadside.website.core :as sut]
             [com.hjsoft.roadside.website.controller :as controller]
-            [com.hjsoft.roadside.website.ui.map :as ui-map]
-            ["react" :as react]))
+            [com.hjsoft.roadside.website.ui.map :as ui-map]))
 
 (use-fixtures :each
   {:after tlr/cleanup})

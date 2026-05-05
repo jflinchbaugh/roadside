@@ -5,8 +5,7 @@
             [malli.core :as m]
             [malli.error :as me]
             [clojure.string :as str]
-            [com.hjsoft.roadside.common.logic :as logic]
-            [com.hjsoft.roadside.common.domain.stand :as common-stand]))
+            [com.hjsoft.roadside.common.logic :as logic]))
 
 (defonce node (atom nil))
 

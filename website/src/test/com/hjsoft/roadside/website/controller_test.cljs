@@ -2,10 +2,8 @@
   (:require [cljs.test :refer [deftest is testing async]]
             [com.hjsoft.roadside.website.controller :as sut]
             [com.hjsoft.roadside.website.storage :as storage]
-            [com.hjsoft.roadside.website.api :as api]
             [clojure.string :as str]
-            [cljs.core.async :refer [go]]
-            [com.hjsoft.roadside.website.state :as state]))
+            [cljs.core.async :refer [go]]))
 
 (defn wait-for [atom-ref pred done-fn timeout-ms]
   (let [start (.getTime (js/Date.))]

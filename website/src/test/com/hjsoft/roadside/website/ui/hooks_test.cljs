@@ -1,9 +1,6 @@
 (ns com.hjsoft.roadside.website.ui.hooks-test
   (:require [cljs.test :refer [deftest is testing]]
             [com.hjsoft.roadside.website.ui.hooks :as sut]
-            [com.hjsoft.roadside.website.state :as state]
-            [helix.core :refer [$]]
-            ["react" :as react]
             ["@testing-library/react" :refer [renderHook act]]))
 
 (deftest use-escape-key-test

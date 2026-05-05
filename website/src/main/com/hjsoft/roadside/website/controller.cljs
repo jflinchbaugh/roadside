@@ -2,7 +2,6 @@
   (:require [com.hjsoft.roadside.website.api :as api]
             [com.hjsoft.roadside.website.storage :as storage]
             [com.hjsoft.roadside.website.domain.stand :as stand-domain]
-            [com.hjsoft.roadside.website.utils :as utils]
             [taoensso.telemere :as tel]
             [clojure.string :as str]
             [cljs.core.async :refer [go <!]]))

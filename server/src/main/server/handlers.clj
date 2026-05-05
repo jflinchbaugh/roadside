@@ -1,7 +1,6 @@
 (ns server.handlers
   (:require [server.db :as db]
             [server.geocoding :as geo]
-            [server.utils :as utils]
             [server.config :as config]
             [clojure.data.json :as json]
             [clojure.data.csv :as csv]

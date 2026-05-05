@@ -9,8 +9,7 @@
             [com.hjsoft.roadside.website.controller :as controller]
             [com.hjsoft.roadside.website.ui.forms.field :refer [form-field]]
             [com.hjsoft.roadside.website.ui.forms.buttons :refer [close-button]]
-            [cljs.core.async :refer [go <!]]
-            [clojure.string :as str]))
+            [cljs.core.async :refer [go <!]]))
 
 (defnc settings-dialog [{:keys [register-fn]}]
   (let [app-state (state/use-app-state)

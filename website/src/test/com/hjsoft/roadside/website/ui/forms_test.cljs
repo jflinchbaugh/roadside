@@ -6,8 +6,7 @@
             [com.hjsoft.roadside.website.ui.forms.stand :as stand]
             [com.hjsoft.roadside.website.ui.forms.settings :as settings]
             [com.hjsoft.roadside.website.state :as state]
-            [com.hjsoft.roadside.website.api :as api]
-            [cljs.core.async :refer [go <! put! chan]]
+            [cljs.core.async :refer [put! chan]]
             [goog.object :as gobj]
             ["react" :as react]))
 

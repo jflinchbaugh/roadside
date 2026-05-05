@@ -1,8 +1,6 @@
 (ns server.core-test
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
-            [server.core :as core]
             [server.db :as db]
-            [server.auth :as auth]
             [server.handlers :as handlers]
             [server.config :as config]
             [buddy.hashers :as hashers]
@@ -10,8 +8,7 @@
             [server.xtdb-container :as xtn]
             [org.httpkit.client :as hkc]
             [clojure.string :as str]
-            [clojure.data.json :as json]
-            [clojure.pprint :refer [pprint]])
+            [clojure.data.json :as json])
   (:import [java.io ByteArrayInputStream]))
 
 (defn with-xtdb-container [f]

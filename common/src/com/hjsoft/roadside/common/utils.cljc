@@ -3,7 +3,7 @@
             [com.hjsoft.roadside.common.logic :as logic]))
 
 (defn get-current-timestamp []
-  #?(:clj (.format (java.time.format.DateTimeFormatter/ISO_INSTANT) (java.time.Instant/now))
+  #?(:clj (.format java.time.format.DateTimeFormatter/ISO_INSTANT (java.time.Instant/now))
      :cljs (.toISOString (js/Date.))))
 
 (defn in-days [d]

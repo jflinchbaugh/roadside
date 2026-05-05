@@ -1,9 +1,7 @@
 (ns com.hjsoft.roadside.website.local-only-test
   (:require [cljs.test :refer [deftest is testing async]]
             [com.hjsoft.roadside.website.controller :as sut]
-            [com.hjsoft.roadside.website.api :as api]
-            [cljs.core.async :refer [go]]
-            [com.hjsoft.roadside.website.state :as state]))
+            [cljs.core.async :refer [go]]))
 
 (def mock-deps
   {:fetch-stands (fn [& _] (go {:success true :data []}))
