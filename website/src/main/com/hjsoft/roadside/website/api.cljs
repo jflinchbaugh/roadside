@@ -21,11 +21,18 @@
 
 (defn- extract-error [response default-msg]
   (let [body (:body response)]
-    (if (and (map? body) (:errors body))
+    (cond
+      (and (map? body) (:errors body))
       (let [errors (:errors body)]
-        (if (map? errors)
-          (map (fn [[k v]] (str (name k) ": " (str/join "; " v))) errors)
-          [errors]))
+        (cond
+          (map? errors) (map (fn [[k v]] (str (name k) ": " (str/join "; " v))) errors)
+          (coll? errors) errors
+          :else [errors]))
+
+      (and (map? body) (:message body))
+      [(:message body)]
+
+      :else
       [(or (:status-text response) default-msg)])))
 
 (defn fetch-stands

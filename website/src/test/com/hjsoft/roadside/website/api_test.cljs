@@ -154,7 +154,7 @@
                  (is (= "ok" (get-in result [:data :msg])))
                  (done)))))))
 
-(deftest register-user-failure-test
+(deftest register-user-failure-message-test
   (async done
          (testing "register-user handles server error with message"
            (let [deps (make-mock-deps
@@ -166,7 +166,9 @@
                (let [result (<! (sut/register-user "u" "p" "e" deps))]
                  (is (not (:success result)))
                  (is (= ["User exists"] (:error result)))
-                 (done))))))
+                 (done)))))))
+
+(deftest register-user-failure-errors-test
   (async done
          (testing "register-user handles server error with list of errors"
            (let [deps (make-mock-deps
@@ -178,7 +180,9 @@
                (let [result (<! (sut/register-user "u" "p" "e" deps))]
                  (is (not (:success result)))
                  (is (= ["Error 1" "Error 2"] (:error result)))
-                 (done))))))
+                 (done)))))))
+
+(deftest register-user-failure-generic-test
   (async done
          (testing "register-user handles generic server error"
            (let [deps (make-mock-deps
