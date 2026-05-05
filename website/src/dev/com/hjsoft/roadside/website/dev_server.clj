@@ -7,7 +7,10 @@
 (defn handler [req]
   (let [uri (:uri req)]
     (if (str/starts-with? uri "/api")
-      (let [url (str target uri (when-let [qs (:query-string req)] (str "?" qs)))]
+      (let [url (str
+                  target
+                  uri
+                  (when-let [qs (:query-string req)] (str "?" qs)))]
         (let [resp @(http/request
                      {:method (:request-method req)
                       :url url
@@ -15,6 +18,8 @@
                       :body (:body req)
                       :as :stream})]
           {:status (:status resp)
-           :headers (update-keys (:headers resp) (fn [k] (if (keyword? k) (name k) (str k))))
+           :headers (update-keys
+                      (:headers resp)
+                      (fn [k] (if (keyword? k) (name k) (str k))))
            :body (:body resp)}))
       nil)))
