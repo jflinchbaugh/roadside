@@ -92,7 +92,19 @@
           state1 (sut/stand-form-reducer state [:toggle-address])
           state2 (sut/stand-form-reducer state1 [:toggle-address])]
       (is (true? (:show-address? state1)))
-      (is (false? (:show-address? state2))))))
+      (is (false? (:show-address? state2)))))
+
+  (testing "sync-coordinate and user-modified-coordinate?"
+    (let [map-center [40.0 -76.0]
+          state (sut/init-form-state {:map-center map-center})
+          _ (is (false? (:user-modified-coordinate? state)) "Initially not modified")
+          state1 (sut/stand-form-reducer state [:sync-coordinate "41.0, -77.0"])]
+      (is (= "41.0, -77.0" (:coordinate state1)) "Coordinate synced when not modified")
+      (is (false? (:user-modified-coordinate? state1)) "Still not modified after sync")
+      (let [state2 (sut/stand-form-reducer state1 [:update-field [:coordinate "42.0, -78.0"]])]
+        (is (true? (:user-modified-coordinate? state2)) "Marked as modified after update-field")
+        (let [state3 (sut/stand-form-reducer state2 [:sync-coordinate "43.0, -79.0"])]
+          (is (= "42.0, -78.0" (:coordinate state3)) "Coordinate NOT synced when modified"))))))
 
 (deftest prepare-submit-data-test
   (testing "adds pending current product"

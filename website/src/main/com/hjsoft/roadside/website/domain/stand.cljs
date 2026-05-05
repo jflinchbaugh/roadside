@@ -31,14 +31,23 @@
            :show-address? (boolean (or (seq (:address initial))
                                        (seq (:town initial))
                                        (seq (:state initial))))
-           :current-product "")))
+           :current-product ""
+           :user-modified-coordinate? (boolean editing-stand))))
 
 (defn- remove-product-by-name [products product-name]
   (filterv #(not= % product-name) products))
 
 (defn stand-form-reducer [state [action-type payload]]
   (case action-type
-    :update-field (assoc state (first payload) (second payload))
+    :update-field (let [[field value] payload]
+                    (cond-> (assoc state field value)
+                      (= field :coordinate) (assoc :user-modified-coordinate? true)))
+    :sync-coordinate (if (:user-modified-coordinate? state)
+                       state
+                       (assoc state
+                              :coordinate payload
+                              :lat (first (utils/parse-coordinates payload))
+                              :lon (second (utils/parse-coordinates payload))))
     :update-current-product (assoc state :current-product payload)
     :add-product (let [product (str/trim (str/lower-case (or (:current-product state) "")))]
                    (if (or (empty? product)

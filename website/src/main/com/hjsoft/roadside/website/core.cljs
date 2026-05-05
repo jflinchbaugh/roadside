@@ -32,13 +32,12 @@
   (let [params (js/URLSearchParams. (.. js/window -location -search))
         action (.get params "action")
         lat (js/parseFloat (.get params "lat"))
-        lon (js/parseFloat (.get params "lon"))]
-    (if (and (not (js/isNaN lat)) (not (js/isNaN lon)))
+        lon (js/parseFloat (.get params "lon"))
+        has-coords? (and (not (js/isNaN lat)) (not (js/isNaN lon)))]
+    (if has-coords?
       (dispatch [:set-map-center [lat lon]])
       (get-location (fn [loc] (dispatch [:set-map-center loc]))))
     (when (= action "add")
-      ;; Use replaceState if already there to avoid back-button loop
-      (js/window.history.replaceState #js {} "" (.. js/window -location -href))
       (set-show-form true))))
 
 (defn sync-form-state-to-url!

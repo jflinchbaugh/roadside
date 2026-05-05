@@ -34,6 +34,14 @@
                            :map-center (:map-center app-state)}
                           stand-domain/init-form-state)]
 
+    (hooks/use-effect
+     [(:map-center app-state)]
+     (when-not editing-stand
+       (local-dispatch
+        [:sync-coordinate (str (first (:map-center app-state))
+                               ", "
+                               (second (:map-center app-state)))])))
+
     (ui-hooks/use-escape-key #(cancel-form!))
 
     (d/div
