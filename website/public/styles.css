@@ -96,6 +96,8 @@ body {
 
 #map-container {
   height: 32vh;
+  height: 32svh; /* More stable on mobile browsers */
+  flex-shrink: 0; /* Prevent shrinking in flex layouts */
   width: 100%;
   margin: 0;
   margin-bottom: 0.5rem; /* Add some space below the map */
