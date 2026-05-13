@@ -596,7 +596,8 @@
         (let [req {:path-params {:id stand-id}
                    :identity "alice"
                    :body (ByteArrayInputStream. (.getBytes (json/write-str {:value 0})))}
-              resp (handlers/vote-stand-handler req)]
+              resp (handlers/vote-stand-handler req)
+              _ (Thread/sleep 200)]
           (is (= 200 (:status resp)))
           (let [get-resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "alice"})
                 stand (json/read-str (:body get-resp) :key-fn keyword)]
