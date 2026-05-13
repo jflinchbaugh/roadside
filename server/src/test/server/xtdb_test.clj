@@ -26,8 +26,7 @@
 (deftest xtdb-math-functions-demo
   (testing "XTDB 2.x math functions in queries"
     (let [node *node*]
-      (xt/submit-tx node [[:put-docs :math-test {:xt/id 1 :x 0.5}]])
-      (Thread/sleep 1000)
+      (xt/execute-tx node [[:put-docs :math-test {:xt/id 1 :x 0.5}]])
       (testing "sqrt in where"
         (let [result (xt/q node '(from :math-test [x] (where (> (sqrt x) 0))))]
           (is (= 1 (count result)))

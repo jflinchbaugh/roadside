@@ -30,7 +30,5 @@
               node
               (mapv
                 (fn [d] [:erase-docs table (:xt/id d)])
-                docs))
-            ;; Small delay to be extra sure indexing is stable
-            (Thread/sleep 100)))))
+                docs))))))
     (f node)))

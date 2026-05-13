@@ -208,22 +208,25 @@
       (vec (set (keep #(when-not (contains? active-ids (:xt/id %)) (:xt/id %)) ended))))))
 
 (defn migrate-stands! []
-  (let [stands (xt/q @node '(from :stands [xt/id *]))]
-    (doseq [stand stands]
-      (let [needs-coord-migration (and (:coordinate stand) (not (and (:lat stand) (:lon stand))))
-            products (:products stand)
-            needs-product-migration (some #(not= % (str/lower-case %)) products)]
-        (when (or needs-coord-migration needs-product-migration)
-          (tel/log! :info {:migrating-stand (:xt/id stand)})
-          (let [updated-stand (cond-> stand
-                                needs-coord-migration (as-> s (if-let [[lat lon] (logic/parse-coordinate (:coordinate s))]
-                                                                (-> s (assoc :lat lat :lon lon) (dissoc :coordinate))
-                                                                (do (tel/log! :error {:migration-failed (:xt/id s) :msg "Could not parse coordinate"}) s)))
-                                needs-product-migration (update :products #(mapv str/lower-case %)))]
-            (xt/submit-tx @node [[:put-docs :stands updated-stand]])))))))
+  (let [stands (xt/q @node '(from :stands [xt/id *]))
+        ops (keep (fn [stand]
+                    (let [needs-coord-migration (and (:coordinate stand) (not (and (:lat stand) (:lon stand))))
+                          products (:products stand)
+                          needs-product-migration (some #(not= % (str/lower-case %)) products)]
+                      (when (or needs-coord-migration needs-product-migration)
+                        (tel/log! :info {:migrating-stand (:xt/id stand)})
+                        (let [updated-stand (cond-> stand
+                                              needs-coord-migration (as-> s (if-let [[lat lon] (logic/parse-coordinate (:coordinate s))]
+                                                                              (-> s (assoc :lat lat :lon lon) (dissoc :coordinate))
+                                                                              (do (tel/log! :error {:migration-failed (:xt/id s) :msg "Could not parse coordinate"}) s)))
+                                              needs-product-migration (update :products #(mapv str/lower-case %)))]
+                          [:put-docs :stands updated-stand]))))
+                  stands)]
+    (when (seq ops)
+      (xt/execute-tx @node (vec ops)))))
 
 (defn save-user [user]
-  (xt/submit-tx @node [[:put-docs :users (assoc user :updated (str (t/now)))]]))
+  (xt/execute-tx @node [[:put-docs :users (assoc user :updated (str (t/now)))]]))
 
 (defn save-stand [stand]
   (let [stand (-> stand
@@ -232,13 +235,13 @@
     (if-not (m/validate logic/StandSchema (dissoc stand :xt/id))
       (throw (ex-info "Invalid stand data"
                       {:errors (me/humanize (m/explain logic/StandSchema (dissoc stand :xt/id)))}))
-      (xt/submit-tx @node [[:put-docs :stands stand]]))))
+      (xt/execute-tx @node [[:put-docs :stands stand]]))))
 
 (defn delete-stand [id]
-  (xt/submit-tx @node [[:delete-docs :stands id]]))
+  (xt/execute-tx @node [[:delete-docs :stands id]]))
 
 (defn vote-stand [stand-id user-id value]
   (let [vote-id (str stand-id "-" user-id)]
     (if (zero? value)
-      (xt/submit-tx @node [[:delete-docs :votes vote-id]])
-      (xt/submit-tx @node [[:put-docs :votes {:xt/id vote-id :stand-id stand-id :user-id user-id :value value}]]))))
+      (xt/execute-tx @node [[:delete-docs :votes vote-id]])
+      (xt/execute-tx @node [[:put-docs :votes {:xt/id vote-id :stand-id stand-id :user-id user-id :value value}]]))))

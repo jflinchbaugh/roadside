@@ -426,12 +426,8 @@
 (deftest migration-test
   (testing "Migration from :coordinate to :lat and :lon"
     (let [old-stand {:xt/id "old-1" :name "Old" :coordinate "40.0, -76.0" :creator "alice"}]
-      (xt/submit-tx @db/node [[:put-docs :stands old-stand]])
-      ;; Wait for tx
-      (Thread/sleep 100)
+      (xt/execute-tx @db/node [[:put-docs :stands old-stand]])
       (db/migrate-stands!)
-      ;; Wait for migration tx
-      (Thread/sleep 100)
       (let [migrated (db/get-stand-unfiltered "old-1")]
         (is (= 40.0 (:lat migrated)))
         (is (= -76.0 (:lon migrated)))
@@ -440,7 +436,7 @@
 (deftest auth-test
   (testing "authfn"
     (reset! db/node @db/node) ;; ensure atom is initialized if needed
-    (xt/submit-tx @db/node [[:put-docs :users {:xt/id "u1" :login "bob" :password (hashers/derive "pass") :enabled? true}]])
+    (xt/execute-tx @db/node [[:put-docs :users {:xt/id "u1" :login "bob" :password (hashers/derive "pass") :enabled? true}]])
     (let [user (db/get-user "bob")]
       (is (= "bob" (:login user)))
       (is (:valid (hashers/verify "pass" (:password user)))))))
@@ -510,7 +506,7 @@
 (deftest vote-test
   (testing "Voting for a stand"
     (let [stand-id "vote-stand-1"
-          _ (xt/submit-tx
+          _ (xt/execute-tx
              @db/node
              [[:put-docs :stands
                {:xt/id stand-id
@@ -518,9 +514,7 @@
                 :shared? true
                 :creator "bob"
                 :lat 40.0
-                :lon -76.0}]])
-          ;; Wait for tx
-          _ (Thread/sleep 200)]
+                :lon -76.0}]])]
 
       ;; Verification assertion: ensure stand is actually in XTDB
       (is (seq (xt/q
@@ -596,8 +590,7 @@
         (let [req {:path-params {:id stand-id}
                    :identity "alice"
                    :body (ByteArrayInputStream. (.getBytes (json/write-str {:value 0})))}
-              resp (handlers/vote-stand-handler req)
-              _ (Thread/sleep 200)]
+              resp (handlers/vote-stand-handler req)]
           (is (= 200 (:status resp)))
           (let [get-resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "alice"})
                 stand (json/read-str (:body get-resp) :key-fn keyword)]
@@ -614,8 +607,8 @@
 
     (testing "Multiple stands with one vote"
       (let [s1-id "stand-a"
-            s2-id "stand-b"
-            _ (xt/submit-tx @db/node
+            s2-id "stand-b"]
+        (xt/execute-tx @db/node
                  [[:put-docs :stands
                   {:xt/id s1-id
                    :name "Stand A"
@@ -633,14 +626,11 @@
                    {:xt/id "v1"
                     :stand-id s1-id
                     :user-id "alice"
-                    :value 1}]
-                  [:put-docs :votes
-                  {:xt/id "v2"
-                   :stand-id s1-id
-                   :user-id "bob"
-                   :value 1}]])
-          ;; Wait for indexing
-            _ (Thread/sleep 500)]
+                    :value 1}
+                   {:xt/id "v2"
+                    :stand-id s1-id
+                    :user-id "bob"
+                    :value 1}]])
 
       ;; Verification assertions: ensure data is present in XTDB
         (is (seq (xt/q
