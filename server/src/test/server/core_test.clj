@@ -277,7 +277,7 @@
           ;; Bob should NOT see Alice's private stand
           (is (not (contains? ids "alice-1")))))
 
-      (testing "Unauthenticated user (if allowed, though routes usually require auth) sees only shared stands"
+      (testing "Unauthenticated user sees only shared stands"
         ;; Although the route has auth middleware, the handler itself should handle nil identity gracefully if it ever reached there
         (let [req {:identity nil}
               resp (handlers/get-stands-handler req)
@@ -292,6 +292,57 @@
         (is (= 404 (:status (handlers/get-stand-handler {:path-params {:id "bob-private"} :identity "alice"}))))
         (is (= 200 (:status (handlers/get-stand-handler {:path-params {:id "bob-shared"} :identity "alice"}))))
         (is (= 200 (:status (handlers/get-stand-handler {:path-params {:id "bob-private"} :identity "bob"}))))))
+
+    (testing "Stands from disabled users are excluded"
+      (let [disabled-bob {:xt/id "disabled-bob"
+                          :login "disabled-bob"
+                          :enabled? false}
+            bob-shared {:xt/id "bob-shared-disabled"
+                        :name "Bob Shared Disabled"
+                        :shared? true
+                        :creator "disabled-bob"
+                        :lat 40.0
+                        :lon -76.0}]
+        (xt/submit-tx @db/node [[:put-docs :users disabled-bob]
+                                [:put-docs :stands bob-shared]])
+
+        (testing "anonymous should NOT see stand from disabled user"
+          (let [req {}
+                resp (handlers/get-stands-handler req)
+                body (json/read-str (:body resp) :key-fn keyword)
+                stands (:stands body)
+                ids (set (map :id stands))]
+            (is (not (contains? ids "bob-shared-disabled")))))
+
+        (testing "anonymous should NOT see stand by radius from disabled user"
+          (let [req {:params {:lat "40.0" :lon "-76.0"}}
+                resp (handlers/get-stands-handler req)
+                body (json/read-str (:body resp) :key-fn keyword)
+                stands (:stands body)
+                ids (set (map :id stands))]
+            (is (not (contains? ids "bob-shared-disabled")))))
+
+        (testing "Alice should NOT see stand from disabled user"
+          (let [req {:identity "alice"}
+                resp (handlers/get-stands-handler req)
+                body (json/read-str (:body resp) :key-fn keyword)
+                stands (:stands body)
+                ids (set (map :id stands))]
+            (is (not (contains? ids "bob-shared-disabled")))))
+
+        (testing "Alice should NOT see stand by radius from disabled user"
+          (let [req {:params {:lat "40.0" :lon "-76.0"} :identity "alice"}
+                resp (handlers/get-stands-handler req)
+                body (json/read-str (:body resp) :key-fn keyword)
+                stands (:stands body)
+                ids (set (map :id stands))]
+            (is (not (contains? ids "bob-shared-disabled")))))
+
+        (testing "Individual stand from disabled user should be 404 for others"
+          (let [req {:path-params {:id "bob-shared-disabled"}
+                     :identity "alice"}
+                resp (handlers/get-stand-handler req)]
+            (is (= 404 (:status resp)))))))
 
     (testing "Reproduce 'Not all variables in scope' error with incomplete docs"
       (xt/submit-tx @db/node [[:put-docs :stands {:xt/id "incomplete-1" :name "No creator or shared" :lat 0.0 :lon 0.0}]])

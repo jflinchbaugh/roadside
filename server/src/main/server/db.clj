@@ -30,9 +30,28 @@
    (xt/q @node
          ['(fn [id-val u]
              (-> (unify
-                  (from :stands [{:xt/id sid} creator name address town state products expiration notes shared? updated lat lon])
-                  (left-join (from :votes [{:stand-id vsid} value {:user-id vuser}]) [value vuser] (= sid vsid)))
-                 (where (and (= sid id-val)
+                  (from :stands [{:xt/id sid}
+                                 creator
+                                 name
+                                 address
+                                 town
+                                 state
+                                 products
+                                 expiration
+                                 notes
+                                 shared?
+                                 updated
+                                 lat
+                                 lon])
+                  (left-join (from :votes [{:stand-id vsid}
+                                           value
+                                           {:user-id vuser}])
+                             [value vuser] (= sid vsid))
+                  (left-join (from :users [{:login login}
+                                           {:enabled? enabled?}])
+                             [enabled?] (= login creator)))
+                 (where (and (or (nil? enabled?) enabled?)
+                             (= sid id-val)
                              (or (= creator u)
                                  (= shared? true))))
                  (aggregate sid creator name address town state products expiration notes shared? updated lat lon
@@ -51,20 +70,25 @@
                    R 6371.0]
                ['(fn [u lat1-rad lon1-rad rad R r]
                    (->
-                    (from :stands
-                          [{:xt/id sid}
-                           creator
-                           name
-                           address
-                           town
-                           state
-                           products
-                           expiration
-                           notes
-                           shared?
-                           updated
-                           lat
-                           lon])
+                    (unify
+                     (from :stands
+                           [{:xt/id sid}
+                            creator
+                            name
+                            address
+                            town
+                            state
+                            products
+                            expiration
+                            notes
+                            shared?
+                            updated
+                            lat
+                            lon])
+                     (left-join (from :users [{:login login}
+                                              {:enabled? enabled?}])
+                                [enabled?]
+                                (= login creator)))
                     (with {:user-id u})
                     (with {:score (pull
                                    (fn [sid]
@@ -74,76 +98,83 @@
                                              stand-id
                                              value])
                                       (aggregate stand-id
-                                        {:value (sum value)})
+                                                 {:value (sum value)})
                                       (return value))))
                            :user-vote (pull
-                                        (fn [sid user-id]
-                                          (->
-                                            (from :votes
-                                              [{:stand-id sid}
-                                               {:user-id user-id}
-                                               stand-id
-                                               user-id
-                                               value])
-                                            (aggregate stand-id user-id
-                                              {:value (sum value)})
-                                            (return value))))})
+                                       (fn [sid user-id]
+                                         (->
+                                          (from :votes
+                                                [{:stand-id sid}
+                                                 {:user-id user-id}
+                                                 stand-id
+                                                 user-id
+                                                 value])
+                                          (aggregate stand-id user-id
+                                                     {:value (sum value)})
+                                          (return value))))})
                     (with {:score (coalesce (. score value) 0)})
                     (with {:user-vote (coalesce (. user-vote value) 0)})
-                    (where (and (or (= creator u)
-                                    (= shared? true))
-                                (<= (* R (* 2.0 (asin (sqrt (+ (* (sin (/ (- (* lat rad) lat1-rad) 2.0))
-                                                                  (sin (/ (- (* lat rad) lat1-rad) 2.0)))
-                                                               (* (cos lat1-rad) (cos (* lat rad))
-                                                                  (sin (/ (- (* lon rad) lon1-rad) 2.0))
-                                                                  (sin (/ (- (* lon rad) lon1-rad) 2.0))))))))
-                                    r)))
+                    (where (and
+                            (or (nil? enabled?) enabled?)
+                            (or (= creator u) (= shared? true))
+                            (<= (* R (* 2.0 (asin (sqrt (+ (* (sin (/ (- (* lat rad) lat1-rad) 2.0))
+                                                              (sin (/ (- (* lat rad) lat1-rad) 2.0)))
+                                                           (* (cos lat1-rad) (cos (* lat rad))
+                                                              (sin (/ (- (* lon rad) lon1-rad) 2.0))
+                                                              (sin (/ (- (* lon rad) lon1-rad) 2.0))))))))
+                                r)))
                     (with {:xt/id sid})))
                 user-id lat1-rad lon1-rad rad R radius])
              ['(fn [u]
-                   (->
-                    (from :stands
-                          [{:xt/id sid}
-                           creator
-                           name
-                           address
-                           town
-                           state
-                           products
-                           expiration
-                           notes
-                           shared?
-                           updated
-                           lat
-                           lon])
-                    (with {:user-id u})
-                    (with {:score (pull
-                                   (fn [sid]
-                                     (->
-                                      (from :votes
-                                            [{:stand-id sid}
-                                             stand-id
-                                             value])
-                                      (aggregate stand-id
-                                        {:value (sum value)})
-                                      (return value))))
-                           :user-vote (pull
-                                        (fn [sid user-id]
-                                          (->
-                                            (from :votes
+                 (->
+                  (unify
+                   (from :stands
+                         [{:xt/id sid}
+                          creator
+                          name
+                          address
+                          town
+                          state
+                          products
+                          expiration
+                          notes
+                          shared?
+                          updated
+                          lat
+                          lon])
+                   (left-join (from :users [{:login login}
+                                            {:enabled? enabled?}])
+                              [enabled?]
+                              (= login creator)))
+                  (with {:user-id u})
+                  (with {:score (pull
+                                 (fn [sid]
+                                   (->
+                                    (from :votes
+                                          [{:stand-id sid}
+                                           stand-id
+                                           value])
+                                    (aggregate stand-id
+                                               {:value (sum value)})
+                                    (return value))))
+                         :user-vote (pull
+                                     (fn [sid user-id]
+                                       (->
+                                        (from :votes
                                               [{:stand-id sid}
                                                {:user-id user-id}
                                                stand-id
                                                user-id
                                                value])
-                                            (aggregate stand-id user-id
-                                              {:value (sum value)})
-                                            (return value))))})
-                    (with {:score (coalesce (. score value) 0)})
-                    (with {:user-vote (coalesce (. user-vote value) 0)})
-                    (where (and (or (= creator u)
-                                    (= shared? true))))
-                    (with {:xt/id sid})))
+                                        (aggregate stand-id user-id
+                                                   {:value (sum value)})
+                                        (return value))))})
+                  (with {:score (coalesce (. score value) 0)})
+                  (with {:user-vote (coalesce (. user-vote value) 0)})
+                  (where (and
+                          (or (nil? enabled?) enabled?)
+                          (or (= creator u) (= shared? true))))
+                  (with {:xt/id sid})))
               user-id])]
      (tel/log! :info {:list-stands q})
      (vec (xt/q @node q)))))
