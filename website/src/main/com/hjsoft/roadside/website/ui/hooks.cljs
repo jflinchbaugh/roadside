@@ -65,7 +65,7 @@
                                                         (reset! locating-ref false)
                                                         (set-is-locating false)
                                                         (when-not @cancelled-ref
-                                                          (set-error "Unable to retrieve location.")
+                                                          (set-error (str "Unable to retrieve location: " msg))
                                                           (when (fn? on-error) (on-error msg)))))]
                            (when-not @locating-ref
                              (tel/log! :debug {:geolocation :starting})
@@ -81,7 +81,7 @@
                                 on-geoposition-success
                                 on-geoposition-error
                                 #js {:enableHighAccuracy false
-                                     :timeout 20000
+                                     :timeout 30000
                                      :maximumAge 30000})
                                (do
                                  (tel/log! :warn {:geolocation :not-supported})
