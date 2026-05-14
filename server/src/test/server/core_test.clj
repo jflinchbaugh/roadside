@@ -224,7 +224,7 @@
                          :expiration "2026-01-01"
                          :notes "Juicy"
                          :updated "2026-01-01"
-                         :xt/id "uuid-1"
+                         :id "uuid-1"
                          :lat 40.0
                          :lon -76.0
                          :shared? true
@@ -241,6 +241,31 @@
         (is (str/includes? rss "Coordinates: 40.0, -76.0"))
         (is (str/includes? rss "peaches"))
         (is (str/includes? rss "Juicy"))
+        (is (str/includes? rss config/external-base-url)))
+      (let [stand-docs [{:name ""
+                         :address ""
+                         :town ""
+                         :state ""
+                         :products ["peaches" "apples"]
+                         :expiration "2026-01-01"
+                         :notes ""
+                         :updated "2026-01-01"
+                         :id "uuid-1"
+                         :lat 40.0
+                         :lon -76.0
+                         :shared? true
+                         :creator "user"}]
+            _ (doall (map create-stand stand-docs))
+            resp (handlers/get-stands-rss-handler {:identity "alice" :scheme :http :server-name "localhost" :server-port 3000})
+            rss (:body resp)]
+        (is (= 200 (:status resp)))
+        (is (str/includes? rss "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
+        (is (str/includes? rss "<rss version=\"2.0\""))
+        (is (str/includes? rss "<title>Roadside Stands</title>"))
+        (is (str/includes? rss "<title>peaches, apples</title>"))
+        (is (str/includes? rss "Coordinates: 40.0, -76.0"))
+        (is (str/includes? rss "peaches"))
+        (is (str/includes? rss "apples"))
         (is (str/includes? rss config/external-base-url))))))
 
 (deftest stands-visibility-test

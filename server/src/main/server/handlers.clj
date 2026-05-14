@@ -75,6 +75,10 @@
 
 (defn- stand->rss-item [base-url stand]
   (let [{:keys [name address town state products expiration notes updated xt/id lat lon shared? creator]} stand
+        title (or
+               (when (not (str/blank? name)) name)
+               (when (seq products) (str/join ", " products))
+               "Roadside Stand")
         full-address (str/join ", " (remove str/blank? [address town state]))
         description (str/join "\n"
                               (remove nil?
@@ -86,7 +90,7 @@
                                        (when (some? shared?) (str "Shared: " (if shared? "Yes" "No")))
                                        (when (seq creator) (str "Creator: " creator))]))]
     [:item
-     [:title (or name "Roadside Stand")]
+     [:title title]
      [:link (str base-url "#stand=" id)]
      [:description description]
      (when-let [pub-date (format-rfc822 updated)]
@@ -102,7 +106,7 @@
          [:channel
           [:title "Roadside Stands"]
           [:link base-url]
-          [:description "Latest roadside stands"]
+          [:description "Latest Roadside Stands"]
           [:atom:link {:href (str base-url "api/stands.rss") :rel "self" :type "application/rss+xml"}]
           (map (partial stand->rss-item base-url) stands)]])))
 
