@@ -15,7 +15,7 @@
 
 (def L (delay (or @leaflet-ref (throw (js/Error. "Leaflet not initialized. Call set-leaflet! first.")))))
 
-(def ^:const crosshairs-zoom-level 12)
+(def ^:const crosshairs-zoom-level 14)
 
 (defn- make-marker
   [{:keys [coord stand set-selected-stand auto-pan?]
