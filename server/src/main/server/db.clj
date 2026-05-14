@@ -13,16 +13,29 @@
   (first
    (xt/q @node
          ['(fn [u]
-             (-> (from :users [login password email enabled?])
-                 (where (= login u))))
+             (-> (from :users [{:login u}
+                               login password email enabled?])))
           username])))
 
 (defn get-stand-unfiltered [id]
   (first
    (xt/q @node
          ['(fn [id-param]
-             (-> (from :stands [xt/id *])
-                 (where (= xt/id id-param))))
+             (from :stands
+                   [{:xt/id id-param}
+                    xt/id
+                    creator
+                    name
+                    address
+                    town
+                    state
+                    products
+                    expiration
+                    notes
+                    shared?
+                    updated
+                    lat
+                    lon]))
           id])))
 
 (defn get-stand [id-param user-id]
@@ -31,6 +44,7 @@
          ['(fn [id-val u]
              (-> (unify
                   (from :stands [{:xt/id sid}
+                                 xt/id
                                  creator
                                  name
                                  address
@@ -54,10 +68,23 @@
                              (= sid id-val)
                              (or (= creator u)
                                  (= shared? true))))
-                 (aggregate sid creator name address town state products expiration notes shared? updated lat lon
+                 (aggregate xt/id
+                            creator
+                            name
+                            address
+                            town
+                            state
+                            products
+                            expiration
+                            notes
+                            shared?
+                            updated
+                            lat
+                            lon
                             {:score (sum (if (nil? value) 0 value))
-                             :user-vote (sum (if (and (not (nil? vuser)) (= vuser u)) value 0))})
-                 (with {:xt/id sid})))
+                             :user-vote (sum
+                                         (if (and (not (nil? vuser)) (= vuser u))
+                                             value 0))})))
           id-param user-id])))
 
 (defn list-stands
@@ -73,6 +100,7 @@
                     (unify
                      (from :stands
                            [{:xt/id sid}
+                            xt/id
                             creator
                             name
                             address
@@ -122,14 +150,14 @@
                                                            (* (cos lat1-rad) (cos (* lat rad))
                                                               (sin (/ (- (* lon rad) lon1-rad) 2.0))
                                                               (sin (/ (- (* lon rad) lon1-rad) 2.0))))))))
-                                r)))
-                    (with {:xt/id sid})))
+                                r)))))
                 user-id lat1-rad lon1-rad rad R radius])
              ['(fn [u]
                  (->
                   (unify
                    (from :stands
                          [{:xt/id sid}
+                          xt/id
                           creator
                           name
                           address
@@ -173,8 +201,7 @@
                   (with {:user-vote (coalesce (. user-vote value) 0)})
                   (where (and
                           (or (nil? enabled?) enabled?)
-                          (or (= creator u) (= shared? true))))
-                  (with {:xt/id sid})))
+                          (or (= creator u) (= shared? true))))))
               user-id])]
      (tel/log! :info {:list-stands q})
      (vec (xt/q @node q)))))
@@ -208,7 +235,19 @@
       (vec (set (keep #(when-not (contains? active-ids (:xt/id %)) (:xt/id %)) ended))))))
 
 (defn migrate-stands! []
-  (let [stands (xt/q @node '(from :stands [xt/id *]))
+  (let [stands (xt/q @node '(from :stands [xt/id
+                                           creator
+                                           name
+                                           address
+                                           town
+                                           state
+                                           products
+                                           expiration
+                                           notes
+                                           shared?
+                                           updated
+                                           coordinate
+                                           ]))
         ops (keep (fn [stand]
                     (let [needs-coord-migration (and (:coordinate stand) (not (and (:lat stand) (:lon stand))))
                           products (:products stand)
