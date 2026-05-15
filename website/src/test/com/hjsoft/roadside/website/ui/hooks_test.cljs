@@ -37,7 +37,8 @@
       (act (fn []
              ((:get-location (aget result "current")))))
       (is (nil? (:location (aget result "current"))))
-      (is (= "Unable to retrieve location." (:error (aget result "current"))))))
+      (is (= "Unable to retrieve location: Permission denied"
+             (:error (aget result "current"))))))
 
   (testing "use-user-location not supported"
     (let [dispatch (fn [_])
