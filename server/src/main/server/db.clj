@@ -117,6 +117,29 @@
                                               {:enabled? enabled?}])
                                 [enabled?]
                                 (= login creator)))
+                    (where (and
+                            (or (nil? enabled?) enabled?)
+                            (or (= creator u) (= shared? true))
+                            (<= (* R (* 2.0 (asin (sqrt (+ (* (sin (/ (- (* lat rad) lat1-rad) 2.0))
+                                                              (sin (/ (- (* lat rad) lat1-rad) 2.0)))
+                                                           (* (cos lat1-rad) (cos (* lat rad))
+                                                              (sin (/ (- (* lon rad) lon1-rad) 2.0))
+                                                              (sin (/ (- (* lon rad) lon1-rad) 2.0))))))))
+                                r)))
+                    (aggregate sid
+                               xt/id
+                               creator
+                               name
+                               address
+                               town
+                               state
+                               products
+                               expiration
+                               notes
+                               shared?
+                               updated
+                               lat
+                               lon)
                     (with {:user-id u})
                     (with {:score (pull
                                    (fn [sid]
@@ -141,16 +164,7 @@
                                                      {:value (sum value)})
                                           (return value))))})
                     (with {:score (coalesce (. score value) 0)})
-                    (with {:user-vote (coalesce (. user-vote value) 0)})
-                    (where (and
-                            (or (nil? enabled?) enabled?)
-                            (or (= creator u) (= shared? true))
-                            (<= (* R (* 2.0 (asin (sqrt (+ (* (sin (/ (- (* lat rad) lat1-rad) 2.0))
-                                                              (sin (/ (- (* lat rad) lat1-rad) 2.0)))
-                                                           (* (cos lat1-rad) (cos (* lat rad))
-                                                              (sin (/ (- (* lon rad) lon1-rad) 2.0))
-                                                              (sin (/ (- (* lon rad) lon1-rad) 2.0))))))))
-                                r)))))
+                    (with {:user-vote (coalesce (. user-vote value) 0)})))
                 user-id lat1-rad lon1-rad rad R radius])
              ['(fn [u]
                  (->
@@ -174,6 +188,23 @@
                                             {:enabled? enabled?}])
                               [enabled?]
                               (= login creator)))
+                  (where (and
+                          (or (nil? enabled?) enabled?)
+                          (or (= creator u) (= shared? true))))
+                  (aggregate sid
+                             xt/id
+                             creator
+                             name
+                             address
+                             town
+                             state
+                             products
+                             expiration
+                             notes
+                             shared?
+                             updated
+                             lat
+                             lon)
                   (with {:user-id u})
                   (with {:score (pull
                                  (fn [sid]
@@ -198,10 +229,7 @@
                                                    {:value (sum value)})
                                         (return value))))})
                   (with {:score (coalesce (. score value) 0)})
-                  (with {:user-vote (coalesce (. user-vote value) 0)})
-                  (where (and
-                          (or (nil? enabled?) enabled?)
-                          (or (= creator u) (= shared? true))))))
+                  (with {:user-vote (coalesce (. user-vote value) 0)})))
               user-id])]
      (tel/log! :info {:list-stands q})
      (vec (xt/q @node q)))))
