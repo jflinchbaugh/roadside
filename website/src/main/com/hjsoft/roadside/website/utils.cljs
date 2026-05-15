@@ -19,9 +19,18 @@
 (def random-uuid-str common-utils/random-uuid-str)
 (def parse-coordinates common-utils/parse-coordinates)
 
-(defn make-map-link [lat lon]
-  (when (and (seq (str lat)) (seq (str lon)))
-    (str "geo:" lat "," lon)))
+(defn mobile?
+  ([] (mobile? (when (exists? js/navigator) js/navigator)))
+  ([nav]
+   (boolean (and nav (re-find #"(?i)Mobi|Android|iPhone" (.-userAgent nav))))))
+
+(defn make-map-link
+  ([lat lon] (make-map-link lat lon (mobile?)))
+  ([lat lon is-mobile?]
+   (when (and (seq (str lat)) (seq (str lon)))
+     (if is-mobile?
+       (str "geo:" lat "," lon)
+       (str "https://www.google.com/maps/search/?api=1&query=" lat "," lon)))))
 
 (def get-all-unique-products common-utils/get-all-unique-products)
 (def haversine-distance common-utils/haversine-distance)

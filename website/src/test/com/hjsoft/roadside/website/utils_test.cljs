@@ -78,14 +78,29 @@
     [10.0 12.0] " 10.0, 12.0 "
     [-10.0 -12.0] "-10.0, -12.0"))
 
+(deftest mobile?-test
+  (testing "mobile detection"
+    (is (sut/mobile? #js {:userAgent "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X)"}))
+    (is (sut/mobile? #js {:userAgent "Mozilla/5.0 (Linux; Android 10; SM-G981B)"}))
+    (is (not (sut/mobile? #js {:userAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})))
+    (is (not (sut/mobile? nil)))))
+
 (deftest make-map-link
-  (are [expected lat lon]
-      (= expected (sut/make-map-link lat lon))
-    nil nil nil
-    nil "" ""
-    "geo:1,2" 1 2
-    "geo:1,2" "1" "2"
-    ))
+  (testing "nil/empty cases"
+    (is (nil? (sut/make-map-link nil nil)))
+    (is (nil? (sut/make-map-link "" ""))))
+
+  (testing "mobile (geo:)"
+    (are [expected lat lon]
+         (= expected (sut/make-map-link lat lon true))
+      "geo:1,2" 1 2
+      "geo:1,2" "1" "2"))
+
+  (testing "desktop (google maps)"
+    (are [expected lat lon]
+         (= expected (sut/make-map-link lat lon false))
+      "https://www.google.com/maps/search/?api=1&query=1,2" 1 2
+      "https://www.google.com/maps/search/?api=1&query=1,2" "1" "2")))
 
 (deftest stand-popup-html
   (testing "empty stand"
