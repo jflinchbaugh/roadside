@@ -65,7 +65,7 @@
           context-val {:state {:settings {}
                                :map-center [0 0]
                                :config {:app-name "MapMarks"
-                                        :app-logo "📍"
+                                        :app-logo "\uD83D\uDCCD"
                                         :default-expiration-days 30
                                         :tags-name-singular "Tag"
                                         :tags-name-plural "Tags"}}

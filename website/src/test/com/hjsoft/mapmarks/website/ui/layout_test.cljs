@@ -42,7 +42,7 @@
           res (tlr/render
                ($ (gobj/get ctx "Provider")
                   {:value {:state {:config {:app-name "MapMarks"
-                                            :app-logo "📍"}}
+                                            :app-logo "\uD83D\uDCCD"}}
                            :ui {:set-show-about-dialog (fn [_])}}}
                   ($ layout/header)))
           container (.-container res)

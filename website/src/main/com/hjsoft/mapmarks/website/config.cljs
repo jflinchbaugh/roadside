@@ -4,7 +4,7 @@
 ;; or by modifying this file directly.
 
 (goog-define APP_NAME "MapMarks")
-(goog-define APP_LOGO "\uD83D\uDCCD") ;; 📍
+(goog-define APP_LOGO "\uD83D\uDCCD") ;; pin emoji, could also be url of an image
 (goog-define DEFAULT_EXPIRATION_DAYS 30)
 (goog-define TAGS_NAME_SINGULAR "Tag")
 (goog-define TAGS_NAME_PLURAL "Tags")
