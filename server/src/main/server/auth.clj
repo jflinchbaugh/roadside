@@ -5,7 +5,7 @@
             [clojure.data.json :as json]
             [buddy.auth.middleware :as buddy]))
 
-(def ^:const realm "roadside")
+(def ^:const realm "mapmarks")
 
 (defn unauthorized
   [& _]

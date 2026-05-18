@@ -5,7 +5,7 @@
             [malli.core :as m]
             [malli.error :as me]
             [clojure.string :as str]
-            [com.hjsoft.roadside.common.logic :as logic]))
+            [com.hjsoft.mapmarks.common.logic :as logic]))
 
 (defonce node (atom nil))
 
@@ -17,11 +17,11 @@
                                login password email enabled?])))
           username])))
 
-(defn get-stand-unfiltered [id]
+(defn get-mark-unfiltered [id]
   (first
    (xt/q @node
          ['(fn [id-param]
-             (from :stands
+             (from :marks
                    [{:xt/id id-param}
                     xt/id
                     creator
@@ -29,7 +29,7 @@
                     address
                     town
                     state
-                    products
+                    tags
                     expiration
                     notes
                     shared?
@@ -38,26 +38,26 @@
                     lon]))
           id])))
 
-(defn get-stand [id-param user-id]
+(defn get-mark [id-param user-id]
   (first
    (xt/q @node
          ['(fn [id-val u]
              (-> (unify
-                  (from :stands [{:xt/id sid}
+                  (from :marks [{:xt/id sid}
                                  xt/id
                                  creator
                                  name
                                  address
                                  town
                                  state
-                                 products
+                                 tags
                                  expiration
                                  notes
                                  shared?
                                  updated
                                  lat
                                  lon])
-                  (left-join (from :votes [{:stand-id vsid}
+                  (left-join (from :votes [{:mark-id vsid}
                                            value
                                            {:user-id vuser}])
                              [value vuser] (= sid vsid))
@@ -74,7 +74,7 @@
                             address
                             town
                             state
-                            products
+                            tags
                             expiration
                             notes
                             shared?
@@ -87,8 +87,8 @@
                                              value 0))})))
           id-param user-id])))
 
-(defn list-stands
-  ([user-id] (list-stands user-id nil))
+(defn list-marks
+  ([user-id] (list-marks user-id nil))
   ([user-id {:keys [lat lon radius]}]
    (let [q (if (and lat lon radius)
              (let [rad (/ Math/PI 180.0)
@@ -98,7 +98,7 @@
                ['(fn [u lat1-rad lon1-rad rad R r]
                    (->
                     (unify
-                     (from :stands
+                     (from :marks
                            [{:xt/id sid}
                             xt/id
                             creator
@@ -106,7 +106,7 @@
                             address
                             town
                             state
-                            products
+                            tags
                             expiration
                             notes
                             shared?
@@ -133,7 +133,7 @@
                                address
                                town
                                state
-                               products
+                               tags
                                expiration
                                notes
                                shared?
@@ -145,22 +145,22 @@
                                    (fn [sid]
                                      (->
                                       (from :votes
-                                            [{:stand-id sid}
-                                             stand-id
+                                            [{:mark-id sid}
+                                             mark-id
                                              value])
-                                      (aggregate stand-id
+                                      (aggregate mark-id
                                                  {:value (sum value)})
                                       (return value))))
                            :user-vote (pull
                                        (fn [sid user-id]
                                          (->
                                           (from :votes
-                                                [{:stand-id sid}
+                                                [{:mark-id sid}
                                                  {:user-id user-id}
-                                                 stand-id
+                                                 mark-id
                                                  user-id
                                                  value])
-                                          (aggregate stand-id user-id
+                                          (aggregate mark-id user-id
                                                      {:value (sum value)})
                                           (return value))))})
                     (with {:score (coalesce (. score value) 0)})
@@ -169,7 +169,7 @@
              ['(fn [u]
                  (->
                   (unify
-                   (from :stands
+                   (from :marks
                          [{:xt/id sid}
                           xt/id
                           creator
@@ -177,7 +177,7 @@
                           address
                           town
                           state
-                          products
+                          tags
                           expiration
                           notes
                           shared?
@@ -198,7 +198,7 @@
                              address
                              town
                              state
-                             products
+                             tags
                              expiration
                              notes
                              shared?
@@ -210,28 +210,28 @@
                                  (fn [sid]
                                    (->
                                     (from :votes
-                                          [{:stand-id sid}
-                                           stand-id
+                                          [{:mark-id sid}
+                                           mark-id
                                            value])
-                                    (aggregate stand-id
+                                    (aggregate mark-id
                                                {:value (sum value)})
                                     (return value))))
                          :user-vote (pull
                                      (fn [sid user-id]
                                        (->
                                         (from :votes
-                                              [{:stand-id sid}
+                                              [{:mark-id sid}
                                                {:user-id user-id}
-                                               stand-id
+                                               mark-id
                                                user-id
                                                value])
-                                        (aggregate stand-id user-id
+                                        (aggregate mark-id user-id
                                                    {:value (sum value)})
                                         (return value))))})
                   (with {:score (coalesce (. score value) 0)})
                   (with {:user-vote (coalesce (. user-vote value) 0)})))
               user-id])]
-     (tel/log! :info {:list-stands q})
+     (tel/log! :info {:list-marks q})
      (vec (xt/q @node q)))))
 
 (defn list-deletions
@@ -246,7 +246,7 @@
           ;; Find all versions that ended (were deleted or updated) since 'since'
           ;; and were in the requested radius.
           q ['(fn [u s lat1-rad lon1-rad rad R r]
-                (-> (from :stands {:for-valid-time :all-time, :bind [xt/id lat lon xt/valid-to creator shared?]})
+                (-> (from :marks {:for-valid-time :all-time, :bind [xt/id lat lon xt/valid-to creator shared?]})
                     (where (and (>= xt/valid-to s)
                                 (or (= creator u) (= shared? true))
                                 (<= (* R (* 2.0 (asin (sqrt (+ (* (sin (/ (- (* lat rad) lat1-rad) 2.0))
@@ -259,56 +259,56 @@
 
           ended (xt/q @node q)
           ;; Find what is currently active
-          active-ids (set (map :xt/id (list-stands user-id {:lat lat :lon lon :radius radius})))]
+          active-ids (set (map :xt/id (list-marks user-id {:lat lat :lon lon :radius radius})))]
       (vec (set (keep #(when-not (contains? active-ids (:xt/id %)) (:xt/id %)) ended))))))
 
-(defn migrate-stands! []
-  (let [stands (xt/q @node '(from :stands [xt/id
+(defn migrate-marks! []
+  (let [marks (xt/q @node '(from :marks [xt/id
                                            creator
                                            name
                                            address
                                            town
                                            state
-                                           products
+                                           tags
                                            expiration
                                            notes
                                            shared?
                                            updated
                                            coordinate
                                            ]))
-        ops (keep (fn [stand]
-                    (let [needs-coord-migration (and (:coordinate stand) (not (and (:lat stand) (:lon stand))))
-                          products (:products stand)
-                          needs-product-migration (some #(not= % (str/lower-case %)) products)]
-                      (when (or needs-coord-migration needs-product-migration)
-                        (tel/log! :info {:migrating-stand (:xt/id stand)})
-                        (let [updated-stand (cond-> stand
+        ops (keep (fn [mark]
+                    (let [needs-coord-migration (and (:coordinate mark) (not (and (:lat mark) (:lon mark))))
+                          tags (:tags mark)
+                          needs-tag-migration (some #(not= % (str/lower-case %)) tags)]
+                      (when (or needs-coord-migration needs-tag-migration)
+                        (tel/log! :info {:migrating-mark (:xt/id mark)})
+                        (let [updated-mark (cond-> mark
                                               needs-coord-migration (as-> s (if-let [[lat lon] (logic/parse-coordinate (:coordinate s))]
                                                                               (-> s (assoc :lat lat :lon lon) (dissoc :coordinate))
                                                                               (do (tel/log! :error {:migration-failed (:xt/id s) :msg "Could not parse coordinate"}) s)))
-                                              needs-product-migration (update :products #(mapv str/lower-case %)))]
-                          [:put-docs :stands updated-stand]))))
-                  stands)]
+                                              needs-tag-migration (update :tags #(mapv str/lower-case %)))]
+                          [:put-docs :marks updated-mark]))))
+                  marks)]
     (when (seq ops)
       (xt/execute-tx @node (vec ops)))))
 
 (defn save-user [user]
   (xt/execute-tx @node [[:put-docs :users (assoc user :updated (str (t/now)))]]))
 
-(defn save-stand [stand]
-  (let [stand (-> stand
+(defn save-mark [mark]
+  (let [mark (-> mark
                   (assoc :updated (str (t/now)))
-                  (update :products #(mapv str/lower-case %)))]
-    (if-not (m/validate logic/StandSchema (dissoc stand :xt/id))
-      (throw (ex-info "Invalid stand data"
-                      {:errors (me/humanize (m/explain logic/StandSchema (dissoc stand :xt/id)))}))
-      (xt/execute-tx @node [[:put-docs :stands stand]]))))
+                  (update :tags #(mapv str/lower-case %)))]
+    (if-not (m/validate logic/MarkSchema (dissoc mark :xt/id))
+      (throw (ex-info "Invalid mark data"
+                      {:errors (me/humanize (m/explain logic/MarkSchema (dissoc mark :xt/id)))}))
+      (xt/execute-tx @node [[:put-docs :marks mark]]))))
 
-(defn delete-stand [id]
-  (xt/execute-tx @node [[:delete-docs :stands id]]))
+(defn delete-mark [id]
+  (xt/execute-tx @node [[:delete-docs :marks id]]))
 
-(defn vote-stand [stand-id user-id value]
-  (let [vote-id (str stand-id "-" user-id)]
+(defn vote-mark [mark-id user-id value]
+  (let [vote-id (str mark-id "-" user-id)]
     (if (zero? value)
       (xt/execute-tx @node [[:delete-docs :votes vote-id]])
-      (xt/execute-tx @node [[:put-docs :votes {:xt/id vote-id :stand-id stand-id :user-id user-id :value value}]]))))
+      (xt/execute-tx @node [[:put-docs :votes {:xt/id vote-id :mark-id mark-id :user-id user-id :value value}]]))))

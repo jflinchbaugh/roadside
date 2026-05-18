@@ -22,24 +22,24 @@
         ["/reverse-geocode" {:middleware [auth/wrap-auth auth/identity-required-wrapper]
                              :get handlers/reverse-geocode-handler}]
         ["/register" {:post handlers/register-handler}]
-        ["/stands.csv" {:middleware [auth/wrap-auth]
-                        :get handlers/get-stands-csv-handler}]
-        ["/stands.kml" {:middleware [auth/wrap-auth]
-                        :get handlers/get-stands-kml-handler}]
-        ["/stands.rss" {:middleware [auth/wrap-auth]
-                        :get handlers/get-stands-rss-handler}]
-        ["/stands" {:middleware [auth/wrap-auth]
-                    :get handlers/get-stands-handler
+        ["/marks.csv" {:middleware [auth/wrap-auth]
+                        :get handlers/get-marks-csv-handler}]
+        ["/marks.kml" {:middleware [auth/wrap-auth]
+                        :get handlers/get-marks-kml-handler}]
+        ["/marks.rss" {:middleware [auth/wrap-auth]
+                        :get handlers/get-marks-rss-handler}]
+        ["/marks" {:middleware [auth/wrap-auth]
+                    :get handlers/get-marks-handler
                     :post {:middleware [auth/identity-required-wrapper]
-                           :handler handlers/create-stand-handler}}]
-        ["/stands/:id" {:middleware [auth/wrap-auth]
-                        :get handlers/get-stand-handler
+                           :handler handlers/create-mark-handler}}]
+        ["/marks/:id" {:middleware [auth/wrap-auth]
+                        :get handlers/get-mark-handler
                         :put {:middleware [auth/identity-required-wrapper]
-                              :handler handlers/update-stand-handler}
+                              :handler handlers/update-mark-handler}
                         :delete {:middleware [auth/identity-required-wrapper]
-                                 :handler handlers/delete-stand-handler}}]
-        ["/stands/:id/vote" {:middleware [auth/wrap-auth auth/identity-required-wrapper]
-                             :post handlers/vote-stand-handler}]]]
+                                 :handler handlers/delete-mark-handler}}]
+        ["/marks/:id/vote" {:middleware [auth/wrap-auth auth/identity-required-wrapper]
+                             :post handlers/vote-mark-handler}]]]
       (ring/router)
       (ring/ring-handler
        (ring/routes
@@ -67,7 +67,7 @@
   (if (nil? @server)
     (let [new-node (xt/client {:host db-host})]
       (reset! db/node new-node)
-      (db/migrate-stands!)
+      (db/migrate-marks!)
       (reset! server (hks/run-server #'app {:port port}))
       (tel/log! :info {:server-started {:port port :db-host db-host}}))
     "server already running"))

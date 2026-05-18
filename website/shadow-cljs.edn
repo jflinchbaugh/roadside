@@ -11,7 +11,7 @@
                 [http-kit "2.8.1"]
                 [metosin/malli "0.20.1"]]
  :dev-http {3000 {:root "public"
-                  :handler com.hjsoft.roadside.website.dev-server/handler}}
+                  :handler com.hjsoft.mapmarks.website.dev-server/handler}}
  :builds
  {
   :frontend
@@ -19,10 +19,10 @@
    :output-dir "public/js"
    :asset-path "js"
    :modules
-     {:main {:init-fn com.hjsoft.roadside.website.browser-main/init}}
+     {:main {:init-fn com.hjsoft.mapmarks.website.browser-main/init}}
    :build-hooks
-     [[com.hjsoft.roadside.website.build-hooks/version-cljs]
-      [com.hjsoft.roadside.website.build-hooks/version-index-resources]]}
+     [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]
+      [com.hjsoft.mapmarks.website.build-hooks/version-index-resources]]}
 
   :test
   {:target :node-test
@@ -30,8 +30,8 @@
     :output-to "out/node-tests.js"
     :autorun true
     :preloads [node-init]
-    :closure-defines {com.hjsoft.roadside.website.ui.forms.stand/NODE_TEST true
-                      com.hjsoft.roadside.website.ui.forms.inputs/NODE_TEST true
+    :closure-defines {com.hjsoft.mapmarks.website.ui.forms.mark/NODE_TEST true
+                      com.hjsoft.mapmarks.website.ui.forms.inputs/NODE_TEST true
                       node-init/ENABLE_JSDOM true}}
 
   :test-browser

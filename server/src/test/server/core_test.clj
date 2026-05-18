@@ -20,22 +20,22 @@
 
 (use-fixtures :each with-xtdb-container)
 
-(defn- create-stand [stand-doc]
-  (handlers/create-stand-handler
-   {:body (ByteArrayInputStream. (.getBytes (json/write-str stand-doc)))
+(defn- create-mark [mark-doc]
+  (handlers/create-mark-handler
+   {:body (ByteArrayInputStream. (.getBytes (json/write-str mark-doc)))
     :identity "alice"}))
 
-(deftest empty-stands-test
-  (testing "Get stands when none exist and no lat/lon"
-    (let [resp (handlers/get-stands-handler {:identity "alice"})]
+(deftest empty-marks-test
+  (testing "Get marks when none exist and no lat/lon"
+    (let [resp (handlers/get-marks-handler {:identity "alice"})]
       (is (= 200 (:status resp)))
-      (is (= [] (:stands (json/read-str (:body resp) :key-fn keyword))))))
-  (testing "Get stands by lat/lon when none exist"
-    (let [resp (handlers/get-stands-handler
+      (is (= [] (:marks (json/read-str (:body resp) :key-fn keyword))))))
+  (testing "Get marks by lat/lon when none exist"
+    (let [resp (handlers/get-marks-handler
                 {:identity "alice"
                  :params {:lat "-74.333", :lon "40.1234"}})]
       (is (= 200 (:status resp)))
-      (is (= [] (:stands (json/read-str (:body resp) :key-fn keyword)))))))
+      (is (= [] (:marks (json/read-str (:body resp) :key-fn keyword)))))))
 
 (deftest ping-test
   (testing "Ping handler returns 200 pong"
@@ -103,124 +103,124 @@
         (is (= "alice" (:login user)))
         (is (:valid (hashers/verify "secret-password" (:password user))) "password not touched")))))
 
-(deftest stands-test
-  (testing "Stands handlers"
-    (let [stand-doc {:name "Morning Coffee" :address "Main St" :lat 40.0379 :lon -76.3055}
-          body (json/write-str stand-doc)
+(deftest marks-test
+  (testing "Marks handlers"
+    (let [mark-doc {:name "Morning Coffee" :address "Main St" :lat 40.0379 :lon -76.3055}
+          body (json/write-str mark-doc)
           create-req {:body (ByteArrayInputStream. (.getBytes body))
                       :identity "alice"}
-          create-resp (handlers/create-stand-handler create-req)]
+          create-resp (handlers/create-mark-handler create-req)]
       (is (= 201 (:status create-resp)))
-      (let [created-stand (json/read-str (:body create-resp) :key-fn keyword)
-            id (:id created-stand)]
+      (let [created-mark (json/read-str (:body create-resp) :key-fn keyword)
+            id (:id created-mark)]
         (is (not (nil? id)))
-        (is (= "Morning Coffee" (:name created-stand)))
-        (is (= 40.0379 (:lat created-stand)))
-        (is (= -76.3055 (:lon created-stand)))
+        (is (= "Morning Coffee" (:name created-mark)))
+        (is (= 40.0379 (:lat created-mark)))
+        (is (= -76.3055 (:lon created-mark)))
 
-        (testing "Get all stands (no filter)"
-          (let [get-resp (handlers/get-stands-handler {:identity "alice"})
+        (testing "Get all marks (no filter)"
+          (let [get-resp (handlers/get-marks-handler {:identity "alice"})
                 body (json/read-str (:body get-resp) :key-fn keyword)
-                stands (:stands body)]
+                marks (:marks body)]
             (is (= 200 (:status get-resp)))
-            (is (>= (count stands) 1))))
+            (is (>= (count marks) 1))))
 
-        (testing "Get stands within radius"
+        (testing "Get marks within radius"
           ;; Lancaster, PA: 40.0379, -76.3055
-          (let [get-resp (handlers/get-stands-handler {:params {:lat "40.0" :lon "-76.0"} :identity "alice"})
+          (let [get-resp (handlers/get-marks-handler {:params {:lat "40.0" :lon "-76.0"} :identity "alice"})
                 body (json/read-str (:body get-resp) :key-fn keyword)
-                stands (:stands body)]
+                marks (:marks body)]
             (is (= 200 (:status get-resp)))
-            (is (>= (count stands) 1) "Should find the stand near Lancaster")))
+            (is (>= (count marks) 1) "Should find the mark near Lancaster")))
 
-        (testing "Get stands outside radius"
+        (testing "Get marks outside radius"
           ;; Los Angeles: 34.0522, -118.2437 (far from Lancaster, PA)
-          (let [get-resp (handlers/get-stands-handler {:params {:lat "34.0" :lon "-118.0"} :identity "alice"})
+          (let [get-resp (handlers/get-marks-handler {:params {:lat "34.0" :lon "-118.0"} :identity "alice"})
                 body (json/read-str (:body get-resp) :key-fn keyword)
-                stands (:stands body)]
+                marks (:marks body)]
             (is (= 200 (:status get-resp)))
-            (is (= 0 (count (filter #(= (:id %) id) stands))) "Should NOT find the Lancaster stand from LA")))
+            (is (= 0 (count (filter #(= (:id %) id) marks))) "Should NOT find the Lancaster mark from LA")))
 
-        (testing "Get single stand"
-          (let [get-resp (handlers/get-stand-handler {:path-params {:id id} :identity "alice"})]
+        (testing "Get single mark"
+          (let [get-resp (handlers/get-mark-handler {:path-params {:id id} :identity "alice"})]
             (is (= 200 (:status get-resp)))
             (is (= "Morning Coffee" (:name (json/read-str (:body get-resp) :key-fn keyword))))))
 
-        (testing "Update stand"
-          (let [update-doc (assoc created-stand :name "Evening Coffee")
+        (testing "Update mark"
+          (let [update-doc (assoc created-mark :name "Evening Coffee")
                 update-body (json/write-str update-doc)
                 update-req {:path-params {:id id}
                             :body (ByteArrayInputStream. (.getBytes update-body))
                             :identity "alice"}
-                update-resp (handlers/update-stand-handler update-req)]
+                update-resp (handlers/update-mark-handler update-req)]
             (is (= 200 (:status update-resp)))
             (is (= "Evening Coffee" (:name (json/read-str (:body update-resp) :key-fn keyword))))))
 
-        (testing "Update non-existent stand (upsert behavior)"
+        (testing "Update non-existent mark (upsert behavior)"
           (let [non-existent-id "missing-id"
-                update-doc {:name "New Stand" :address "Unknown" :lat 0.0 :lon 0.0}
+                update-doc {:name "New Mark" :address "Unknown" :lat 0.0 :lon 0.0}
                 update-body (json/write-str update-doc)
                 update-req {:path-params {:id non-existent-id}
                             :body (ByteArrayInputStream. (.getBytes update-body))
                             :identity "alice"}
-                update-resp (handlers/update-stand-handler update-req)]
+                update-resp (handlers/update-mark-handler update-req)]
             (is (= 200 (:status update-resp)))
             (let [created (json/read-str (:body update-resp) :key-fn keyword)]
-              (is (= "New Stand" (:name created)))
+              (is (= "New Mark" (:name created)))
               (is (= 0.0 (:lat created)))
               (is (= 0.0 (:lon created)))
               (is (= non-existent-id (:id created)))
               ;; Verify it's actually in the DB
-              (let [get-resp (handlers/get-stand-handler {:path-params {:id non-existent-id} :identity "alice"})]
+              (let [get-resp (handlers/get-mark-handler {:path-params {:id non-existent-id} :identity "alice"})]
                 (is (= 200 (:status get-resp)))
-                (is (= "New Stand" (:name (json/read-str (:body get-resp) :key-fn keyword))))))))
+                (is (= "New Mark" (:name (json/read-str (:body get-resp) :key-fn keyword))))))))
 
-        (testing "Delete stand"
-          (let [del-resp (handlers/delete-stand-handler {:path-params {:id id} :identity "alice"})]
+        (testing "Delete mark"
+          (let [del-resp (handlers/delete-mark-handler {:path-params {:id id} :identity "alice"})]
             (is (= 200 (:status del-resp)))
-            (is (nil? (db/get-stand-unfiltered id)))))
+            (is (nil? (db/get-mark-unfiltered id)))))
 
-        (testing "Delete non-existent stand"
-          (let [del-resp (handlers/delete-stand-handler {:path-params {:id "non-existent"} :identity "alice"})]
+        (testing "Delete non-existent mark"
+          (let [del-resp (handlers/delete-mark-handler {:path-params {:id "non-existent"} :identity "alice"})]
             (is (= 200 (:status del-resp)))
             (is (= "'non-existent' deleted" (:message (json/read-str (:body del-resp) :key-fn keyword))))))))
 
     (testing "CSV export"
-      (let [stand-doc {:name "CSV Stand"
+      (let [mark-doc {:name "CSV Mark"
                        :address "CSV St"
                        :town "CSV Town"
                        :state "CS"
                        :lat 40.0
                        :lon -76.0
-                       :products ["apples" "bananas"]}
-            _ (create-stand stand-doc)
-            resp (handlers/get-stands-csv-handler {:identity "alice"})
+                       :tags ["apples" "bananas"]}
+            _ (create-mark mark-doc)
+            resp (handlers/get-marks-csv-handler {:identity "alice"})
             csv (:body resp)]
         (is (= 200 (:status resp)))
-        (is (str/includes? csv "Name,Latitude,Longitude,Address,Town,State,Products,Notes"))
-        (is (str/includes? csv "CSV Stand,40.0,-76.0,CSV St,CSV Town,CS,apples; bananas,"))))
+        (is (str/includes? csv "Name,Latitude,Longitude,Address,Town,State,Tags,Notes"))
+        (is (str/includes? csv "CSV Mark,40.0,-76.0,CSV St,CSV Town,CS,apples; bananas,"))))
 
     (testing "KML export"
-      (let [stand-doc {:name "KML Stand" :address "KML St" :lat 40.0 :lon -76.0 :products ["cherries"] :notes "Sweet"}
-            create-req {:body (ByteArrayInputStream. (.getBytes (json/write-str stand-doc)))
+      (let [mark-doc {:name "KML Mark" :address "KML St" :lat 40.0 :lon -76.0 :tags ["cherries"] :notes "Sweet"}
+            create-req {:body (ByteArrayInputStream. (.getBytes (json/write-str mark-doc)))
                         :identity "alice"}
-            _ (handlers/create-stand-handler create-req)
-            resp (handlers/get-stands-kml-handler {:identity "alice"})
+            _ (handlers/create-mark-handler create-req)
+            resp (handlers/get-marks-kml-handler {:identity "alice"})
             kml (:body resp)]
         (is (= 200 (:status resp)))
         (is (str/includes? kml "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
         (is (str/includes? kml "<kml xmlns=\"http://www.opengis.net/kml/2.2\">"))
-        (is (str/includes? kml "<name>KML Stand</name>"))
+        (is (str/includes? kml "<name>KML Mark</name>"))
         (is (str/includes? kml "-76.000000,40.000000,0"))
         (is (str/includes? kml "cherries"))
         (is (str/includes? kml "Sweet"))))
 
     (testing "RSS export"
-      (let [stand-docs [{:name "RSS Stand"
+      (let [mark-docs [{:name "RSS Mark"
                          :address "RSS St"
                          :town "Lancaster"
                          :state "PA"
-                         :products ["peaches"]
+                         :tags ["peaches"]
                          :expiration "2026-01-01"
                          :notes "Juicy"
                          :updated "2026-01-01"
@@ -229,24 +229,24 @@
                          :lon -76.0
                          :shared? true
                          :creator "user"}]
-            _ (doall (map create-stand stand-docs))
-            resp (handlers/get-stands-rss-handler {:identity "alice" :scheme :http :server-name "localhost" :server-port 3000})
+            _ (doall (map create-mark mark-docs))
+            resp (handlers/get-marks-rss-handler {:identity "alice" :scheme :http :server-name "localhost" :server-port 3000})
             rss (:body resp)]
         (is (= 200 (:status resp)))
         (is (str/includes? rss "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
         (is (str/includes? rss "<rss version=\"2.0\""))
-        (is (str/includes? rss "<title>Roadside Stands</title>"))
-        (is (str/includes? rss "<title>RSS Stand</title>"))
+        (is (str/includes? rss "<title>MapMarks Marks</title>"))
+        (is (str/includes? rss "<title>RSS Mark</title>"))
         (is (str/includes? rss "Address: RSS St, Lancaster, PA"))
         (is (str/includes? rss "Coordinates: 40.0, -76.0"))
         (is (str/includes? rss "peaches"))
         (is (str/includes? rss "Juicy"))
         (is (str/includes? rss config/external-base-url)))
-      (let [stand-docs [{:name ""
+      (let [mark-docs [{:name ""
                          :address ""
                          :town ""
                          :state ""
-                         :products ["peaches" "apples"]
+                         :tags ["peaches" "apples"]
                          :expiration "2026-01-01"
                          :notes ""
                          :updated "2026-01-01"
@@ -255,70 +255,70 @@
                          :lon -76.0
                          :shared? true
                          :creator "user"}]
-            _ (doall (map create-stand stand-docs))
-            resp (handlers/get-stands-rss-handler {:identity "alice" :scheme :http :server-name "localhost" :server-port 3000})
+            _ (doall (map create-mark mark-docs))
+            resp (handlers/get-marks-rss-handler {:identity "alice" :scheme :http :server-name "localhost" :server-port 3000})
             rss (:body resp)]
         (is (= 200 (:status resp)))
         (is (str/includes? rss "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
         (is (str/includes? rss "<rss version=\"2.0\""))
-        (is (str/includes? rss "<title>Roadside Stands</title>"))
+        (is (str/includes? rss "<title>MapMarks Marks</title>"))
         (is (str/includes? rss "<title>peaches, apples</title>"))
         (is (str/includes? rss "Coordinates: 40.0, -76.0"))
         (is (str/includes? rss "peaches"))
         (is (str/includes? rss "apples"))
         (is (str/includes? rss config/external-base-url))))))
 
-(deftest stands-visibility-test
-  (testing "Stands visibility filtering"
-    (let [alice-stand {:xt/id "alice-1" :name "Alice Stand" :shared? false}
+(deftest marks-visibility-test
+  (testing "Marks visibility filtering"
+    (let [alice-mark {:xt/id "alice-1" :name "Alice Mark" :shared? false}
           bob-private {:xt/id "bob-private" :name "Bob Private" :shared? false}
           bob-shared {:xt/id "bob-shared" :name "Bob Shared" :shared? true}]
 
-      ;; Setup stands in DB
-      (xt/submit-tx @db/node [[:put-docs :stands (assoc alice-stand :creator "alice" :lat 40.0 :lon -76.0)]
-                              [:put-docs :stands (assoc bob-private :creator "bob" :lat 40.0 :lon -76.0)]
-                              [:put-docs :stands (assoc bob-shared :creator "bob" :lat 40.0 :lon -76.0)]])
+      ;; Setup marks in DB
+      (xt/submit-tx @db/node [[:put-docs :marks (assoc alice-mark :creator "alice" :lat 40.0 :lon -76.0)]
+                              [:put-docs :marks (assoc bob-private :creator "bob" :lat 40.0 :lon -76.0)]
+                              [:put-docs :marks (assoc bob-shared :creator "bob" :lat 40.0 :lon -76.0)]])
 
-      (testing "Alice sees her own and bob's shared stands"
+      (testing "Alice sees her own and bob's shared marks"
         (let [req {:identity "alice"}
-              resp (handlers/get-stands-handler req)
+              resp (handlers/get-marks-handler req)
               body (json/read-str (:body resp) :key-fn keyword)
-              stands (:stands body)
-              ids (set (map :id stands))]
+              marks (:marks body)
+              ids (set (map :id marks))]
           (is (= 200 (:status resp)))
           (is (contains? ids "alice-1"))
           (is (contains? ids "bob-shared"))
           (is (not (contains? ids "bob-private")))))
 
-      (testing "Bob sees his own and bob's shared stands (all 3 in this case since he owns both private and shared)"
+      (testing "Bob sees his own and bob's shared marks (all 3 in this case since he owns both private and shared)"
         (let [req {:identity "bob"}
-              resp (handlers/get-stands-handler req)
+              resp (handlers/get-marks-handler req)
               body (json/read-str (:body resp) :key-fn keyword)
-              stands (:stands body)
-              ids (set (map :id stands))]
+              marks (:marks body)
+              ids (set (map :id marks))]
           (is (= 200 (:status resp)))
           (is (contains? ids "bob-private"))
           (is (contains? ids "bob-shared"))
-          ;; Bob should NOT see Alice's private stand
+          ;; Bob should NOT see Alice's private mark
           (is (not (contains? ids "alice-1")))))
 
-      (testing "Unauthenticated user sees only shared stands"
+      (testing "Unauthenticated user sees only shared marks"
         ;; Although the route has auth middleware, the handler itself should handle nil identity gracefully if it ever reached there
         (let [req {:identity nil}
-              resp (handlers/get-stands-handler req)
+              resp (handlers/get-marks-handler req)
               body (json/read-str (:body resp) :key-fn keyword)
-              stands (:stands body)
-              ids (set (map :id stands))]
+              marks (:marks body)
+              ids (set (map :id marks))]
           (is (= 200 (:status resp)))
           (is (= #{"bob-shared"} ids))))
 
-      (testing "Individual stand visibility"
-        (is (= 200 (:status (handlers/get-stand-handler {:path-params {:id "alice-1"} :identity "alice"}))))
-        (is (= 404 (:status (handlers/get-stand-handler {:path-params {:id "bob-private"} :identity "alice"}))))
-        (is (= 200 (:status (handlers/get-stand-handler {:path-params {:id "bob-shared"} :identity "alice"}))))
-        (is (= 200 (:status (handlers/get-stand-handler {:path-params {:id "bob-private"} :identity "bob"}))))))
+      (testing "Individual mark visibility"
+        (is (= 200 (:status (handlers/get-mark-handler {:path-params {:id "alice-1"} :identity "alice"}))))
+        (is (= 404 (:status (handlers/get-mark-handler {:path-params {:id "bob-private"} :identity "alice"}))))
+        (is (= 200 (:status (handlers/get-mark-handler {:path-params {:id "bob-shared"} :identity "alice"}))))
+        (is (= 200 (:status (handlers/get-mark-handler {:path-params {:id "bob-private"} :identity "bob"}))))))
 
-    (testing "Stands from disabled users are excluded"
+    (testing "Marks from disabled users are excluded"
       (let [disabled-bob {:xt/id "disabled-bob"
                           :login "disabled-bob"
                           :enabled? false}
@@ -329,131 +329,131 @@
                         :lat 40.0
                         :lon -76.0}]
         (xt/submit-tx @db/node [[:put-docs :users disabled-bob]
-                                [:put-docs :stands bob-shared]])
+                                [:put-docs :marks bob-shared]])
 
-        (testing "anonymous should NOT see stand from disabled user"
+        (testing "anonymous should NOT see mark from disabled user"
           (let [req {}
-                resp (handlers/get-stands-handler req)
+                resp (handlers/get-marks-handler req)
                 body (json/read-str (:body resp) :key-fn keyword)
-                stands (:stands body)
-                ids (set (map :id stands))]
+                marks (:marks body)
+                ids (set (map :id marks))]
             (is (not (contains? ids "bob-shared-disabled")))))
 
-        (testing "anonymous should NOT see stand by radius from disabled user"
+        (testing "anonymous should NOT see mark by radius from disabled user"
           (let [req {:params {:lat "40.0" :lon "-76.0"}}
-                resp (handlers/get-stands-handler req)
+                resp (handlers/get-marks-handler req)
                 body (json/read-str (:body resp) :key-fn keyword)
-                stands (:stands body)
-                ids (set (map :id stands))]
+                marks (:marks body)
+                ids (set (map :id marks))]
             (is (not (contains? ids "bob-shared-disabled")))))
 
-        (testing "Alice should NOT see stand from disabled user"
+        (testing "Alice should NOT see mark from disabled user"
           (let [req {:identity "alice"}
-                resp (handlers/get-stands-handler req)
+                resp (handlers/get-marks-handler req)
                 body (json/read-str (:body resp) :key-fn keyword)
-                stands (:stands body)
-                ids (set (map :id stands))]
+                marks (:marks body)
+                ids (set (map :id marks))]
             (is (not (contains? ids "bob-shared-disabled")))))
 
-        (testing "Alice should NOT see stand by radius from disabled user"
+        (testing "Alice should NOT see mark by radius from disabled user"
           (let [req {:params {:lat "40.0" :lon "-76.0"} :identity "alice"}
-                resp (handlers/get-stands-handler req)
+                resp (handlers/get-marks-handler req)
                 body (json/read-str (:body resp) :key-fn keyword)
-                stands (:stands body)
-                ids (set (map :id stands))]
+                marks (:marks body)
+                ids (set (map :id marks))]
             (is (not (contains? ids "bob-shared-disabled")))))
 
-        (testing "Individual stand from disabled user should be 404 for others"
+        (testing "Individual mark from disabled user should be 404 for others"
           (let [req {:path-params {:id "bob-shared-disabled"}
                      :identity "alice"}
-                resp (handlers/get-stand-handler req)]
+                resp (handlers/get-mark-handler req)]
             (is (= 404 (:status resp)))))))
 
     (testing "Reproduce 'Not all variables in scope' error with incomplete docs"
-      (xt/submit-tx @db/node [[:put-docs :stands {:xt/id "incomplete-1" :name "No creator or shared" :lat 0.0 :lon 0.0}]])
+      (xt/submit-tx @db/node [[:put-docs :marks {:xt/id "incomplete-1" :name "No creator or shared" :lat 0.0 :lon 0.0}]])
       (let [req {:identity "alice" :params {:lat "40.0" :lon "-76.0"}}
-            resp (handlers/get-stands-handler req)]
+            resp (handlers/get-marks-handler req)]
         (is (= 200 (:status resp)))))))
 
 (deftest creator-test
   (testing "Creator value behavior"
-    (let [stand-id "stand-1"
-          stand-doc {:id stand-id :name "Creator Test Stand" :creator "malicious-user" :lat 0.0 :lon 0.0}
-          body (json/write-str stand-doc)
+    (let [mark-id "mark-1"
+          mark-doc {:id mark-id :name "Creator Test Mark" :creator "malicious-user" :lat 0.0 :lon 0.0}
+          body (json/write-str mark-doc)
           create-req {:body (ByteArrayInputStream. (.getBytes body))
                       :identity "alice"}
-          create-resp (handlers/create-stand-handler create-req)]
+          create-resp (handlers/create-mark-handler create-req)]
       (is (= 201 (:status create-resp)))
-      (let [created-stand (json/read-str (:body create-resp) :key-fn keyword)]
-        (is (= "alice" (:creator created-stand)) "Creator should be set from identity, ignoring client input")
-        (is (= stand-id (:id created-stand)))
+      (let [created-mark (json/read-str (:body create-resp) :key-fn keyword)]
+        (is (= "alice" (:creator created-mark)) "Creator should be set from identity, ignoring client input")
+        (is (= mark-id (:id created-mark)))
 
-        (testing "Updating stand preserves creator"
-          (let [update-doc (assoc created-stand :name "Updated Name" :creator "malicious-user")
+        (testing "Updating mark preserves creator"
+          (let [update-doc (assoc created-mark :name "Updated Name" :creator "malicious-user")
                 update-body (json/write-str update-doc)
-                update-req {:path-params {:id stand-id}
+                update-req {:path-params {:id mark-id}
                             :body (ByteArrayInputStream. (.getBytes update-body))
                             :identity "alice"}
-                update-resp (handlers/update-stand-handler update-req)]
+                update-resp (handlers/update-mark-handler update-req)]
             (is (= 200 (:status update-resp)))
-            (let [updated-stand (json/read-str (:body update-resp) :key-fn keyword)]
-              (is (= "alice" (:creator updated-stand)) "Creator should be preserved from existing record, ignoring client input and current identity"))))
+            (let [updated-mark (json/read-str (:body update-resp) :key-fn keyword)]
+              (is (= "alice" (:creator updated-mark)) "Creator should be preserved from existing record, ignoring client input and current identity"))))
 
-        (testing "Updating stand by non-owner is forbidden"
-          (let [update-doc (assoc created-stand :name "Malicious Update")
+        (testing "Updating mark by non-owner is forbidden"
+          (let [update-doc (assoc created-mark :name "Malicious Update")
                 update-body (json/write-str update-doc)
-                update-req {:path-params {:id stand-id}
+                update-req {:path-params {:id mark-id}
                             :body (ByteArrayInputStream. (.getBytes update-body))
                             :identity "bob"}
-                update-resp (handlers/update-stand-handler update-req)]
+                update-resp (handlers/update-mark-handler update-req)]
             (is (= 403 (:status update-resp)))
-            (is (= "Forbidden: You do not own this stand" (:error (json/read-str (:body update-resp) :key-fn keyword))))))
+            (is (= "Forbidden: You do not own this mark" (:error (json/read-str (:body update-resp) :key-fn keyword))))))
 
-        (testing "Deleting stand by non-owner is forbidden"
-          (let [del-req {:path-params {:id stand-id}
+        (testing "Deleting mark by non-owner is forbidden"
+          (let [del-req {:path-params {:id mark-id}
                          :identity "bob"}
-                del-resp (handlers/delete-stand-handler del-req)]
+                del-resp (handlers/delete-mark-handler del-req)]
             (is (= 403 (:status del-resp)))
-            (is (= "Forbidden: You do not own this stand" (:error (json/read-str (:body del-resp) :key-fn keyword))))))
+            (is (= "Forbidden: You do not own this mark" (:error (json/read-str (:body del-resp) :key-fn keyword))))))
 
-        (testing "Upserting new stand sets creator from current identity"
-          (let [upsert-id "stand-2"
-                upsert-doc {:name "Upsert Stand" :creator "malicious-user" :lat 0.0 :lon 0.0}
+        (testing "Upserting new mark sets creator from current identity"
+          (let [upsert-id "mark-2"
+                upsert-doc {:name "Upsert Mark" :creator "malicious-user" :lat 0.0 :lon 0.0}
                 upsert-body (json/write-str upsert-doc)
                 upsert-req {:path-params {:id upsert-id}
                             :body (ByteArrayInputStream. (.getBytes upsert-body))
                             :identity "charlie"}
-                upsert-resp (handlers/update-stand-handler upsert-req)]
+                upsert-resp (handlers/update-mark-handler upsert-req)]
             (is (= 200 (:status upsert-resp)))
-            (let [upserted-stand (json/read-str (:body upsert-resp) :key-fn keyword)]
-              (is (= "charlie" (:creator upserted-stand)) "Creator should be set from identity for new record in update handler"))))))))
+            (let [upserted-mark (json/read-str (:body upsert-resp) :key-fn keyword)]
+              (is (= "charlie" (:creator upserted-mark)) "Creator should be set from identity for new record in update handler"))))))))
 
 (deftest upsert-test
-  (testing "Updating a non-existent stand creates it (upsert)"
+  (testing "Updating a non-existent mark creates it (upsert)"
     (let [id "upsert-id"
-          stand-doc {:name "Upserted Stand" :address "Upsert Lane" :lat 0.0 :lon 0.0}
-          body (json/write-str stand-doc)
+          mark-doc {:name "Upserted Mark" :address "Upsert Lane" :lat 0.0 :lon 0.0}
+          body (json/write-str mark-doc)
           req {:path-params {:id id}
                :body (ByteArrayInputStream. (.getBytes body))
                :identity "alice"}
-          resp (handlers/update-stand-handler req)]
+          resp (handlers/update-mark-handler req)]
       (is (= 200 (:status resp)))
       (let [created (json/read-str (:body resp) :key-fn keyword)]
         (is (= id (:id created)))
-        (is (= "Upserted Stand" (:name created)))
+        (is (= "Upserted Mark" (:name created)))
         (is (= "alice" (:creator created)))
 
         ;; Verify it persists in DB
-        (let [get-resp (handlers/get-stand-handler {:path-params {:id id} :identity "alice"})]
+        (let [get-resp (handlers/get-mark-handler {:path-params {:id id} :identity "alice"})]
           (is (= 200 (:status get-resp)))
-          (is (= "Upserted Stand" (:name (json/read-str (:body get-resp) :key-fn keyword)))))))))
+          (is (= "Upserted Mark" (:name (json/read-str (:body get-resp) :key-fn keyword)))))))))
 
 (deftest migration-test
   (testing "Migration from :coordinate to :lat and :lon"
-    (let [old-stand {:xt/id "old-1" :name "Old" :coordinate "40.0, -76.0" :creator "alice"}]
-      (xt/execute-tx @db/node [[:put-docs :stands old-stand]])
-      (db/migrate-stands!)
-      (let [migrated (db/get-stand-unfiltered "old-1")]
+    (let [old-mark {:xt/id "old-1" :name "Old" :coordinate "40.0, -76.0" :creator "alice"}]
+      (xt/execute-tx @db/node [[:put-docs :marks old-mark]])
+      (db/migrate-marks!)
+      (let [migrated (db/get-mark-unfiltered "old-1")]
         (is (= 40.0 (:lat migrated)))
         (is (= -76.0 (:lon migrated)))
         (is (nil? (:coordinate migrated)))))))
@@ -529,27 +529,27 @@
             (is (str/includes? (:body resp) "Nominatim error"))))))))
 
 (deftest vote-test
-  (testing "Voting for a stand"
-    (let [stand-id "vote-stand-1"
+  (testing "Voting for a mark"
+    (let [mark-id "vote-mark-1"
           _ (xt/execute-tx
              @db/node
-             [[:put-docs :stands
-               {:xt/id stand-id
-                :name "Vote Stand"
+             [[:put-docs :marks
+               {:xt/id mark-id
+                :name "Vote Mark"
                 :shared? true
                 :creator "bob"
                 :lat 40.0
                 :lon -76.0}]])]
 
-      ;; Verification assertion: ensure stand is actually in XTDB
+      ;; Verification assertion: ensure mark is actually in XTDB
       (is (seq (xt/q
                   @db/node
                   ['(fn [id]
                       (->
-                       (from :stands [xt/id])
+                       (from :marks [xt/id])
                        (where (= xt/id id))))
-                   stand-id]))
-          "Stand should be present in XTDB before testing votes")
+                   mark-id]))
+          "Mark should be present in XTDB before testing votes")
       (is (empty? (xt/q
                    @db/node
                    ['(fn []
@@ -558,102 +558,102 @@
           "No votes should be present in XTDB before testing votes")
 
       (testing "Initial score is exactly 0 (not nil)"
-        (let [resp (handlers/get-stand-handler
-                    {:path-params {:id stand-id}
+        (let [resp (handlers/get-mark-handler
+                    {:path-params {:id mark-id}
                      :identity "alice"})
-              stand (json/read-str (:body resp) :key-fn keyword)]
+              mark (json/read-str (:body resp) :key-fn keyword)]
           (is (= 200 (:status resp)))
-          (is (= 0 (:score stand))
-              "Score should be exactly 0 for a stand with no votes")
-          (is (= 0 (:user-vote stand))
-              "User vote should be exactly 0 for a stand with no votes")
-          (is (= 0 (:score stand))
-              "Overall score should be exactly 0 for a stand with no votes")))
+          (is (= 0 (:score mark))
+              "Score should be exactly 0 for a mark with no votes")
+          (is (= 0 (:user-vote mark))
+              "User vote should be exactly 0 for a mark with no votes")
+          (is (= 0 (:score mark))
+              "Overall score should be exactly 0 for a mark with no votes")))
 
       (testing "Alice upvotes"
-        (let [req {:path-params {:id stand-id}
+        (let [req {:path-params {:id mark-id}
                    :identity "alice"
                    :body (-> {:value 1}
                              json/write-str
                              .getBytes
                              ByteArrayInputStream.)}
-              resp (handlers/vote-stand-handler req)]
+              resp (handlers/vote-mark-handler req)]
           (is (= 200 (:status resp)))
-          (let [get-resp (handlers/get-stand-handler
-                          {:path-params {:id stand-id}
+          (let [get-resp (handlers/get-mark-handler
+                          {:path-params {:id mark-id}
                            :identity "alice"})
-                stand (json/read-str (:body get-resp) :key-fn keyword)]
-            (is (= 1 (:score stand)))
-            (is (= 1 (:user-vote stand))))))
+                mark (json/read-str (:body get-resp) :key-fn keyword)]
+            (is (= 1 (:score mark)))
+            (is (= 1 (:user-vote mark))))))
 
       (testing "Bob downvotes"
-        (let [req {:path-params {:id stand-id}
+        (let [req {:path-params {:id mark-id}
                    :identity "bob"
                    :body (ByteArrayInputStream. (.getBytes (json/write-str {:value -1})))}
-              resp (handlers/vote-stand-handler req)]
+              resp (handlers/vote-mark-handler req)]
           (is (= 200 (:status resp)))
-          (let [get-resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "alice"})
-                stand (json/read-str (:body get-resp) :key-fn keyword)]
-            (is (= 0 (:score stand)) "1 (alice) + -1 (bob) = 0")
-            (is (= 1 (:user-vote stand)) "Alice still sees her upvote"))
-          (let [get-resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "bob"})
-                stand (json/read-str (:body get-resp) :key-fn keyword)]
-            (is (= -1 (:user-vote stand)) "Bob sees his downvote"))))
+          (let [get-resp (handlers/get-mark-handler {:path-params {:id mark-id} :identity "alice"})
+                mark (json/read-str (:body get-resp) :key-fn keyword)]
+            (is (= 0 (:score mark)) "1 (alice) + -1 (bob) = 0")
+            (is (= 1 (:user-vote mark)) "Alice still sees her upvote"))
+          (let [get-resp (handlers/get-mark-handler {:path-params {:id mark-id} :identity "bob"})
+                mark (json/read-str (:body get-resp) :key-fn keyword)]
+            (is (= -1 (:user-vote mark)) "Bob sees his downvote"))))
 
       (testing "Alice changes vote to downvote"
-        (let [req {:path-params {:id stand-id}
+        (let [req {:path-params {:id mark-id}
                    :identity "alice"
                    :body (ByteArrayInputStream. (.getBytes (json/write-str {:value -1})))}
-              resp (handlers/vote-stand-handler req)]
+              resp (handlers/vote-mark-handler req)]
           (is (= 200 (:status resp)))
-          (let [get-resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "alice"})
-                stand (json/read-str (:body get-resp) :key-fn keyword)]
-            (is (= -2 (:score stand)) "-1 (alice) + -1 (bob) = -2")
-            (is (= -1 (:user-vote stand))))))
+          (let [get-resp (handlers/get-mark-handler {:path-params {:id mark-id} :identity "alice"})
+                mark (json/read-str (:body get-resp) :key-fn keyword)]
+            (is (= -2 (:score mark)) "-1 (alice) + -1 (bob) = -2")
+            (is (= -1 (:user-vote mark))))))
 
       (testing "Alice clears vote"
-        (let [req {:path-params {:id stand-id}
+        (let [req {:path-params {:id mark-id}
                    :identity "alice"
                    :body (ByteArrayInputStream. (.getBytes (json/write-str {:value 0})))}
-              resp (handlers/vote-stand-handler req)]
+              resp (handlers/vote-mark-handler req)]
           (is (= 200 (:status resp)))
-          (let [get-resp (handlers/get-stand-handler {:path-params {:id stand-id} :identity "alice"})
-                stand (json/read-str (:body get-resp) :key-fn keyword)]
-            (is (= -1 (:score stand)) "0 (alice) + -1 (bob) = -1")
-            (is (= 0 (:user-vote stand))))))
+          (let [get-resp (handlers/get-mark-handler {:path-params {:id mark-id} :identity "alice"})
+                mark (json/read-str (:body get-resp) :key-fn keyword)]
+            (is (= -1 (:score mark)) "0 (alice) + -1 (bob) = -1")
+            (is (= 0 (:user-vote mark))))))
 
       (testing "Invalid vote value"
-        (let [req {:path-params {:id stand-id}
+        (let [req {:path-params {:id mark-id}
                    :identity "alice"
                    :body (ByteArrayInputStream. (.getBytes (json/write-str {:value 2})))}
-              resp (handlers/vote-stand-handler req)]
+              resp (handlers/vote-mark-handler req)]
           (is (= 400 (:status resp)))))
       )
 
-    (testing "Multiple stands with one vote"
-      (let [s1-id "stand-a"
-            s2-id "stand-b"]
+    (testing "Multiple marks with one vote"
+      (let [s1-id "mark-a"
+            s2-id "mark-b"]
         (xt/execute-tx @db/node
-                 [[:put-docs :stands
+                 [[:put-docs :marks
                   {:xt/id s1-id
-                   :name "Stand A"
+                   :name "Mark A"
                    :shared? true
                    :creator "bob"
                    :lat 40.0
                    :lon -76.0}
                   {:xt/id s2-id
-                   :name "Stand B"
+                   :name "Mark B"
                    :shared? true
                    :creator "bob"
                    :lat 40.0
                    :lon -76.0}]
                   [:put-docs :votes
                    {:xt/id "v1"
-                    :stand-id s1-id
+                    :mark-id s1-id
                     :user-id "alice"
                     :value 1}
                    {:xt/id "v2"
-                    :stand-id s1-id
+                    :mark-id s1-id
                     :user-id "bob"
                     :value 1}]])
 
@@ -662,18 +662,18 @@
                      @db/node
                      ['(fn [id]
                          (->
-                           (from :stands [xt/id])
+                           (from :marks [xt/id])
                            (where (= xt/id id))))
                       s1-id]))
-          "Stand A should be in XTDB")
+          "Mark A should be in XTDB")
         (is (seq (xt/q
                      @db/node
                      ['(fn [id]
                          (->
-                           (from :stands [xt/id])
+                           (from :marks [xt/id])
                            (where (= xt/id id))))
                       s2-id]))
-          "Stand B should be in XTDB")
+          "Mark B should be in XTDB")
         (is (seq (xt/q
                      @db/node
                      ['(fn [id]
@@ -683,34 +683,34 @@
                       "v1"]))
           "Vote should be in XTDB")
 
-        (let [resp (handlers/get-stands-handler
+        (let [resp (handlers/get-marks-handler
                      {:identity "alice"
                       :params {:lat "40.0" :lon "-76.0"}})
               body (json/read-str (:body resp) :key-fn keyword)
-              stands (:stands body)
-              s1 (some #(when (= (:id %) s1-id) %) stands)
-              s2 (some #(when (= (:id %) s2-id) %) stands)]
+              marks (:marks body)
+              s1 (some #(when (= (:id %) s1-id) %) marks)
+              s2 (some #(when (= (:id %) s2-id) %) marks)]
           (is (= 200 (:status resp)))
-          (is (= "Stand A" (:name s1)) "Stand A")
-          (is (= 2 (:score s1)) "Stand A should have score 2")
-          (is (= 1 (:user-vote s1)) "Stand A should have user-vote 1")
-          (is (= "Stand B" (:name s2)) "Stand B")
-          (is (= 0 (:score s2)) "Stand B should have score 0")
-          (is (= 0 (:user-vote s2)) "Stand B should have user-vote 0")
+          (is (= "Mark A" (:name s1)) "Mark A")
+          (is (= 2 (:score s1)) "Mark A should have score 2")
+          (is (= 1 (:user-vote s1)) "Mark A should have user-vote 1")
+          (is (= "Mark B" (:name s2)) "Mark B")
+          (is (= 0 (:score s2)) "Mark B should have score 0")
+          (is (= 0 (:user-vote s2)) "Mark B should have user-vote 0")
           )
 
-        (let [resp (handlers/get-stands-handler
+        (let [resp (handlers/get-marks-handler
                      {:identity "alice"
                       :params {}})
               body (json/read-str (:body resp) :key-fn keyword)
-              stands (:stands body)
-              s1 (some #(when (= (:id %) s1-id) %) stands)
-              s2 (some #(when (= (:id %) s2-id) %) stands)]
+              marks (:marks body)
+              s1 (some #(when (= (:id %) s1-id) %) marks)
+              s2 (some #(when (= (:id %) s2-id) %) marks)]
           (is (= 200 (:status resp)))
-          (is (= "Stand A" (:name s1)) "Stand A")
-          (is (= 2 (:score s1)) "Stand A should have score 2")
-          (is (= 1 (:user-vote s1)) "Stand A should have user-vote 1")
-          (is (= "Stand B" (:name s2)) "Stand B")
-          (is (= 0 (:score s2)) "Stand B should have score 0")
-          (is (= 0 (:user-vote s2)) "Stand B should have user-vote 0")
+          (is (= "Mark A" (:name s1)) "Mark A")
+          (is (= 2 (:score s1)) "Mark A should have score 2")
+          (is (= 1 (:user-vote s1)) "Mark A should have user-vote 1")
+          (is (= "Mark B" (:name s2)) "Mark B")
+          (is (= 0 (:score s2)) "Mark B should have score 0")
+          (is (= 0 (:user-vote s2)) "Mark B should have user-vote 0")
           )))))

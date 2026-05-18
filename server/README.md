@@ -1,20 +1,20 @@
-# roadside-server
+# mapmarks-server
 
 run the server:
 ```
 $ clj -M:run
 ```
 
-register a new roadside account with login and password:
+register a new mapmarks account with login and password:
 ```
 $ curl -s -v \
   -d login=u -d password=p \
-  http://localhost:8080/roadside/api/register
+  http://localhost:8080/mapmarks/api/register
 ```
 
-Download the roadside stand data:
+Download the mapmarks mark data:
 ```
-$ curl -s -v -u u:p http://localhost:8080/roadside/api/stands
+$ curl -s -v -u u:p http://localhost:8080/mapmarks/api/marks
 ```
 
 Post new document data:
@@ -25,9 +25,9 @@ $ curl -s -v -u u:p \
   http://localhost:8080/storage/api/logger/z
 ```
 
-delete a stand:
+delete a mark:
 ```
-$ curl -s -v -u u:p -X delete http://localhost:8080/roadside/api/stands/:id
+$ curl -s -v -u u:p -X delete http://localhost:8080/mapmarks/api/marks/:id
 ```
 
 static content, like the stylesheet, is available as well:
@@ -52,34 +52,34 @@ $ make
 
 start the containers: app + xtdb 2.1:
 ```
-$ podman kube play roadside-server.yaml
+$ podman kube play mapmarks-server.yaml
 ```
 
 stop the containers: app + xtdb 2.1:
 ```
-$ podman kube down roadside-server.yaml
+$ podman kube down mapmarks-server.yaml
 ```
 
 Create a system service around the pods:
 ```
-$ sudo cp roadside-server.service /usr/lib/systemd/system/roadside-server.service
+$ sudo cp mapmarks-server.service /usr/lib/systemd/system/mapmarks-server.service
 $ sudo systemctl daemon-reload
-$ sudo systemctl enable roadside-server
-$ sudo systemctl start roadside-server
-$ sudo systemctl stop roadside-server
+$ sudo systemctl enable mapmarks-server
+$ sudo systemctl start mapmarks-server
+$ sudo systemctl stop mapmarks-server
 ```
 
 Create a user Quadlet to run pods:
 ```
 $ loginctl enable-linger # so our services will start at boot and stay around
-$ cp roadside-server.kube roadside-server.yaml $HOME/.config/containers/systemd/
+$ cp mapmarks-server.kube mapmarks-server.yaml $HOME/.config/containers/systemd/
 $ systemctl --user daemon-reload
-$ systemctl --user start roadside-server
+$ systemctl --user start mapmarks-server
 ```
 
 Access the running XTDB server from the api server:
 ```
-$ podman exec -it roadside-server-api psql -U xtdb -h xtdb
+$ podman exec -it mapmarks-server-api psql -U xtdb -h xtdb
 ```
 
 ## License

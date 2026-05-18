@@ -1,37 +1,19 @@
 {
-  "name": "Roadside Stands",
-  "short_name": "Roadside",
-  "description": "Find and share roadside produce stands",
+  "name": "MapMarks",
+  "short_name": "MapMarks",
+  "description": "Find and share interesting locations",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4a7c44",
-  "icons": [
-    {
-      "src": "images/apples.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "images/apples.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    }
-  ],
+  "icons": [],
   "shortcuts": [
     {
-      "name": "Add Stand",
+      "name": "Add Mark",
       "short_name": "Add",
-      "description": "Open the form to add a new roadside stand",
+      "description": "Open the form to add a new mark",
       "url": "./?action=add",
-      "icons": [
-        {
-          "src": "images/apples.png",
-          "sizes": "192x192"
-        }
-      ]
+      "icons": []
     }
   ]
 }
