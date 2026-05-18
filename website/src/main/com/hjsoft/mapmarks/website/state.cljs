@@ -1,6 +1,7 @@
 (ns com.hjsoft.mapmarks.website.state
   (:require [com.hjsoft.mapmarks.website.storage :as storage]
             [com.hjsoft.mapmarks.website.utils :as utils]
+            [com.hjsoft.mapmarks.website.config :as config]
             [clojure.string :as str]
             [helix.core :refer [create-context]]
             [helix.hooks :as hooks]))
@@ -39,6 +40,7 @@
    :map-center (or (storage/get-item "mapmarks-map-center") map-home)
    :map-zoom (or (storage/get-item "mapmarks-map-zoom") 11)
    :settings (or (storage/get-item "mapmarks-settings") {})
+   :config config/config
    :is-synced false
    :last-sync (storage/get-item "mapmarks-last-sync")
    :loading-marks? false
@@ -109,6 +111,7 @@
    :set-tag-filter #(set-value %1 :tag-filter %2)
    :set-show-expired #(set-value %1 :show-expired? %2)
    :set-settings #(set-value %1 :settings %2)
+   :set-config #(set-value %1 :config %2)
    :set-map-center #(set-value %1 :map-center %2)
    :set-map-zoom #(set-value %1 :map-zoom %2)})
 

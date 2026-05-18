@@ -81,7 +81,7 @@
       (when (seq (:tags mark))
         (d/div
          {:class "mark-tags"}
-         (d/strong "Tags: ")
+         (d/strong (str (:tags-name-plural (:config app-state)) ": "))
          (d/div
           {:class "tags-tags"}
           (map (fn [tag]
@@ -199,7 +199,8 @@
 
 (defnc tag-list
   [{:keys [marks]}]
-  (let [{:keys [tag-filter show-expired?]} (state/use-app-state)
+  (let [app-state (state/use-app-state)
+        {:keys [tag-filter show-expired? config]} app-state
         dispatch (state/use-dispatch)
         unique-tags (hooks/use-memo
                          [marks]
@@ -208,8 +209,9 @@
      {:class "tag-list"}
      (d/div
       {:class "tag-list-content"}
+      (d/strong (str (:tags-name-plural config) ": "))
       (if (empty? unique-tags)
-        (d/p "No tags available yet.")
+        (d/p (str "No " (clojure.string/lower-case (:tags-name-plural config)) " available yet."))
         (d/div
          {:class "tags-tags"}
          (map (fn [tag]
@@ -225,14 +227,16 @@
                  tag))
               unique-tags)))
       (d/div
-       {:class "filter-controls"}
-       (d/span
-        {:class (str "tag-tag show-expired-toggle"
-                     (when show-expired? " tag-tag-active"))
-         :onClick #(dispatch [:set-show-expired (not show-expired?)])}
-        "Show Expired")
-       (when tag-filter
-         (d/button
-          {:class "clear-filter-btn"
-           :onClick #(dispatch [:set-tag-filter nil])}
-          "Clear Filter")))))))
+      {:class "filter-controls"}
+      (when (pos? (or (:default-expiration-days config) 0))
+        (d/span
+         {:class (str "tag-tag show-expired-toggle"
+                      (when show-expired? " tag-tag-active"))
+          :onClick #(dispatch [:set-show-expired (not show-expired?)])}
+         "Show Expired"))
+      (when tag-filter
+        (d/button
+         {:class "clear-filter-btn"
+          :onClick #(dispatch [:set-tag-filter nil])}
+         "Clear Filter")))))))
+

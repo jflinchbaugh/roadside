@@ -2,6 +2,7 @@
   (:require [helix.core :refer [defnc $]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
+            [clojure.string :as string]
             [com.hjsoft.mapmarks.website.utils :as utils]
             [com.hjsoft.mapmarks.website.state :as state]
             [com.hjsoft.mapmarks.website.domain.mark :as mark-domain]
@@ -19,6 +20,7 @@
 (defnc mark-form []
   (let [app-state (state/use-app-state)
         settings (:settings app-state)
+        config (:config app-state)
         authenticated? (and (seq (:user settings))
                             (seq (:password settings)))
         {:keys [editing-mark]} (state/use-ui)
@@ -31,7 +33,8 @@
          local-dispatch] (hooks/use-reducer
                           mark-domain/mark-form-reducer
                           {:editing-mark editing-mark
-                           :map-center (:map-center app-state)}
+                           :map-center (:map-center app-state)
+                           :default-expiration-days (:default-expiration-days config)}
                           mark-domain/init-form-state)]
 
     (hooks/use-effect
@@ -79,7 +82,9 @@
                                          (:lon editing-mark)))}))
        ($ tag-input
           {:mark-form-data mark-form-data
-           :on-update local-dispatch})
+           :on-update local-dispatch
+           :label (str (:tags-name-plural config) ":")
+           :placeholder (str "Add a " (string/lower-case (:tags-name-singular config)) " and press Enter")})
        ($ form-field
           {:label "Mark Name:"
            :value (:name mark-form-data)
@@ -136,12 +141,13 @@
               :class "button secondary lookup-btn"
               :onClick #(lookup-address! local-dispatch mark-form-data)}
              "To Map"))))
-       ($ form-field
-          {:label "Expiration Date:"
-           :type "date"
-           :value (:expiration mark-form-data)
-           :on-change #(local-dispatch
-                        [:update-field [:expiration (.. % -target -value)]])})
+       (when (pos? (or (:default-expiration-days config) 0))
+         ($ form-field
+            {:label "Expiration Date:"
+             :type "date"
+             :value (:expiration mark-form-data)
+             :on-change #(local-dispatch
+                          [:update-field [:expiration (.. % -target -value)]])}))
        ($ form-field
           {:label "Shared?"
            :type "checkbox"

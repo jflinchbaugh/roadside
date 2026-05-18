@@ -62,7 +62,13 @@
 (deftest mark-form-cancel-test
   (testing "mark-form can be cancelled"
     (let [cancelled (atom false)
-          context-val {:state {:settings {} :map-center [0 0]}
+          context-val {:state {:settings {}
+                               :map-center [0 0]
+                               :config {:app-name "MapMarks"
+                                        :app-logo "📍"
+                                        :default-expiration-days 30
+                                        :tags-name-singular "Tag"
+                                        :tags-name-plural "Tags"}}
                        :dispatch (fn [_])
                        :ui {:editing-mark nil
                             :set-show-form (fn [v] (when (false? v) (reset! cancelled true)))

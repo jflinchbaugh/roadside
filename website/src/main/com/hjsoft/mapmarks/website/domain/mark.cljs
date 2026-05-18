@@ -18,7 +18,7 @@
    :notes ""
    :shared? true})
 
-(defn init-form-state [{:keys [editing-mark map-center]}]
+(defn init-form-state [{:keys [editing-mark map-center default-expiration-days]}]
   (let [initial (if editing-mark
                   (assoc editing-mark
                          :coordinate (str (:lat editing-mark) ", " (:lon editing-mark)))
@@ -26,7 +26,10 @@
                          :coordinate (str (first map-center) ", " (second map-center))
                          :lat (first map-center)
                          :lon (second map-center)
-                         :expiration (utils/in-days 28)))]
+                         :expiration (if (and default-expiration-days
+                                              (pos? default-expiration-days))
+                                       (utils/in-days default-expiration-days)
+                                       "")))]
     (assoc initial
            :show-address? (boolean (or (seq (:address initial))
                                        (seq (:town initial))

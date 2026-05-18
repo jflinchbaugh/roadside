@@ -68,7 +68,7 @@
         {:class "error-message"}
         error)))))
 
-(defnc tag-input [{:keys [mark-form-data on-update]}]
+(defnc tag-input [{:keys [mark-form-data on-update label placeholder]}]
   (let [tag-input-ref (hooks/use-ref nil)
         current-tag (:current-tag mark-form-data "")]
     (hooks/use-effect
@@ -79,14 +79,14 @@
      {:class "tag-section-wrapper"}
      (d/div
       {:class "form-group"}
-      (d/label "Tags:")
+      (d/label (or label "Tags:"))
       (d/div
        {:class "tag-input-group"}
        (d/input
         {:type "text"
          :ref tag-input-ref
          :value current-tag
-         :placeholder "Add a tag and press Enter"
+         :placeholder (or placeholder "Add a tag and press Enter")
          :onChange #(on-update [:update-current-tag (.. % -target -value)])
          :onKeyDown (fn [e]
                       (when (= (.-key e) "Enter")

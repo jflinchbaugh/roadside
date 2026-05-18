@@ -38,7 +38,13 @@
 
 (deftest header-test
   (testing "renders header with title"
-    (let [res (tlr/render ($ layout/header))
+    (let [ctx state/app-context
+          res (tlr/render
+               ($ (gobj/get ctx "Provider")
+                  {:value {:state {:config {:app-name "MapMarks"
+                                            :app-logo "📍"}}
+                           :ui {:set-show-about-dialog (fn [_])}}}
+                  ($ layout/header)))
           container (.-container res)
           title (tlr/getByText container "MapMarks")]
         (is (some? title) "Should render the main header title"))))
