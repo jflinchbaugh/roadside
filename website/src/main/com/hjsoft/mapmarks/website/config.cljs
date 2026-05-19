@@ -4,6 +4,7 @@
 ;; or by modifying this file directly.
 
 (goog-define APP_NAME "MapMarks")
+(goog-define APP_DESCRIPTION "Find and share interesting locations")
 ;; string emoji or image url
 (goog-define APP_LOGO "\uD83D\uDCCD") ;; pin emoji
 (goog-define DEFAULT_EXPIRATION_DAYS 30)
@@ -16,6 +17,7 @@
 
 (def config
   {:app-name APP_NAME
+   :app-description APP_DESCRIPTION
    :app-logo APP_LOGO
    :default-expiration-days DEFAULT_EXPIRATION_DAYS
    :tags-name-singular TAGS_NAME_SINGULAR

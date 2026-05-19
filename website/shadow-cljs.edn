@@ -32,8 +32,9 @@
    {:main {:init-fn com.hjsoft.mapmarks.website.browser-main/init}}
    :closure-defines
    {com.hjsoft.mapmarks.website.config/APP_NAME "Coffee Shops"
+    com.hjsoft.mapmarks.website.config/APP_DESCRIPTION "Share your favorite Coffee Shops."
     com.hjsoft.mapmarks.website.config/APP_LOGO "\u2615" ;; coffee cup
-    com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS 0
+    com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS 365
     com.hjsoft.mapmarks.website.config/TAGS_NAME_ARTICLE "an"
     com.hjsoft.mapmarks.website.config/TAGS_NAME_SINGULAR "Item"
     com.hjsoft.mapmarks.website.config/TAGS_NAME_PLURAL "Items"
