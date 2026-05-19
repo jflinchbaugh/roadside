@@ -29,13 +29,11 @@
          :alt "Logo"
          :class "logo"})
        (d/span
-        {:class "logo" :style {:font-size "2em" :margin-right "10px"}}
+        {:class "logo"}
         logo))
      (d/h1
       {:class "main-header"}
-      (:app-name config)
-      " "
-      (d/span {:style {:font-size "0.5em"}} "beta"))
+      (:app-name config))
      (d/button
       {:class "about-btn"
        :onClick #(set-show-about-dialog true)

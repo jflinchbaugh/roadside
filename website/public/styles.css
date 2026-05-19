@@ -42,6 +42,7 @@ body {
 .logo {
   height: 40px;
   width: auto;
+  font-size: 2em;
 }
 
 .main-header {
