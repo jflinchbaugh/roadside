@@ -139,7 +139,7 @@
           (d/button
            {:class "edit-mark-btn"
             :onClick handle-edit
-            :title "Edit this mark"}
+            :title (str "Edit this " (str/lower-case (:mark-name-singular (:config app-state))))}
            "Edit")))
       (when owner?
         (if confirming?
@@ -149,7 +149,7 @@
             (d/button
              {:class "delete-mark-btn"
               :onClick handle-delete
-              :title "Really delete this mark?"}
+              :title (str "Really delete this " (str/lower-case (:mark-name-singular (:config app-state))) "?")}
              "Really?"))
           (let [handle-delete-confirm (fn [e]
                                         (.stopPropagation e)
@@ -157,7 +157,7 @@
             (d/button
              {:class "delete-mark-btn"
               :onClick handle-delete-confirm
-              :title "Delete this mark"}
+              :title (str "Delete this " (str/lower-case (:mark-name-singular (:config app-state))))}
              "Delete"))))))))
 
 (defnc marks-list
@@ -179,7 +179,7 @@
     (d/div
      {:class "marks-list"}
      (if (empty? marks)
-       (d/p "No marks added yet.")
+       (d/p (str "No " (str/lower-case (:mark-name-plural (:config app-state))) " added yet."))
        (<>
         (map
          (fn [mark]
@@ -211,7 +211,7 @@
       {:class "tag-list-content"}
       (d/strong (str (:tags-name-plural config) ": "))
       (if (empty? unique-tags)
-        (d/p (str "No " (clojure.string/lower-case (:tags-name-plural config)) " available yet."))
+        (d/p (str "No " (str/lower-case (:tags-name-plural config)) " available yet."))
         (d/div
          {:class "tags-tags"}
          (map (fn [tag]
@@ -233,7 +233,7 @@
          {:class (str "tag-tag show-expired-toggle"
                       (when show-expired? " tag-tag-active"))
           :onClick #(dispatch [:set-show-expired (not show-expired?)])}
-         "Show Expired"))
+         (str "Show Expired " (:mark-name-plural config))))
       (when tag-filter
         (d/button
          {:class "clear-filter-btn"

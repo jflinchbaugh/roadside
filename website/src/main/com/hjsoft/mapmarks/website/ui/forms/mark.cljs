@@ -62,7 +62,7 @@
                        (create-mark! final-data))))}
       (d/div
        {:class "form-header-actions"}
-       (d/h3 (if editing-mark "Edit Mark" "Add New Mark"))
+       (d/h3 (if editing-mark (str "Edit " (:mark-name-singular config)) (str "Add New " (:mark-name-singular config))))
        (d/div {:class "form-header-buttons"}
               ($ close-button {:onClick #(cancel-form!) :title "Cancel"})
               (d/button
@@ -84,9 +84,9 @@
           {:mark-form-data mark-form-data
            :on-update local-dispatch
            :label (str (:tags-name-plural config) ":")
-           :placeholder (str "Add a " (string/lower-case (:tags-name-singular config)) " and press Enter")})
+           :placeholder (str "Add " (:tags-name-article config) " " (string/lower-case (:tags-name-singular config)) " and press Enter")})
        ($ form-field
-          {:label "Mark Name:"
+          {:label (str (:mark-name-singular config) " Name:")
            :value (:name mark-form-data)
            :on-change #(local-dispatch
                         [:update-field [:name (.. % -target -value)]])})

@@ -18,7 +18,7 @@
        :onClick #(.stopPropagation %)}
       (d/div
        {:class "settings-header"}
-       (d/h3 "Google Maps Integration")
+       (d/h3 "External Integration")
        ($ close-button {:onClick #(set-show-export-dialog false)}))
       (d/div
        {:class "settings-content"}

@@ -3,6 +3,7 @@
             [helix.core :refer [defnc $ <>]]
             [helix.hooks :as hooks]
             [helix.dom :as d]
+            [clojure.string :as str]
             [com.hjsoft.mapmarks.website.utils :as utils]
             [com.hjsoft.mapmarks.website.state :as state]
             [com.hjsoft.mapmarks.website.controller :as controller]
@@ -42,17 +43,17 @@
 
 (defn sync-form-state-to-url!
   "Synchronizes the browser URL and page title when showing the Add form."
-  [show-form]
+  [show-form config]
   (let [params (js/URLSearchParams. (.. js/window -location -search))
         current-action (.get params "action")]
     (if show-form
       (do
-        (set! (.-title js/document) "Add Mark - MapMarks Marks")
+        (set! (.-title js/document) (str "Add " (:mark-name-singular config) " - " (:app-name config)))
         (when (not= current-action "add")
           (.set params "action" "add")
           (js/window.history.pushState #js {} "" (str "?" (.toString params)))))
       (do
-        (set! (.-title js/document) "MapMarks Marks")
+        (set! (.-title js/document) (:app-name config))
         (when (= current-action "add")
           (.delete params "action")
           (let [query (.toString params)
@@ -139,8 +140,8 @@
 
         ;; Synchronize show-form state with URL and Page Title
         _ (hooks/use-effect
-           [show-form]
-           (sync-form-state-to-url! show-form))
+           [show-form (:config app-state)]
+           (sync-form-state-to-url! show-form (:config app-state)))
 
         ;; Handle browser back/forward buttons
         _ (hooks/use-effect
@@ -208,7 +209,8 @@
               :onClick #(do
                           (set-editing-mark nil)
                           (set-show-form true))}
-             "Add Mark"))
+             (str "Add " (:mark-name-article (:config app-state)) " " (:mark-name-singular (:config app-state)))))
+
            (d/div
             {:class "map-actions-right"}
             (when (and (:error user-location) (string? (:error user-location)))
@@ -234,13 +236,13 @@
             (d/button
              {:class "export-btn"
               :onClick #(set-show-export-dialog true)
-              :title "Google Maps Integration"}
+              :title "External Integration"}
              "\u2913")) ;; Downwards arrow to bar
            (d/button
             {:class "upload-all-btn"
              :onClick #(controller/upload-all-marks! app-state dispatch)
-             :title "Upload all local marks to server"}
-            "\u21E7"))
+             :title (str "Upload all local " (str/lower-case (:mark-name-plural (:config app-state))) " to server")}
+           "\u21E7"))
           (when show-settings-dialog ($ settings-dialog {:key "settings"}))
           (when show-export-dialog ($ export-dialog {:key "export"}))
           (when show-about-dialog ($ about-dialog {:key "about"}))))))))

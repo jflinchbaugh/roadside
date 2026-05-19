@@ -41,7 +41,7 @@
               container (.-container res)]
           (is (some? (tlr/queryByText container "MapMarks"))
             "Header title should be present")
-          (is (some? (tlr/queryByText container "Add Mark"))
+          (is (some? (tlr/queryByText container "Add a Mark"))
             "Add Mark button should be present"))))))
 
 (deftest app-url-action-add-test

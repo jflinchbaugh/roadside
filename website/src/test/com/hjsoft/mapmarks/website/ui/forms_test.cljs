@@ -68,7 +68,11 @@
                                         :app-logo "\uD83D\uDCCD"
                                         :default-expiration-days 30
                                         :tags-name-singular "Tag"
-                                        :tags-name-plural "Tags"}}
+                                        :tags-name-plural "Tags"
+                                        :tags-name-article "a"
+                                        :mark-name-singular "Mark"
+                                        :mark-name-plural "Marks"
+                                        :mark-name-article "a"}}
                        :dispatch (fn [_])
                        :ui {:editing-mark nil
                             :set-show-form (fn [v] (when (false? v) (reset! cancelled true)))

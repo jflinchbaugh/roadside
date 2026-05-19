@@ -10,10 +10,19 @@
   {:after tlr/cleanup})
 
 (defn render-mark-item [state mark & [props]]
-  (let [ctx state/app-context]
+  (let [ctx state/app-context
+        state-with-config (update state :config #(or % {:app-name "MapMarks"
+                                                        :app-logo "\uD83D\uDCCD"
+                                                        :default-expiration-days 30
+                                                        :tags-name-singular "Tag"
+                                                        :tags-name-plural "Tags"
+                                                        :tags-name-article "a"
+                                                        :mark-name-singular "Mark"
+                                                        :mark-name-plural "Marks"
+                                                        :mark-name-article "a"}))]
     (tlr/render
      ($ (gobj/get ctx "Provider")
-        {:value {:state state
+        {:value {:state state-with-config
                  :dispatch (fn [_])
                  :ui {:set-editing-mark (fn [_])
                       :set-show-form (fn [_])}}}

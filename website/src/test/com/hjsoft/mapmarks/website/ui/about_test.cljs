@@ -19,10 +19,16 @@
 
 (deftest about-dialog-test
   (testing "about-dialog displays correct information"
-    (let [context-val {:ui {:set-show-about-dialog (fn [_])}}
+    (let [context-val {:state {:config {:app-name "MapMarks"
+                                        :mark-name-singular "Mark"
+                                        :mark-name-plural "Marks"
+                                        :mark-name-article "a"
+                                        :tags-name-plural "Tags"
+                                        :tags-name-article "a"}}
+                       :ui {:set-show-about-dialog (fn [_])}}
           res (render-with-context ($ about/about-dialog) context-val)
           container (.-container res)]
-      (is (some? (tlr/queryByText container "About MapMarks Marks"))
+      (is (some? (tlr/queryByText container "About MapMarks"))
           "Header should be visible")
       (is (some? (tlr/queryByText container #"GitHub"))
         "source link")
@@ -31,7 +37,11 @@
 
   (testing "about-dialog can be closed via X button"
     (let [closed (atom false)
-          context-val {:ui {:set-show-about-dialog (fn [v] (when (false? v) (reset! closed true)))}}
+          context-val {:state {:config {:app-name "MapMarks"
+                                        :mark-name-singular "Mark"
+                                        :mark-name-plural "Marks"
+                                        :tags-name-plural "Tags"}}
+                       :ui {:set-show-about-dialog (fn [v] (when (false? v) (reset! closed true)))}}
           res (render-with-context ($ about/about-dialog) context-val)
           container (.-container res)
           x-btn (tlr/getByTitle container "Close")]
