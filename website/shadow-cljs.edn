@@ -20,6 +20,8 @@
    :asset-path "js"
    :modules
    {:main {:init-fn com.hjsoft.mapmarks.website.browser-main/init}}
+   :devtools {:preloads [devtools.preload]}
+   :compiler-options {:source-map true}
    :build-hooks
    [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]
     [com.hjsoft.mapmarks.website.build-hooks/version-index-resources]]}
@@ -30,6 +32,8 @@
    :asset-path "js"
    :modules
    {:main {:init-fn com.hjsoft.mapmarks.website.browser-main/init}}
+   :devtools {:preloads [devtools.preload]}
+   :compiler-options {:source-map true}
    :closure-defines
    {com.hjsoft.mapmarks.website.config/APP_NAME "Coffee Shops"
     com.hjsoft.mapmarks.website.config/APP_DESCRIPTION "Share your favorite Coffee Shops."

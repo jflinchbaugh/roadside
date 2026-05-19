@@ -4,3 +4,4 @@ website/public/js
 website/public/index.html
 website/out
 server/target
+/website/public/manifest.json
