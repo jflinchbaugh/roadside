@@ -4,6 +4,7 @@
             ["@testing-library/react" :as tlr]
             [com.hjsoft.mapmarks.website.leaflet-init]
             [com.hjsoft.mapmarks.website.core :as sut]
+            [com.hjsoft.mapmarks.website.config :as config]
             [com.hjsoft.mapmarks.website.controller :as controller]
             [com.hjsoft.mapmarks.website.ui.map :as ui-map]))
 
@@ -39,9 +40,14 @@
         (let [mock-geo #js {:getCurrentPosition (fn [success _ _])}
               res (tlr/render ($ sut/app {:geolocation mock-geo}))
               container (.-container res)]
-          (is (some? (tlr/queryByText container "MapMarks"))
+          (is (some? (tlr/queryByText container (:app-name config/config)))
             "Header title should be present")
-          (is (some? (tlr/queryByText container "Add a Mark"))
+          (is (some? (tlr/queryByText
+                      container
+                      (str "Add "
+                           (:mark-name-article config/config)
+                           " "
+                           (:mark-name-singular config/config))))
             "Add Mark button should be present"))))))
 
 (deftest app-url-action-add-test
@@ -56,6 +62,8 @@
           (js/window.history.pushState #js {} "" "?action=add")
           (let [res (tlr/render ($ sut/app {:geolocation mock-geo}))
                 container (.-container res)]
-            (is (some? (tlr/queryByText container "Add New Mark"))
+            (is (some? (tlr/queryByText
+                        container
+                        (str "Add New " (:mark-name-singular config/config))))
               "Add New Mark form should be present"))
           (js/window.history.pushState #js {} "" "/"))))))
