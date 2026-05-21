@@ -1,6 +1,6 @@
 (ns server.config)
 
-(def base-url "/mapmarks")
+(def base-url (or (System/getenv "BASE_URL") "/mapmarks"))
 
 (def site (or (System/getenv "SITE") "mapmarks"))
 
