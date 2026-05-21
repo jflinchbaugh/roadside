@@ -21,8 +21,9 @@
    :headers {"Content-Type" "application/json"}
    :body (json/write-str document)})
 
-(defn- marks->csv [marks]
-  (let [header ["Name" "Latitude" "Longitude" "Address" "Town" "State" "Tags" "Notes"]
+(defn- marks->csv [marks cfg]
+  (let [header ["Name" "Latitude" "Longitude" "Address" "Town" "State"
+                (:tags-name-plural cfg) "Notes"]
         rows (map (fn [{:keys [name lat lon address tags notes town state]}]
                     [name
                      (str lat)
@@ -38,37 +39,39 @@
 
 (defn- get-site [req]
   (or (get-in req [:path-params :site])
-      (get-in req [:headers "x-mapmarks-site"])
       config/site))
 
 (defn get-marks-csv-handler [req]
   (let [identity (:identity req)
         site (get-site req)
+        cfg (config/get-config site)
         marks (db/list-marks identity site)
-        csv (marks->csv marks)]
+        csv (marks->csv marks cfg)
+        filename (str (str/lower-case (:mark-name-plural cfg)) ".csv")]
     {:status 200
      :headers {"Content-Type" "text/csv"
-               "Content-Disposition" "attachment; filename=\"marks.csv\""}
+               "Content-Disposition"
+               (str "attachment; filename=\"" filename "\"")}
      :body csv}))
 
-(defn- mark->placemark [mark]
+(defn- mark->placemark [cfg mark]
   (let [{:keys [name lat lon address tags notes]} mark]
     [:Placemark
-     [:name (or name "MapMarks Mark")]
+     [:name (or name (:mark-name-singular cfg))]
      [:description (str "Address: " address "\n"
-                        "Tags: " (str/join ", " tags) "\n"
+                        (:tags-name-plural cfg) ": " (str/join ", " tags) "\n"
                         "Notes: " (or notes ""))]
      [:Point
       [:coordinates (format "%f,%f,0" lon lat)]]]))
 
-(defn- marks->kml [marks]
+(defn- marks->kml [marks cfg]
   (str (h/html
         {:mode :xml}
         (h/raw "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
         [:kml {:xmlns "http://www.opengis.net/kml/2.2"}
          [:Document
-          [:name "MapMarks Marks"]
-          (map mark->placemark marks)]])))
+          [:name (:app-name cfg)]
+          (map (partial mark->placemark cfg) marks)]])))
 
 (defn- format-rfc822 [iso-str]
   (try
@@ -79,49 +82,62 @@
     (catch Exception _
       nil)))
 
-(defn- mark->rss-item [base-url mark]
-  (let [{:keys [name address town state tags expiration notes updated xt/id lat lon shared? creator]} mark
+(defn- mark->rss-item [base-url cfg mark]
+  (let [{:keys [name address town state tags expiration notes updated
+                xt/id lat lon shared? creator]} mark
         title (or
                (when (not (str/blank? name)) name)
                (when (seq tags) (str/join ", " tags))
-               "MapMarks Mark")
+               (:mark-name-singular cfg))
         full-address (str/join ", " (remove str/blank? [address town state]))
         description (str/join "\n"
                               (remove nil?
-                                      [(when (seq full-address) (str "Address: " full-address))
-                                       (when (seq tags) (str "Tags: " (str/join ", " tags)))
-                                       (when (seq expiration) (str "Expires: " expiration))
-                                       (when (seq notes) (str "Notes: " notes))
+                                      [(when (seq full-address)
+                                         (str "Address: " full-address))
+                                       (when (seq tags)
+                                         (str (:tags-name-plural cfg)
+                                              ": " (str/join ", " tags)))
+                                       (when (seq expiration)
+                                         (str "Expires: " expiration))
+                                       (when (seq notes)
+                                         (str "Notes: " notes))
                                        (str "Coordinates: " lat ", " lon)
-                                       (when (some? shared?) (str "Shared: " (if shared? "Yes" "No")))
-                                       (when (seq creator) (str "Creator: " creator))]))]
+                                       (when (some? shared?)
+                                         (str "Shared: "
+                                              (if shared? "Yes" "No")))
+                                       (when (seq creator)
+                                         (str "Creator: " creator))]))
+        anchor (str/lower-case (:mark-name-singular cfg))]
     [:item
      [:title title]
-     [:link (str base-url "#mark=" id)]
+     [:link (str base-url "#" anchor "=" id)]
      [:description description]
      (when-let [pub-date (format-rfc822 updated)]
        [:pubDate pub-date])
      [:guid {:isPermaLink "false"} id]]))
 
-(defn- marks->rss [marks base-url site]
+(defn- marks->rss [marks base-url site cfg]
   (str (h/html
         {:mode :xml}
         (h/raw "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
         [:rss {:version "2.0"
                :xmlns:atom "http://www.w3.org/2005/Atom"}
          [:channel
-          [:title "MapMarks Marks"]
+          [:title (:app-name cfg)]
           [:link base-url]
-          [:description "Latest MapMarks Marks"]
-          [:atom:link {:href (str base-url "s/" site "/feed.rss") :rel "self" :type "application/rss+xml"}]
-          (map (partial mark->rss-item base-url) marks)]])))
+          [:description (:app-description cfg)]
+          [:atom:link {:href (str base-url "s/" site "/feed.rss")
+                       :rel "self"
+                       :type "application/rss+xml"}]
+          (map (partial mark->rss-item base-url cfg) marks)]])))
 
 (defn get-marks-rss-handler [req]
   (let [identity (:identity req)
         site (get-site req)
+        cfg (config/get-config site)
         marks (db/list-marks identity site)
         base-url config/external-base-url
-        rss (marks->rss marks base-url site)]
+        rss (marks->rss marks base-url site cfg)]
     {:status 200
      :headers {"Content-Type" "application/rss+xml"
                "Content-Disposition" "inline"}
@@ -130,11 +146,14 @@
 (defn get-marks-kml-handler [req]
   (let [identity (:identity req)
         site (get-site req)
+        cfg (config/get-config site)
         marks (db/list-marks identity site)
-        kml (marks->kml marks)]
+        kml (marks->kml marks cfg)
+        filename (str (str/lower-case (:mark-name-plural cfg)) ".kml")]
     {:status 200
      :headers {"Content-Type" "application/vnd.google-earth.kml+xml"
-               "Content-Disposition" "attachment; filename=\"marks.kml\""}
+               "Content-Disposition"
+               (str "attachment; filename=\"" filename "\"")}
      :body kml}))
 
 (defn not-found [& _]

@@ -17,6 +17,7 @@
 (goog-define MARK_NAME_ARTICLE "a")
 (goog-define DISABLE_TAGS false)
 (goog-define DISABLE_NAME false)
+(goog-define FEEDBACK_EMAIL "mapmarks@hjsoft.com")
 
 (def config
   {:app-name APP_NAME
@@ -31,4 +32,6 @@
    :mark-name-plural MARK_NAME_PLURAL
    :mark-name-article MARK_NAME_ARTICLE
    :disable-tags? DISABLE_TAGS
-   :disable-name? DISABLE_NAME})
+   :disable-name? DISABLE_NAME
+   :feedback-email FEEDBACK_EMAIL})
+

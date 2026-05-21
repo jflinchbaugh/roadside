@@ -15,7 +15,7 @@
   (let [app-state (state/use-app-state)
         dispatch (state/use-dispatch)
         {:keys [set-show-settings-dialog]} (state/use-ui)
-        {:keys [settings]} app-state
+        {:keys [settings config]} app-state
         [registering? set-registering] (hooks/use-state false)
         [register-error set-register-error] (hooks/use-state nil)
         form-data (merge {:user "" :password "" :email "" :local-only? false} settings)
@@ -135,4 +135,5 @@
        {:class "build-date"}
        "Build: " version/build-date
        (d/br)
-       (d/a {:href "mailto:mapmarks@hjsoft.com"} "mapmarks@hjsoft.com"))))))
+       (d/a {:href (str "mailto:" (:feedback-email config))}
+            (:feedback-email config)))))))

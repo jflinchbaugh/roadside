@@ -367,7 +367,7 @@
               (is (not (some #(= "Other Site Mark" (:name %)) marks)))))
 
           (testing "Alice on other site sees only other site mark"
-            (let [req (assoc-in {:identity "alice"} [:headers "x-mapmarks-site"] other-site)
+            (let [req (assoc-in {:identity "alice"} [:path-params :site] other-site)
                   resp (handlers/get-marks-handler req)
                   marks (:marks (json/read-str (:body resp) :key-fn keyword))]
               (is (= 1 (count marks)))
@@ -820,11 +820,78 @@
 
           (testing "Fetch with since t1 returns only second mark"
             (let [resp (handlers/get-marks-handler
-                        (with-test-site {:identity "alice" :params {:lat "40.0" :lon "-76.0" :since t1}}))
+                        (with-test-site
+                         {:identity "alice"
+                          :params {:lat "40.0" :lon "-76.0" :since t1}}))
                   data (json/read-str (:body resp) :key-fn keyword)]
-              ;; Note: xtdb/from doesn't natively filter by 'since' in our list-marks impl yet,
-              ;; but list-deletions uses it.
-              ;; Actually, the list-marks implementation in db.clj doesn't use 'since'.
-              ;; It's the controller's job to handle incremental updates if the server doesn't.
-              ;; Wait, the get-marks-handler doesn't pass 'since' to list-marks.
+              ;; Note: xtdb/from doesn't natively filter by 'since' in our
+              ;; list-marks impl yet, but list-deletions uses it.
+              ;; Actually, the list-marks implementation in db.clj doesn't
+              ;; use 'since'.
+              ;; It's the controller's job to handle incremental updates if
+              ;; the server doesn't.
+              ;; Wait, the get-marks-handler doesn't pass 'since' to
+              ;; list-marks.
               (is (= 2 (count (:marks data)))))))))))
+
+(deftest roadside-branding-test
+  (testing "Roadside Stands branding is applied when site is 'roadside'"
+    (let [roadside-site "roadside"
+          with-roadside-site (fn [req]
+                               (assoc-in req
+                                         [:path-params :site]
+                                         roadside-site))
+          create-roadside-mark (fn [mark-doc]
+                                 (handlers/create-mark-handler
+                                  (with-roadside-site
+                                   {:body (ByteArrayInputStream.
+                                           (.getBytes
+                                            (json/write-str
+                                             (assoc mark-doc
+                                                    :site
+                                                    roadside-site))))
+                                    :identity "alice"})))]
+      (testing "CSV export headers use Roadside vocabulary"
+        (let [mark-doc {:name "CSV Stand"
+                        :address "123 Farm Rd"
+                        :lat 40.0
+                        :lon -76.0
+                        :tags ["apples" "honey"]}
+              _ (create-roadside-mark mark-doc)
+              resp (handlers/get-marks-csv-handler
+                    (with-roadside-site {:identity "alice"}))
+              csv (:body resp)]
+          (is (= 200 (:status resp)))
+          (is (str/includes?
+               csv
+               "Name,Latitude,Longitude,Address,Town,State,Products,Notes"))
+          (is (str/includes?
+               csv
+               "CSV Stand,40.0,-76.0,123 Farm Rd,,,apples; honey,"))))
+
+      (testing "KML export uses Roadside vocabulary"
+        (let [resp (handlers/get-marks-kml-handler
+                    (with-roadside-site {:identity "alice"}))
+              kml (:body resp)]
+          (is (= 200 (:status resp)))
+          (is (str/includes? kml "<name>Roadside Stands</name>"))
+          (is (str/includes?
+               kml
+               (str "<description>Address: 123 Farm Rd\n"
+                    "Products: apples, honey\n"
+                    "Notes: </description>")))))
+
+      (testing "RSS export uses Roadside vocabulary"
+        (let [resp (handlers/get-marks-rss-handler
+                    (with-roadside-site
+                     {:identity "alice"
+                      :scheme :http
+                      :server-name "localhost"
+                      :server-port 3000}))
+              rss (:body resp)]
+          (is (= 200 (:status resp)))
+          (is (str/includes? rss "<title>Roadside Stands</title>"))
+          (is (str/includes?
+               rss
+               "<description>Latest Roadside Stands</description>"))
+          (is (str/includes? rss "Products: apples, honey")))))))

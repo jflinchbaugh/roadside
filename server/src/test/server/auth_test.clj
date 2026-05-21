@@ -20,13 +20,13 @@
     (db/save-user {:xt/id "user3" :login "user3" :password (hashers/derive "pass") :site "test"}) ; Legacy user, no flag
 
     (testing "Enabled user can login"
-      (is (= "user1" (#'auth/authfn {:headers {"x-mapmarks-site" "test"}} {:username "user1" :password "pass"}))))
+      (is (= "user1" (#'auth/authfn {:path-params {:site "test"}} {:username "user1" :password "pass"}))))
 
     (testing "Disabled user cannot login"
-      (is (nil? (#'auth/authfn {:headers {"x-mapmarks-site" "test"}} {:username "user2" :password "pass"}))))
+      (is (nil? (#'auth/authfn {:path-params {:site "test"}} {:username "user2" :password "pass"}))))
 
     (testing "User without flag cannot login (now fails as it's not explicitly enabled)"
-      (is (nil? (#'auth/authfn {:headers {"x-mapmarks-site" "test"}} {:username "user3" :password "pass"}))))
+      (is (nil? (#'auth/authfn {:path-params {:site "test"}} {:username "user3" :password "pass"}))))
 
     (testing "Wrong password fails even for enabled user"
-      (is (nil? (#'auth/authfn {:headers {"x-mapmarks-site" "test"}} {:username "user1" :password "wrong-pass"}))))))
+      (is (nil? (#'auth/authfn {:path-params {:site "test"}} {:username "user1" :password "wrong-pass"}))))))

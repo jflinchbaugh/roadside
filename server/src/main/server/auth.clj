@@ -18,7 +18,6 @@
 (defn- authfn
   [req {:keys [username password]}]
   (let [site (or (get-in req [:path-params :site])
-                 (get-in req [:headers "x-mapmarks-site"])
                  config/site)
         user (db/get-user username site)]
     (when (and user

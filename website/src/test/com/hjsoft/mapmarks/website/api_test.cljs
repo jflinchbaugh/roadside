@@ -19,7 +19,6 @@
                               (is (= "s/test-site/api/marks" url))
                               (is (= {:username "user" :password "pass"}
                                      (:basic-auth opts)))
-                              (is (nil? (get-in opts [:headers "X-MapMarks-Site"])))
                               (is (= {:lat 1.0 :lon 2.0 :since "2026-03-21T12:00:00Z"}
                                      (:query-params opts)))
                               (mock-http-response
@@ -59,7 +58,6 @@
                        :post (fn [url opts]
                                (is (= "s/test-site/api/marks" url))
                                (is (= (assoc mark :site "test-site") (:json-params opts)))
-                               (is (nil? (get-in opts [:headers "X-MapMarks-Site"])))
                                (mock-http-response
                                 {:success true
                                  :body {:id "new-id"}})))]
@@ -77,7 +75,6 @@
                        :put (fn [url opts]
                               (is (= "s/test-site/api/marks/s123" url))
                               (is (= (assoc mark :site "test-site") (:json-params opts)))
-                              (is (nil? (get-in opts [:headers "X-MapMarks-Site"])))
                               (mock-http-response {:success true
                                                    :body mark})))]
              (go
@@ -92,7 +89,6 @@
            (let [deps (make-mock-deps
                        :delete (fn [url opts]
                                  (is (= "s/test-site/api/marks/s123" url))
-                                 (is (nil? (get-in opts [:headers "X-MapMarks-Site"])))
                                  (mock-http-response {:success true})))]
              (go
                (let [result (<! (sut/delete-mark "test-site" "user" "pass" "s123" deps))]
@@ -106,7 +102,6 @@
                        :get (fn [url opts]
                               (is (= "s/test-site/api/geocode" url))
                               (is (= {:q "Lancaster, PA"} (:query-params opts)))
-                              (is (nil? (get-in opts [:headers "X-MapMarks-Site"])))
                               (mock-http-response {:success true
                                                    :body [{:lat "40.0" :lon "-76.0"}]})))]
              (go
@@ -135,7 +130,6 @@
                        :get (fn [url opts]
                               (is (= "s/test-site/api/reverse-geocode" url))
                               (is (= {:lat 40.0 :lon -76.0} (:query-params opts)))
-                              (is (nil? (get-in opts [:headers "X-MapMarks-Site"])))
                               (mock-http-response {:success true :body {:address {:road "Main St"}}})))]
              (go
                (let [result (<! (sut/reverse-geocode "test-site" "user" "pass" 40.0 -76.0 deps))]
@@ -150,7 +144,6 @@
                        :post (fn [url opts]
                                (is (= "s/test-site/api/marks/m123/vote" url))
                                (is (= {:value 1} (:json-params opts)))
-                               (is (nil? (get-in opts [:headers "X-MapMarks-Site"])))
                                (mock-http-response {:success true})))]
              (go
                (let [result (<! (sut/vote-mark "test-site" "user" "pass" "m123" 1 deps))]
@@ -164,7 +157,6 @@
                        :post (fn [url opts]
                                (is (= "s/test-site/api/register" url))
                                (is (= {:login "user" :password "pass" :email "a@b.c" :site "test-site"} (:form-params opts)))
-                               (is (nil? (get-in opts [:headers "X-MapMarks-Site"])))
                                (mock-http-response {:status 201 :body {:login "user"}})))]
              (go
                (let [result (<! (sut/register-user "test-site" "user" "pass" "a@b.c" deps))]

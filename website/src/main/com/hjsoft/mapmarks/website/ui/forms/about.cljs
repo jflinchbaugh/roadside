@@ -35,10 +35,11 @@
                     (str/lower-case (:tags-name-plural config)) " on the map."))
          (d/li (str "Find your favorite " (str/lower-case (:mark-name-plural config)) ".")))
        (d/p
-         "Feedback and suggestions are welcome. "
-         (d/a {:href "mailto:mapmarks@hjsoft.com"} "mapmarks@hjsoft.com"))
+        "Feedback and suggestions are welcome. "
+        (d/a {:href (str "mailto:" (:feedback-email config))}
+             (:feedback-email config)))
        (d/p
          "Source on "
          (d/a {:href "https://github.com/jflinchbaugh/roadside/"
                :target "_blank"} "GitHub")
-         "."))))))
+          "."))))))

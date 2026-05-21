@@ -14,17 +14,38 @@
                   :handler com.hjsoft.mapmarks.website.dev-server/handler}}
  :builds
  {
-  :frontend
-  {:target :browser
-   :output-dir "public/js"
-   :asset-path "js"
-   :modules
-   {:main {:init-fn com.hjsoft.mapmarks.website.browser-main/init}}
-   :devtools {:preloads [devtools.preload]}
-   :compiler-options {:source-map true}
-   :build-hooks
-   [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]
-    [com.hjsoft.mapmarks.website.build-hooks/version-index-resources]]}
+   :frontend
+   {:target :browser
+    :output-dir "public/js"
+    :asset-path "js"
+    :modules
+    {:main {:init-fn com.hjsoft.mapmarks.website.browser-main/init}}
+    :devtools {:preloads [devtools.preload]}
+    :compiler-options {:source-map true}
+    :closure-defines
+    {com.hjsoft.mapmarks.website.config/APP_NAME
+     "Roadside Stands"
+     com.hjsoft.mapmarks.website.config/SITE
+     "roadside"
+     com.hjsoft.mapmarks.website.config/APP_DESCRIPTION
+     "Find and share roadside produce stands"
+     com.hjsoft.mapmarks.website.config/APP_LOGO
+     "images/apples.png"
+     com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS
+     28
+     com.hjsoft.mapmarks.website.config/TAGS_NAME_SINGULAR
+     "Product"
+     com.hjsoft.mapmarks.website.config/TAGS_NAME_PLURAL
+     "Products"
+     com.hjsoft.mapmarks.website.config/MARK_NAME_SINGULAR
+     "Stand"
+     com.hjsoft.mapmarks.website.config/MARK_NAME_PLURAL
+     "Stands"
+     com.hjsoft.mapmarks.website.config/FEEDBACK_EMAIL
+     "roadside@hjsoft.com"}
+    :build-hooks
+    [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]
+     [com.hjsoft.mapmarks.website.build-hooks/version-index-resources]]}
 
   :test
   {:target :node-test
@@ -33,15 +54,56 @@
     :autorun true
     :preloads [node-init]
     :closure-defines {com.hjsoft.mapmarks.website.ui.forms.mark/NODE_TEST true
-                      com.hjsoft.mapmarks.website.ui.forms.inputs/NODE_TEST true
-                      node-init/ENABLE_JSDOM true}}
+                      com.hjsoft.mapmarks.website.ui.forms.inputs/NODE_TEST
+                      true
+                      node-init/ENABLE_JSDOM true
+                      com.hjsoft.mapmarks.website.config/APP_NAME
+                      "Roadside Stands"
+                      com.hjsoft.mapmarks.website.config/SITE
+                      "roadside"
+                      com.hjsoft.mapmarks.website.config/APP_DESCRIPTION
+                      "Find and share roadside produce stands"
+                      com.hjsoft.mapmarks.website.config/APP_LOGO
+                      "images/apples.png"
+                      com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS
+                      28
+                      com.hjsoft.mapmarks.website.config/TAGS_NAME_SINGULAR
+                      "Product"
+                      com.hjsoft.mapmarks.website.config/TAGS_NAME_PLURAL
+                      "Products"
+                      com.hjsoft.mapmarks.website.config/MARK_NAME_SINGULAR
+                      "Stand"
+                      com.hjsoft.mapmarks.website.config/MARK_NAME_PLURAL
+                      "Stands"
+                      com.hjsoft.mapmarks.website.config/FEEDBACK_EMAIL
+                      "roadside@hjsoft.com"}}
 
   :test-browser
   {:target :browser-test
     :test-dir "out/browser/test"
     :autorun true
     :devtools {:http-port 3021
-               :http-root "out/browser/test"}}
+               :http-root "out/browser/test"}
+    :closure-defines {com.hjsoft.mapmarks.website.config/APP_NAME
+                      "Roadside Stands"
+                      com.hjsoft.mapmarks.website.config/SITE
+                      "roadside"
+                      com.hjsoft.mapmarks.website.config/APP_DESCRIPTION
+                      "Find and share roadside produce stands"
+                      com.hjsoft.mapmarks.website.config/APP_LOGO
+                      "images/apples.png"
+                      com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS
+                      28
+                      com.hjsoft.mapmarks.website.config/TAGS_NAME_SINGULAR
+                      "Product"
+                      com.hjsoft.mapmarks.website.config/TAGS_NAME_PLURAL
+                      "Products"
+                      com.hjsoft.mapmarks.website.config/MARK_NAME_SINGULAR
+                      "Stand"
+                      com.hjsoft.mapmarks.website.config/MARK_NAME_PLURAL
+                      "Stands"
+                      com.hjsoft.mapmarks.website.config/FEEDBACK_EMAIL
+                      "roadside@hjsoft.com"}}
 
   :coffee-marks
   {:target :browser
