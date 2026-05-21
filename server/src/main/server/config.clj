@@ -17,13 +17,7 @@
    :tags-name-plural (or (System/getenv "TAGS_NAME_PLURAL") "Tags")})
 
 (def site-configs
-  {"mapmarks" default-site-config
-   "roadside" {:app-name "Roadside Stands"
-               :app-description "Latest Roadside Stands"
-               :mark-name-singular "Stand"
-               :mark-name-plural "Stands"
-               :tags-name-singular "Product"
-               :tags-name-plural "Products"}})
+  {"mapmarks" default-site-config})
 
 (defn get-config [site]
   (get site-configs site default-site-config))
