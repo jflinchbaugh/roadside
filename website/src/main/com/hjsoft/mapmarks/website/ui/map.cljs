@@ -18,12 +18,12 @@
 (def ^:const crosshairs-zoom-level 14)
 
 (defn- make-marker
-  [{:keys [coord mark set-selected-mark auto-pan?]
+  [{:keys [coord mark set-selected-mark auto-pan? config]
     :or {auto-pan? true}}]
   (let [l @L
         marker-fn (gobj/get l "marker")
         marker ^js (marker-fn (clj->js coord))
-        popup-content (utils/mark-popup-html mark)
+        popup-content (utils/mark-popup-html mark config)
         point-fn (gobj/get l "point")]
     (.bindPopup
      ^js marker
@@ -84,19 +84,20 @@
   (= (mark-domain/mark-key selected-mark)
      (mark-domain/mark-key mark)))
 
-(defn- prepare-marker [auto-pan? dispatch {:keys [coord mark]}]
+(defn- prepare-marker [auto-pan? dispatch config {:keys [coord mark]}]
   (make-marker
    {:coord coord
     :mark mark
     :auto-pan? auto-pan?
+    :config config
     :set-selected-mark #(dispatch [:set-selected-mark %])}))
 
 (defn- use-map-markers
-  [mark-map marks selected-mark auto-pan? dispatch]
+  [mark-map marks selected-mark auto-pan? dispatch config]
   (let [layer-group-ref (hooks/use-ref nil)
         prev-selected-ref (hooks/use-ref nil)]
     (hooks/use-effect
-     [marks selected-mark mark-map auto-pan?]
+     [marks selected-mark mark-map auto-pan? config]
      (when mark-map
        (let [selection-changed? (not (identical? selected-mark @prev-selected-ref))
              should-auto-pan? (and auto-pan? selection-changed?)
@@ -107,7 +108,7 @@
                                          [(:lat s) (:lon s)])
                                 :mark s}))
                         (remove (comp nil? :coord))
-                        (map (partial prepare-marker should-auto-pan? dispatch)))
+                        (map (partial prepare-marker should-auto-pan? dispatch config)))
              new-layer-group (when (seq locations)
                                (let [l ^js @L
                                      lg-fn (gobj/get l "layerGroup")]
@@ -250,18 +251,17 @@
        (set-mark-map m)
        ;; Ensure map is correctly sized after modal animation/render
        (js/setTimeout
-        (fn []
-          (.invalidateSize m)
-          (.setView m (clj->js @center-ref) zoom-level))
-        100)))
+       (fn []
+         (.invalidateSize m)
+         (.setView m (clj->js @center-ref) zoom-level))
+       100)))
 
-    (use-map-center mark-map center reported-center-ref)
-    (use-map-markers mark-map marks selected-mark auto-pan? dispatch)
-    (use-user-location-marker mark-map location)
-    (use-search-radius-marker mark-map (:loading-marks? app-state))
-    {:mark-map mark-map
-     :zoom current-zoom}))
-
+       (use-map-center mark-map center reported-center-ref)
+       (use-map-markers mark-map marks selected-mark auto-pan? dispatch (:config app-state))
+       (use-user-location-marker mark-map location)
+       (use-search-radius-marker mark-map (:loading-marks? app-state))
+       {:mark-map mark-map
+       :zoom current-zoom}))
 (defnc leaflet-map
   [{:keys [div-id show-crosshairs] :as props}]
   (let [{:keys [is-locating cancel-location]} (state/use-user-location-state)

@@ -37,19 +37,20 @@
 
 (defn mark-popup-html
   "Generates sanitized HTML content for a mark's map popup."
-  [mark]
-  (let [name (:name mark)
-        tags (:tags mark)
-        content (str
-                 (when (seq name)
-                   (str "<b>" (goog.string/htmlEscape name) "</b><br>"))
-                 (when (seq tags)
-                   (str
-                    (str/join ", " (map goog.string/htmlEscape tags))
-                    "<br>")))]
-    (if (empty? content)
-      "(no details)"
-      content)))
+  ([mark] (mark-popup-html mark {}))
+  ([mark config]
+   (let [name (:name mark)
+         tags (:tags mark)
+         content (str
+                  (when (and (not (:disable-name? config)) (seq name))
+                    (str "<b>" (goog.string/htmlEscape name) "</b><br>"))
+                  (when (and (not (:disable-tags? config)) (seq tags))
+                    (str
+                     (str/join ", " (map goog.string/htmlEscape tags))
+                     "<br>")))]
+     (if (empty? content)
+       "(no details)"
+       content))))
 
 (defn debounce
   [f ms]

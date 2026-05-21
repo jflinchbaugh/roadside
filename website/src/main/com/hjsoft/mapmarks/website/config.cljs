@@ -15,6 +15,8 @@
 (goog-define MARK_NAME_SINGULAR "Mark")
 (goog-define MARK_NAME_PLURAL "Marks")
 (goog-define MARK_NAME_ARTICLE "a")
+(goog-define DISABLE_TAGS false)
+(goog-define DISABLE_NAME false)
 
 (def config
   {:app-name APP_NAME
@@ -27,4 +29,6 @@
    :tags-name-article TAGS_NAME_ARTICLE
    :mark-name-singular MARK_NAME_SINGULAR
    :mark-name-plural MARK_NAME_PLURAL
-   :mark-name-article MARK_NAME_ARTICLE})
+   :mark-name-article MARK_NAME_ARTICLE
+   :disable-tags? DISABLE_TAGS
+   :disable-name? DISABLE_NAME})

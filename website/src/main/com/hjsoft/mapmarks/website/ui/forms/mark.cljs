@@ -80,16 +80,18 @@
                                     (str (:lat editing-mark)
                                          ", "
                                          (:lon editing-mark)))}))
-       ($ tag-input
-          {:mark-form-data mark-form-data
-           :on-update local-dispatch
-           :label (str (:tags-name-plural config) ":")
-           :placeholder (str "Add " (:tags-name-article config) " " (string/lower-case (:tags-name-singular config)) " and press Enter")})
-       ($ form-field
-          {:label (str (:mark-name-singular config) " Name:")
-           :value (:name mark-form-data)
-           :on-change #(local-dispatch
-                        [:update-field [:name (.. % -target -value)]])})
+       (when-not (:disable-tags? config)
+         ($ tag-input
+            {:mark-form-data mark-form-data
+             :on-update local-dispatch
+             :label (str (:tags-name-plural config) ":")
+             :placeholder (str "Add " (:tags-name-article config) " " (string/lower-case (:tags-name-singular config)) " and press Enter")}))
+       (when-not (:disable-name? config)
+         ($ form-field
+            {:label (str (:mark-name-singular config) " Name:")
+             :value (:name mark-form-data)
+             :on-change #(local-dispatch
+                          [:update-field [:name (.. % -target -value)]])}))
        ($ form-field
           {:label "Notes:"
            :type "textarea"

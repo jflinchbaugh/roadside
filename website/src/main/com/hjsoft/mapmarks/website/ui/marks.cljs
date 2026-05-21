@@ -46,9 +46,16 @@
         owner? (or (empty? (str creator))
                    (= (str current-user) (str creator)))
         expired? (utils/past-expiration? (:expiration mark))
+        config (:config app-state)
         incomplete? (and owner?
-                         (empty? (str/trim (or (:name mark) "")))
-                         (empty? (:tags mark)))]
+                         (or (not (:disable-name? config))
+                             (not (:disable-tags? config)))
+                         (if (:disable-name? config)
+                           true
+                           (empty? (str/trim (or (:name mark) ""))))
+                         (if (:disable-tags? config)
+                           true
+                           (empty? (:tags mark))))]
     (hooks/use-effect
      [selected?]
      (when-not selected?
@@ -65,11 +72,12 @@
      ($ mark-notification-toast {:mark-id (:id mark)})
      (d/div
       {:class "mark-content"}
-      (when (and (not (seq (:name mark))) (not (seq (:tags mark))))
+      (when (and (or (:disable-name? config) (not (seq (:name mark))))
+                 (or (:disable-tags? config) (not (seq (:tags mark)))))
         (d/div
          {:class "mark-incomplete"}
          "(no details)"))
-      (when (seq (:name mark))
+      (when (and (not (:disable-name? config)) (seq (:name mark)))
         (d/div
          {:class "mark-header"}
          (d/h4 (:name mark))))
@@ -78,7 +86,7 @@
       (let [town-state (remove empty? [(:town mark) (:state mark)])]
         (when (seq town-state)
           (d/p (str/join ", " town-state))))
-      (when (seq (:tags mark))
+      (when (and (not (:disable-tags? (:config app-state))) (seq (:tags mark)))
         (d/div
          {:class "mark-tags"}
          (d/strong (str (:tags-name-plural (:config app-state)) ": "))
@@ -205,38 +213,39 @@
         unique-tags (hooks/use-memo
                          [marks]
                          (utils/get-all-unique-tags marks))]
-    (d/div
-     {:class "tag-list"}
-     (d/div
-      {:class "tag-list-content"}
-      (d/strong (str (:tags-name-plural config) ": "))
-      (if (empty? unique-tags)
-        (d/p (str "No " (str/lower-case (:tags-name-plural config)) " available yet."))
-        (d/div
-         {:class "tags-tags"}
-         (map (fn [tag]
-                (d/span
-                 {:key tag
-                  :class (str
-                          "tag-tag"
-                          (when (= tag tag-filter)
-                            " tag-tag-active"))
-                  :onClick #(if (= tag tag-filter)
-                              (dispatch [:set-tag-filter nil])
-                              (dispatch [:set-tag-filter tag]))}
-                 tag))
-              unique-tags)))
+    (when-not (:disable-tags? config)
       (d/div
-      {:class "filter-controls"}
-      (when (pos? (or (:default-expiration-days config) 0))
-        (d/span
-         {:class (str "tag-tag show-expired-toggle"
-                      (when show-expired? " tag-tag-active"))
-          :onClick #(dispatch [:set-show-expired (not show-expired?)])}
-         (str "Show Expired " (:mark-name-plural config))))
-      (when tag-filter
-        (d/button
-         {:class "clear-filter-btn"
-          :onClick #(dispatch [:set-tag-filter nil])}
-         "Clear Filter")))))))
+       {:class "tag-list"}
+       (d/div
+        {:class "tag-list-content"}
+        (d/strong (str (:tags-name-plural config) ": "))
+        (if (empty? unique-tags)
+          (d/p (str "No " (str/lower-case (:tags-name-plural config)) " available yet."))
+          (d/div
+           {:class "tags-tags"}
+           (map (fn [tag]
+                  (d/span
+                   {:key tag
+                    :class (str
+                            "tag-tag"
+                            (when (= tag tag-filter)
+                              " tag-tag-active"))
+                    :onClick #(if (= tag tag-filter)
+                                (dispatch [:set-tag-filter nil])
+                                (dispatch [:set-tag-filter tag]))}
+                   tag))
+                unique-tags)))
+        (d/div
+         {:class "filter-controls"}
+         (when (pos? (or (:default-expiration-days config) 0))
+           (d/span
+            {:class (str "tag-tag show-expired-toggle"
+                         (when show-expired? " tag-tag-active"))
+             :onClick #(dispatch [:set-show-expired (not show-expired?)])}
+            (str "Show Expired " (:mark-name-plural config))))
+         (when tag-filter
+           (d/button
+            {:class "clear-filter-btn"
+             :onClick #(dispatch [:set-tag-filter nil])}
+            "Clear Filter"))))))))
 

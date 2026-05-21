@@ -120,4 +120,14 @@
     (is (str/includes? (sut/mark-popup-html
                          {:name "<script>alert(1)</script>"}) "&lt;script&gt;"))
     (is (str/includes? (sut/mark-popup-html
-                         {:tags ["<b>bold</b>"]}) "&lt;b&gt;bold&lt;/b&gt;"))))
+                         {:tags ["<b>bold</b>"]}) "&lt;b&gt;bold&lt;/b&gt;")))
+
+  (testing "disabling fields"
+    (let [mark {:name "My Mark" :tags ["Tag1"]}]
+      (is (not (str/includes? (sut/mark-popup-html mark {:disable-name? true}) "My Mark")))
+      (is (str/includes? (sut/mark-popup-html mark {:disable-name? true}) "Tag1"))
+
+      (is (str/includes? (sut/mark-popup-html mark {:disable-tags? true}) "My Mark"))
+      (is (not (str/includes? (sut/mark-popup-html mark {:disable-tags? true}) "Tag1")))
+
+      (is (= "(no details)" (sut/mark-popup-html mark {:disable-name? true :disable-tags? true}))))))
