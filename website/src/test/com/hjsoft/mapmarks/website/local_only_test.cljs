@@ -35,8 +35,9 @@
           dispatch (fn [action] (swap! dispatched conj action))
           called (atom false)
           app-state {:settings {:user "alice" :password "secret" :local-only? true}
-                     :marks []}
-          form-data {:name "New Mark" :lat 1.0 :lon 2.0}
+                     :marks []
+                     :config {:site "test-site"}}
+          form-data {:name "New Mark" :lat 1.0 :lon 2.0 :site "test-site"}
           deps (assoc mock-deps
                       :create-mark (fn [& _]
                                       (reset! called true)

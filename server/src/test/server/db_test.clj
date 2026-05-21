@@ -15,24 +15,26 @@
 
 (deftest list-marks-duplication-test
   (let [user-id "test-user"
-        mark-id "test-mark"]
+        mark-id "test-mark"
+        site "test"]
     ;; Setup data: one user with two records, and one mark
     (xt/execute-tx @db/node
-                   [[:put-docs :users {:xt/id "u1" :login user-id :enabled? true}]
-                    [:put-docs :users {:xt/id "u2" :login user-id :enabled? true}]
+                   [[:put-docs :users {:xt/id "u1" :login user-id :enabled? true :site site}]
+                    [:put-docs :users {:xt/id "u2" :login user-id :enabled? true :site site}]
                     [:put-docs :marks {:xt/id mark-id
                                         :creator user-id
+                                        :site site
                                         :name "Test Mark"
                                         :lat 40.0 :lon -76.0
                                         :shared? true
                                         :updated (common-utils/get-current-timestamp)}]])
 
     (testing "list-marks (default) should not produce duplicate entries"
-      (let [marks (db/list-marks user-id)]
+      (let [marks (db/list-marks user-id site)]
         (is (= 1 (count marks))
             (str "Expected 1 mark, got " (count marks)))))
 
     (testing "list-marks (with location) should not produce duplicate entries"
-      (let [marks (db/list-marks user-id {:lat 40.0 :lon -76.0 :radius 10.0})]
+      (let [marks (db/list-marks user-id site {:lat 40.0 :lon -76.0 :radius 10.0})]
         (is (= 1 (count marks))
             (str "Expected 1 mark in radius, got " (count marks)))))))

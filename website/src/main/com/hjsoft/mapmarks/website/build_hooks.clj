@@ -16,11 +16,13 @@
         app-name (get closure-defines 'com.hjsoft.mapmarks.website.config/APP_NAME "MapMarks")
         app-description (get closure-defines 'com.hjsoft.mapmarks.website.config/APP_DESCRIPTION "Find and share interesting locations")
         mark-name-singular (get closure-defines 'com.hjsoft.mapmarks.website.config/MARK_NAME_SINGULAR "Mark")
+        site (get closure-defines 'com.hjsoft.mapmarks.website.config/SITE "mapmarks")
         replacements {"ts" ts
                       "app-name" app-name
                       "app-description" app-description
                       "mark-name-singular" mark-name-singular
-                      "mark-name-singular-lc" (str/lower-case (str mark-name-singular))}]
+                      "mark-name-singular-lc" (str/lower-case (str mark-name-singular))
+                      "site" site}]
     (spit "public/index.html" (replace-placeholders (slurp "src/html/index.html") replacements))
     (spit "public/manifest.json" (replace-placeholders (slurp "src/html/manifest.json") replacements)))
   state)

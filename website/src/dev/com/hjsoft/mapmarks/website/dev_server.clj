@@ -6,7 +6,8 @@
 
 (defn handler [req]
   (let [uri (:uri req)]
-    (if (str/starts-with? uri "/api")
+    (if (or (str/starts-with? uri "/api")
+            (str/starts-with? uri "/s/"))
       (let [url (str target uri (when-let [qs (:query-string req)] (str "?" qs)))]
         (let [{:keys [status headers body error]}
               @(http/request

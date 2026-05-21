@@ -43,6 +43,7 @@
    [:password [:string {:min 8}]]
    [:email [:re #".+@.+\..+"]]
    [:enabled? :boolean]
+   [:site :string]
    [:updated {:optional true} [:maybe :string]]])
 
 (def MarkSchema
@@ -57,6 +58,7 @@
    [:expiration {:optional true} [:maybe :string]]
    [:notes {:optional true} [:maybe :string]]
    [:shared? {:optional true} :boolean]
+   [:site :string]
    [:updated {:optional true} [:maybe :string]]
    [:lat :double]
    [:lon :double]])

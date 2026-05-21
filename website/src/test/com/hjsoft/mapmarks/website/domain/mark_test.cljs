@@ -133,13 +133,15 @@
                  :name "Apple Farm"
                  :tags ["apples"]
                  :lat 1.0
-                 :lon 2.0}]]
+                 :lon 2.0
+                 :site "test"}]]
     (testing "adding a new mark with auto-tag detection"
       (let [result (sut/add-mark
                     {:name "Better Apples"
                      :lat 3.0
                      :lon 4.0
-                     :tags []}
+                     :tags []
+                     :site "test"}
                     marks
                     "test-user")]
         (is (:success result))
@@ -154,7 +156,8 @@
                     {:name ""
                      :lat 3.0
                      :lon 4.0
-                     :tags ["Apples"]}
+                     :tags ["Apples"]
+                     :site "test"}
                     marks
                     "test-user")]
         (is (:success result))
@@ -162,21 +165,22 @@
 
     (testing "preventing duplicates in add-mark"
       (let [result (sut/add-mark
-                    {:id "1" :name "Apple Farm" :lat 1.0 :lon 2.0 :tags ["apples"]}
+                    {:id "1" :name "Apple Farm" :lat 1.0 :lon 2.0 :tags ["apples"] :site "test"}
                     marks
                     "test-user")]
         (is (not (:success result)))
         (is (= "This mark already exists!" (:error result)))))
 
     (testing "editing mark replaces the old one and DOES NOT auto-detect tags"
-      (let [marks [{:id "1" :name "Original" :tags ["apples"] :lat 1.0 :lon 2.0}
-                    {:id "2" :name "Corn Mark" :tags ["corn"] :lat 3.0 :lon 4.0}]
+      (let [marks [{:id "1" :name "Original" :tags ["apples"] :lat 1.0 :lon 2.0 :site "test"}
+                    {:id "2" :name "Corn Mark" :tags ["corn"] :lat 3.0 :lon 4.0 :site "test"}]
             result (sut/edit-mark
                     {:id "1"
                      :name "Original and corn"
                      :tags ["apples"]
                      :lat 1.0
-                     :lon 2.0}
+                     :lon 2.0
+                     :site "test"}
                     marks
                     (first marks)
                     "test-user")
@@ -187,7 +191,8 @@
                 :name "Original and corn"
                 :lat 1.0
                 :lon 2.0
-                :tags ["apples"]}
+                :tags ["apples"]
+                :site "test"}
                (dissoc processed-data :updated :creator)))
         (is (not (some #(= "corn" %) (:tags processed-data)))
             "Should NOT have added corn even though it is in the name and exists elsewhere")
@@ -195,10 +200,12 @@
                  :name "Original and corn"
                  :lat 1.0
                  :lon 2.0
-                 :tags ["apples"]}
+                 :tags ["apples"]
+                 :site "test"}
                 {:id "2"
                  :name "Corn Mark"
                  :tags ["corn"]
                  :lat 3.0
-                 :lon 4.0}]
+                 :lon 4.0
+                 :site "test"}]
                (map (fn [s] (dissoc s :updated :creator)) marks)))))))

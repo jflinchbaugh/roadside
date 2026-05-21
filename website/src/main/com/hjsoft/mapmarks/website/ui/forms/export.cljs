@@ -8,6 +8,8 @@
 
 (defnc export-dialog []
   (let [{:keys [set-show-export-dialog]} (state/use-ui)
+        {:keys [config]} (state/use-app-state)
+        site (:site config)
         base-url (utils/get-app-base-url)]
     (ui-hooks/use-escape-key #(set-show-export-dialog false))
     (d/div
@@ -30,7 +32,7 @@
          (d/div
           {:class "export-link-item"}
           (d/label "KML Feed (Live):")
-          (let [kml-url (str base-url "api/marks.kml")]
+          (let [kml-url (str base-url "s/" site "/marks.kml")]
             (d/div
              {:class "export-url-container"}
              (d/input
@@ -44,7 +46,7 @@
          (d/div
           {:class "export-link-item"}
           (d/label "RSS Feed (Live):")
-          (let [rss-url (str base-url "api/marks.rss")]
+          (let [rss-url (str base-url "s/" site "/feed.rss")]
             (d/div
              {:class "export-url-container"}
              (d/input
@@ -60,7 +62,7 @@
           (d/label "KML for Import:")
           (d/a
            {:class "download-link"
-            :href (str base-url "api/marks.kml")
+            :href (str base-url "s/" site "/marks.kml")
             :download "marks.kml"}
            "Download KML"))
          (d/div
@@ -68,6 +70,6 @@
           (d/label "CSV for Import:")
           (d/a
            {:class "download-link"
-            :href "api/marks.csv" ;; relative to the current base
+            :href (str base-url "s/" site "/marks.csv")
             :download "marks.csv"}
            "Download CSV")))))))))

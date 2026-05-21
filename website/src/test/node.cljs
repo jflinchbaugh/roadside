@@ -11,6 +11,7 @@
             [com.hjsoft.mapmarks.website.ui.map-test]
             [com.hjsoft.mapmarks.website.ui.forms-test]
             [com.hjsoft.mapmarks.website.ui.about-test]
+            [com.hjsoft.mapmarks.website.ui.settings-test]
             [com.hjsoft.mapmarks.website.ui.marks-test]
             [com.hjsoft.mapmarks.website.controller-test]
             [com.hjsoft.mapmarks.website.local-only-test]

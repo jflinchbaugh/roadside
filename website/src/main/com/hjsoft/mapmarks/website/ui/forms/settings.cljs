@@ -25,7 +25,9 @@
                             (set-register-error ["Registration disabled in Local Only mode"])
                             (go
                               (let [register (or register-fn api/register-user)
+                                    site (get-in app-state [:config :site])
                                     res (<! (register
+                                             site
                                              (:user form-data)
                                              (:password form-data)
                                              (:email form-data)))]

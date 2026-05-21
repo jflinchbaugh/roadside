@@ -26,29 +26,6 @@
    [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]
     [com.hjsoft.mapmarks.website.build-hooks/version-index-resources]]}
 
-  :coffee-marks
-  {:target :browser
-   :output-dir "public/js"
-   :asset-path "js"
-   :modules
-   {:main {:init-fn com.hjsoft.mapmarks.website.browser-main/init}}
-   :devtools {:preloads [devtools.preload]}
-   :compiler-options {:source-map true}
-   :closure-defines
-   {com.hjsoft.mapmarks.website.config/APP_NAME "Coffee Shops"
-    com.hjsoft.mapmarks.website.config/APP_DESCRIPTION "Share your favorite Coffee Shops."
-    com.hjsoft.mapmarks.website.config/APP_LOGO "\u2615" ;; coffee cup
-    com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS 365
-    com.hjsoft.mapmarks.website.config/TAGS_NAME_ARTICLE "an"
-    com.hjsoft.mapmarks.website.config/TAGS_NAME_SINGULAR "Item"
-    com.hjsoft.mapmarks.website.config/TAGS_NAME_PLURAL "Items"
-    com.hjsoft.mapmarks.website.config/MARK_NAME_ARTICLE "a"
-    com.hjsoft.mapmarks.website.config/MARK_NAME_SINGULAR "Shop"
-    com.hjsoft.mapmarks.website.config/MARK_NAME_PLURAL "Shops"}
-   :build-hooks
-     [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]
-      [com.hjsoft.mapmarks.website.build-hooks/version-index-resources]]}
-
   :test
   {:target :node-test
     :main node/main
@@ -65,4 +42,53 @@
     :autorun true
     :devtools {:http-port 3021
                :http-root "out/browser/test"}}
+
+  :coffee-marks
+  {:target :browser
+   :output-dir "public/js"
+   :asset-path "js"
+   :modules
+   {:main {:init-fn com.hjsoft.mapmarks.website.browser-main/init}}
+   :devtools {:preloads [devtools.preload]}
+   :compiler-options {:source-map true}
+   :closure-defines
+   {com.hjsoft.mapmarks.website.config/APP_NAME "Coffee Shops"
+    com.hjsoft.mapmarks.website.config/SITE "coffee-marks"
+    com.hjsoft.mapmarks.website.config/APP_DESCRIPTION "Share your favorite Coffee Shops."
+    com.hjsoft.mapmarks.website.config/APP_LOGO "\u2615" ;; coffee cup
+    com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS 365
+    com.hjsoft.mapmarks.website.config/TAGS_NAME_ARTICLE "an"
+    com.hjsoft.mapmarks.website.config/TAGS_NAME_SINGULAR "Item"
+    com.hjsoft.mapmarks.website.config/TAGS_NAME_PLURAL "Items"
+    com.hjsoft.mapmarks.website.config/MARK_NAME_ARTICLE "a"
+    com.hjsoft.mapmarks.website.config/MARK_NAME_SINGULAR "Shop"
+    com.hjsoft.mapmarks.website.config/MARK_NAME_PLURAL "Shops"}
+   :build-hooks
+     [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]
+      [com.hjsoft.mapmarks.website.build-hooks/version-index-resources]]}
+
+  :potholes-example
+  {:target :browser
+   :output-dir "public/js"
+   :asset-path "js"
+   :modules
+   {:main {:init-fn com.hjsoft.mapmarks.website.browser-main/init}}
+   :devtools {:preloads [devtools.preload]}
+   :compiler-options {:source-map true}
+   :closure-defines
+   {com.hjsoft.mapmarks.website.config/APP_NAME "Pothole Derby"
+    com.hjsoft.mapmarks.website.config/SITE "potholes"
+    com.hjsoft.mapmarks.website.config/APP_DESCRIPTION "Share your favorite Potholes."
+    com.hjsoft.mapmarks.website.config/APP_LOGO "\uD83E\uDE8F" ;; shovel
+    com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS 365
+    com.hjsoft.mapmarks.website.config/TAGS_NAME_ARTICLE "a"
+    com.hjsoft.mapmarks.website.config/TAGS_NAME_SINGULAR "Tag"
+    com.hjsoft.mapmarks.website.config/TAGS_NAME_PLURAL "Tags"
+    com.hjsoft.mapmarks.website.config/MARK_NAME_ARTICLE "a"
+    com.hjsoft.mapmarks.website.config/MARK_NAME_SINGULAR "Pothole"
+    com.hjsoft.mapmarks.website.config/MARK_NAME_PLURAL "Potholes"}
+   :build-hooks
+     [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]
+      [com.hjsoft.mapmarks.website.build-hooks/version-index-resources]]}
+
 }}

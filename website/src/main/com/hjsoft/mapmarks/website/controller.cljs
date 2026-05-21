@@ -46,12 +46,14 @@
 (defn fetch-remote-marks!
   ([app-state dispatch]
    (fetch-remote-marks! app-state dispatch default-deps))
-  ([{:keys [settings map-center last-sync]} dispatch {:keys [fetch-marks]}]
+  ([{:keys [settings map-center last-sync config]} dispatch {:keys [fetch-marks]}]
    (when (remote-allowed? settings)
      (dispatch [:set-loading-marks true])
      (go
        (let [[lat lng] map-center
+             site (:site config)
              {:keys [success data error]} (<! (fetch-marks
+                                               site
                                                (:user settings)
                                                (:password settings)
                                                lat lng
@@ -72,10 +74,12 @@
                  (str "Sync failed: " (format-error error)))))))))))
 
 (defn- remote-create-mark!
-  [{:keys [settings]} dispatch mark {:keys [create-mark]}]
+  [{:keys [settings config]} dispatch mark {:keys [create-mark]}]
   (when (and (remote-allowed? settings) (has-credentials? settings))
     (go
-      (let [{:keys [success error]} (<! (create-mark
+      (let [site (:site config)
+            {:keys [success error]} (<! (create-mark
+                                         site
                                          (:user settings)
                                          (:password settings)
                                          mark))]
@@ -90,10 +94,12 @@
               (:id mark))))))))
 
 (defn- remote-update-mark!
-  [{:keys [settings]} dispatch mark {:keys [update-mark]}]
+  [{:keys [settings config]} dispatch mark {:keys [update-mark]}]
   (when (and (remote-allowed? settings) (has-credentials? settings))
     (go
-      (let [{:keys [success error]} (<! (update-mark
+      (let [site (:site config)
+            {:keys [success error]} (<! (update-mark
+                                         site
                                          (:user settings)
                                          (:password settings)
                                          mark))]
@@ -107,10 +113,12 @@
               (str "Update failed: " (format-error error)) (:id mark))))))))
 
 (defn- remote-delete-mark!
-  [{:keys [settings]} dispatch mark-id {:keys [delete-mark]}]
+  [{:keys [settings config]} dispatch mark-id {:keys [delete-mark]}]
   (when (and (remote-allowed? settings) (has-credentials? settings))
     (go
-      (let [{:keys [success error]} (<! (delete-mark
+      (let [site (:site config)
+            {:keys [success error]} (<! (delete-mark
+                                         site
                                          (:user settings)
                                          (:password settings)
                                          mark-id))]
@@ -124,10 +132,12 @@
               (str "Delete failed: " (format-error error)))))))))
 
 (defn- remote-vote-mark!
-  [{:keys [settings]} dispatch mark-id value {:keys [vote-mark]}]
+  [{:keys [settings config]} dispatch mark-id value {:keys [vote-mark]}]
   (when (and (remote-allowed? settings) (has-credentials? settings))
     (go
-      (let [{:keys [success error]} (<! (vote-mark
+      (let [site (:site config)
+            {:keys [success error]} (<! (vote-mark
+                                         site
                                          (:user settings)
                                          (:password settings)
                                          mark-id
@@ -145,8 +155,9 @@
 (defn upload-all-marks!
   ([app-state dispatch]
    (upload-all-marks! app-state dispatch default-deps))
-  ([{:keys [marks settings]} dispatch {:keys [create-mark]}]
+  ([{:keys [marks settings config]} dispatch {:keys [create-mark]}]
    (let [user (:user settings)
+         site (:site config)
          marks-to-upload (filter (fn [s]
                                     (let [creator (:creator s)]
                                       (or (nil? creator)
@@ -168,7 +179,7 @@
          (notify! dispatch :info (str "Uploading " (count marks-to-upload) " marks..."))
          (let [results (atom [])]
            (doseq [mark marks-to-upload]
-             (let [res (<! (create-mark (:user settings) (:password settings) mark))]
+             (let [res (<! (create-mark site (:user settings) (:password settings) mark))]
                (swap! results conj res)))
            (let [success-count (count (filter :success @results))
                  fail-count (- (count marks-to-upload) success-count)]
@@ -197,11 +208,12 @@
    (create-mark! app-state dispatch form-data default-deps))
   ([app-state dispatch form-data deps]
    (let [creator (get-in app-state [:settings :user])
+         site (get-in app-state [:config :site])
          {:keys [success
                  marks
                  error
                  processed-data]} (mark-domain/add-mark
-                                    form-data
+                                    (assoc form-data :site site)
                                     (:marks app-state)
                                     creator)]
      (if success
@@ -220,6 +232,7 @@
    (update-mark! app-state dispatch form-data editing-mark default-deps))
   ([app-state dispatch form-data editing-mark deps]
    (let [user (get-in app-state [:settings :user])
+         site (get-in app-state [:config :site])
          editing-creator (:creator editing-mark)]
      (if (and (seq (str editing-creator)) (not= user editing-creator))
        (do
@@ -229,7 +242,7 @@
                      marks
                      error
                      processed-data]} (mark-domain/edit-mark
-                                        form-data
+                                        (assoc form-data :site site)
                                         (:marks app-state)
                                         editing-mark
                                         user)]
@@ -281,6 +294,7 @@
    (let [settings (:settings app-state)
          user (:user settings)
          password (:password settings)
+         site (get-in app-state [:config :site])
          address (str/join ", " (remove empty? [(:address address-data)
                                                 (:town address-data)
                                                 (:state address-data)]))]
@@ -299,6 +313,7 @@
          (notify! dispatch :info "Looking up address...")
          (let [{:keys [success lat lng error]} (<!
                                                  (geocode-address
+                                                   site
                                                    user
                                                    password
                                                    address))]
@@ -318,7 +333,8 @@
   ([app-state dispatch on-update lat lng {:keys [reverse-geocode]}]
    (let [settings (:settings app-state)
          user (:user settings)
-         password (:password settings)]
+         password (:password settings)
+         site (get-in app-state [:config :site])]
      (cond
        (not (remote-allowed? settings))
        (notify! dispatch :error "Remote operations disabled by settings")
@@ -329,7 +345,7 @@
        :else
        (go
          (notify! dispatch :info "Determining address...")
-         (let [{:keys [success data error]} (<! (reverse-geocode user password lat lng))]
+         (let [{:keys [success data error]} (<! (reverse-geocode site user password lat lng))]
            (if success
              (let [addr (:address data)
                    road (:road addr)

@@ -21,7 +21,8 @@
 (deftest export-dialog-test
   (testing "export-dialog displays correct links"
     (let [closed (atom false)
-          context-val {:state {}
+          site "test-site"
+          context-val {:state {:config {:site site}}
                        :dispatch (fn [_])
                        :ui {:set-show-export-dialog
                             (fn [v] (when (false? v) (reset! @closed true)))}}
@@ -35,7 +36,7 @@
                           (re-pattern
                             (str
                               (.. js/window -location -origin)
-                              ".*/api/marks.kml")))]
+                              ".*/s/" site "/marks.kml")))]
           (is (some? kml-label))
           (is (some? kml-input))))
 
@@ -46,16 +47,16 @@
                           (re-pattern
                             (str
                               (.. js/window -location -origin)
-                              ".*/api/marks.rss")))]
+                              ".*/s/" site "/feed.rss")))]
           (is (some? rss-label))
           (is (some? rss-input))))
 
       (testing "displays KML download link"
         (let [kml-link (tlr/getByText container "Download KML")]
           (is (some? kml-link))
-          (is (str/includes? (.-href kml-link) "/api/marks.kml"))))
+          (is (str/includes? (.-href kml-link) (str "/s/" site "/marks.kml")))))
 
       (testing "displays CSV download link"
         (let [csv-link (tlr/getByText container "Download CSV")]
           (is (some? csv-link))
-          (is (str/includes? (.-href csv-link) "/api/marks.csv")))))))
+          (is (str/includes? (.-href csv-link) (str "/s/" site "/marks.csv"))))))))

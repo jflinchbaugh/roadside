@@ -36,9 +36,15 @@
     (with-out-str
       (csv/write-csv *out* (into [header] rows)))))
 
+(defn- get-site [req]
+  (or (get-in req [:path-params :site])
+      (get-in req [:headers "x-mapmarks-site"])
+      config/site))
+
 (defn get-marks-csv-handler [req]
   (let [identity (:identity req)
-        marks (db/list-marks identity)
+        site (get-site req)
+        marks (db/list-marks identity site)
         csv (marks->csv marks)]
     {:status 200
      :headers {"Content-Type" "text/csv"
@@ -97,7 +103,7 @@
        [:pubDate pub-date])
      [:guid {:isPermaLink "false"} id]]))
 
-(defn- marks->rss [marks base-url]
+(defn- marks->rss [marks base-url site]
   (str (h/html
         {:mode :xml}
         (h/raw "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
@@ -107,14 +113,15 @@
           [:title "MapMarks Marks"]
           [:link base-url]
           [:description "Latest MapMarks Marks"]
-          [:atom:link {:href (str base-url "api/marks.rss") :rel "self" :type "application/rss+xml"}]
+          [:atom:link {:href (str base-url "s/" site "/feed.rss") :rel "self" :type "application/rss+xml"}]
           (map (partial mark->rss-item base-url) marks)]])))
 
 (defn get-marks-rss-handler [req]
   (let [identity (:identity req)
-        marks (db/list-marks identity)
+        site (get-site req)
+        marks (db/list-marks identity site)
         base-url config/external-base-url
-        rss (marks->rss marks base-url)]
+        rss (marks->rss marks base-url site)]
     {:status 200
      :headers {"Content-Type" "application/rss+xml"
                "Content-Disposition" "inline"}
@@ -122,7 +129,8 @@
 
 (defn get-marks-kml-handler [req]
   (let [identity (:identity req)
-        marks (db/list-marks identity)
+        site (get-site req)
+        marks (db/list-marks identity site)
         kml (marks->kml marks)]
     {:status 200
      :headers {"Content-Type" "application/vnd.google-earth.kml+xml"
@@ -163,11 +171,12 @@
         login (get-in req [:params :login])
         password (get-in req [:params :password])
         email (get-in req [:params :email])
-        user-data {:login login :password password :email email :enabled? true}]
+        site (or (get-in req [:params :site]) (get-site req))
+        user-data {:login login :password password :email email :enabled? true :site site}]
     (if-not (m/validate UserSchema user-data)
       (api-response 400 {:status "failed"
                          :errors (me/humanize (m/explain UserSchema user-data))})
-      (if (db/get-user login)
+      (if (db/get-user login site)
         (api-response 403 {:status "failed" :errors {:login ["not available"]}})
         (do
           (db/save-user (assoc
@@ -181,16 +190,17 @@
   (tel/log! :info {:get-marks req})
   (let [identity (:identity req)
         params (:params req)
+        site (get-site req)
         lat (some-> (get params :lat) Double/parseDouble)
         lon (some-> (get params :lon) Double/parseDouble)
         since (get params :since)
-        marks (db/list-marks identity {:lat lat
-                                         :lon lon
-                                         :radius logic/search-radius-km})
+        marks (db/list-marks identity site {:lat lat
+                                             :lon lon
+                                             :radius logic/search-radius-km})
         results (mapv common-mark/select-mark-fields marks)
         now (common-utils/get-current-timestamp)
         deleted-ids (if since
-                      (db/list-deletions identity since {:lat lat :lon lon :radius logic/search-radius-km})
+                      (db/list-deletions identity site since {:lat lat :lon lon :radius logic/search-radius-km})
                       [])]
     (api-response 200 {:marks results :deleted-ids deleted-ids :new-sync now})))
 
@@ -198,7 +208,8 @@
   (tel/log! :info {:get-mark req})
   (let [identity (:identity req)
         id (get-in req [:path-params :id])
-        mark (db/get-mark id identity)]
+        site (get-site req)
+        mark (db/get-mark id identity site)]
     (if mark
       (api-response 200 (common-mark/select-mark-fields mark))
       (not-found))))
@@ -208,8 +219,9 @@
                   common-mark/select-mark-fields
                   (dissoc :creator))
         id (or (:id mark) (:xt/id mark) (common-utils/random-uuid-str))
-        existing-mark (when id (db/get-mark-unfiltered id))
-        mark-to-validate (dissoc mark :id :xt/id)]
+        site (or (:site mark) (get-site req))
+        existing-mark (when id (db/get-mark-unfiltered id site))
+        mark-to-validate (assoc (dissoc mark :id :xt/id) :site site)]
     (tel/log! :info {:create-mark mark})
     (if (and existing-mark (not= (:creator existing-mark) (:identity req)))
       (api-response 403 {:error "Forbidden: You do not own this mark"})
@@ -219,6 +231,7 @@
         (let [mark (assoc
                       mark
                       :xt/id id
+                      :site site
                       :creator (or (:creator existing-mark) (:identity req)))
               mark (dissoc mark :id)]
           (db/save-mark mark)
@@ -230,11 +243,12 @@
         mark (-> (json/read-str (rur/body-string req) :key-fn keyword)
                   common-mark/select-mark-fields
                   (dissoc :creator))
-        existing-mark (when id (db/get-mark-unfiltered id))]
+        site (or (:site mark) (get-site req))
+        existing-mark (when id (db/get-mark-unfiltered id site))]
     (tel/log! :info {:update-mark mark})
     (if (and existing-mark (not= (:creator existing-mark) (:identity req)))
       (api-response 403 {:error "Forbidden: You do not own this mark"})
-      (let [mark-to-validate (dissoc mark :id :xt/id)]
+      (let [mark-to-validate (assoc (dissoc mark :id :xt/id) :site site)]
         (if-not (m/validate MarkSchema mark-to-validate)
           (api-response 400 {:status "failed"
                              :errors (me/humanize (m/explain MarkSchema mark-to-validate))})
@@ -243,6 +257,7 @@
                 mark (assoc
                         mark
                         :xt/id final-id
+                        :site site
                         :creator (or (:creator existing-mark) (:identity req)))
                 mark (dissoc mark :id)]
             (db/save-mark mark)
@@ -251,7 +266,8 @@
 (defn delete-mark-handler [req]
   (tel/log! :info {:delete-mark req})
   (let [id (get-in req [:path-params :id])
-        existing-mark (db/get-mark-unfiltered id)]
+        site (get-site req)
+        existing-mark (db/get-mark-unfiltered id site)]
     (if (and existing-mark (not= (:creator existing-mark) (:identity req)))
       (api-response 403 {:error "Forbidden: You do not own this mark"})
       (do
@@ -262,6 +278,7 @@
   (tel/log! :info {:vote-mark req})
   (let [id (get-in req [:path-params :id])
         identity (:identity req)
+        site (get-site req)
         body (json/read-str (rur/body-string req) :key-fn keyword)
         value (:value body)]
     (if (not identity)
@@ -269,5 +286,5 @@
       (if (not (contains? #{1 -1 0} value))
         (api-response 400 {:error "Invalid vote value"})
         (do
-          (db/vote-mark id identity value)
+          (db/vote-mark id identity value site)
           (api-response 200 {:status "success"}))))))

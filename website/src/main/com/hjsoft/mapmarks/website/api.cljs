@@ -4,7 +4,8 @@
             [clojure.string :as str]
             [taoensso.telemere :as tel]))
 
-(def ^:private marks-url "api/marks")
+(defn- site-url [site path]
+  (str "s/" site "/api/" path))
 
 (defn- with-auth-opts
   ([user password] (with-auth-opts user password {}))
@@ -36,56 +37,58 @@
       [(or (:status-text response) default-msg)])))
 
 (defn fetch-marks
-  ([user password]
-   (fetch-marks user password nil nil nil default-http-deps))
-  ([user password lat lng since]
-   (fetch-marks user password lat lng since default-http-deps))
-  ([user password lat lng since {:keys [get]}]
+  ([site user password]
+   (fetch-marks site user password nil nil nil default-http-deps))
+  ([site user password lat lng since]
+   (fetch-marks site user password lat lng since default-http-deps))
+  ([site user password lat lng since {:keys [get]}]
    (go
-     (let [params (cond-> {}
+     (let [url (site-url site "marks")
+           params (cond-> {}
                     lat (assoc :lat lat)
                     lng (assoc :lon lng)
                     since (assoc :since since))
-           response (<! (get marks-url
+           response (<! (get url
                              (with-auth-opts user password
                                {:query-params params})))]
        (if (:success response)
          {:success true
           :data (:body response)}
          {:success false
-          :error (extract-error response (str "HTTP Error: " marks-url ", " (:status response)))})))))
+          :error (extract-error response (str "HTTP Error: " url ", " (:status response)))})))))
 
 (defn create-mark
-  ([user password mark] (create-mark user password mark default-http-deps))
-  ([user password mark {:keys [post]}]
+  ([site user password mark] (create-mark site user password mark default-http-deps))
+  ([site user password mark {:keys [post]}]
    (go
-     (let [response (<! (post marks-url
+     (let [url (site-url site "marks")
+           response (<! (post url
                               (with-auth-opts user password
-                                {:json-params mark})))]
+                                {:json-params (assoc mark :site site)})))]
        (if (:success response)
          {:success true :data (:body response)}
          {:success false :error (extract-error response (str "HTTP Error: " (:status response)))})))))
 
 (defn update-mark
-  ([user password mark] (update-mark user password mark default-http-deps))
-  ([user password mark {:keys [put]}]
+  ([site user password mark] (update-mark site user password mark default-http-deps))
+  ([site user password mark {:keys [put]}]
    (let [id (:id mark)
-         resource-url (str marks-url "/" id)]
+         url (site-url site (str "marks/" id))]
      (go
-       (let [response (<! (put resource-url
+       (let [response (<! (put url
                                (with-auth-opts user password
-                                 {:json-params mark})))]
+                                 {:json-params (assoc mark :site site)})))]
          (if (:success response)
            {:success true :data (:body response)}
            {:success false :error (extract-error response (str "HTTP Error: " (:status response)))}))))))
 
 (defn delete-mark
-  ([user password mark-id]
-   (delete-mark user password mark-id default-http-deps))
-  ([user password mark-id {:keys [delete]}]
-   (let [resource-url (str marks-url "/" mark-id)]
+  ([site user password mark-id]
+   (delete-mark site user password mark-id default-http-deps))
+  ([site user password mark-id {:keys [delete]}]
+   (let [url (site-url site (str "marks/" mark-id))]
      (go
-       (let [response (<! (delete resource-url
+       (let [response (<! (delete url
                                   (with-auth-opts user password)))]
          (if (:success response)
            {:success true}
@@ -93,12 +96,12 @@
             :error (extract-error response (str "HTTP Error: " (:status response)))}))))))
 
 (defn vote-mark
-  ([user password mark-id value]
-   (vote-mark user password mark-id value default-http-deps))
-  ([user password mark-id value {:keys [post]}]
-   (let [resource-url (str marks-url "/" mark-id "/vote")]
+  ([site user password mark-id value]
+   (vote-mark site user password mark-id value default-http-deps))
+  ([site user password mark-id value {:keys [post]}]
+   (let [url (site-url site (str "marks/" mark-id "/vote"))]
      (go
-       (let [response (<! (post resource-url
+       (let [response (<! (post url
                                 (with-auth-opts user password
                                   {:json-params {:value value}})))]
          (if (:success response)
@@ -107,11 +110,11 @@
             :error (extract-error response (str "HTTP Error: " (:status response)))}))))))
 
 (defn geocode-address
-  ([user password address]
-   (geocode-address user password address default-http-deps))
-  ([user password address {:keys [get]}]
+  ([site user password address]
+   (geocode-address site user password address default-http-deps))
+  ([site user password address {:keys [get]}]
    (go
-     (let [url "api/geocode"
+     (let [url (site-url site "geocode")
            params {:q address}
            response (<! (get url (with-auth-opts user password
                                    {:query-params params})))]
@@ -124,11 +127,11 @@
           :error (or (:status-text response) "Address not found")})))))
 
 (defn reverse-geocode
-  ([user password lat lng]
-   (reverse-geocode user password lat lng default-http-deps))
-  ([user password lat lng {:keys [get]}]
+  ([site user password lat lng]
+   (reverse-geocode site user password lat lng default-http-deps))
+  ([site user password lat lng {:keys [get]}]
    (go
-     (let [url "api/reverse-geocode"
+     (let [url (site-url site "reverse-geocode")
            params {:lat lat :lon lng}
            response (<! (get url (with-auth-opts user password
                                    {:query-params params})))]
@@ -138,14 +141,15 @@
           :error (or (:status-text response) "Location not found")})))))
 
 (defn register-user
-  ([user password email]
-   (register-user user password email default-http-deps))
-  ([user password email {:keys [post]}]
+  ([site user password email]
+   (register-user site user password email default-http-deps))
+  ([site user password email {:keys [post]}]
    (go
-     (let [url "api/register"
+     (let [url (site-url site "register")
            params {:login user
                    :password password
-                   :email email}
+                   :email email
+                   :site site}
            response (<! (post url {:form-params params}))]
        (tel/log! :info {:register-user {:params params :response response}})
        (if (= 201 (:status response))
