@@ -36,7 +36,7 @@
                           (re-pattern
                             (str
                               (.. js/window -location -origin)
-                              ".*/s/" site "/marks.kml")))]
+                              ".*/s/" site "/feed.kml")))]
           (is (some? kml-label))
           (is (some? kml-input))))
 
@@ -54,9 +54,11 @@
       (testing "displays KML download link"
         (let [kml-link (tlr/getByText container "Download KML")]
           (is (some? kml-link))
-          (is (str/includes? (.-href kml-link) (str "/s/" site "/marks.kml")))))
+          (is (str/includes? (.-href kml-link)
+                             (str "/s/" site "/feed.kml")))))
 
       (testing "displays CSV download link"
         (let [csv-link (tlr/getByText container "Download CSV")]
           (is (some? csv-link))
-          (is (str/includes? (.-href csv-link) (str "/s/" site "/marks.csv"))))))))
+          (is (str/includes? (.-href csv-link)
+                             (str "/s/" site "/feed.csv"))))))))

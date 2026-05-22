@@ -2,6 +2,7 @@
   (:require [cljs.test :refer [deftest is testing async]]
             [com.hjsoft.mapmarks.website.controller :as sut]
             [com.hjsoft.mapmarks.website.storage :as storage]
+            [com.hjsoft.mapmarks.website.config :as config]
             [clojure.string :as str]
             [cljs.core.async :refer [go]]))
 
@@ -215,3 +216,21 @@
                       (is (contains? updates [:update-field [:state "PA"]]))
                       (done)))
                   1000)))))
+
+(deftest save-local-data-namespaced-test
+  (testing "save-local-data! uses the configured site namespace"
+    (let [saved (atom {})]
+      (with-redefs [config/config (assoc config/config :site "potholes")
+                    storage/set-item! (fn [k v] (swap! saved assoc k v))]
+        (sut/save-local-data!
+         ["mark1"]
+         {:user "alice"}
+         [10 20]
+         15
+         "2026-03-21T12:00:00Z")
+        (is (= ["mark1"] (get @saved "potholes-marks")))
+        (is (= {:user "alice"} (get @saved "potholes-settings")))
+        (is (= [10 20] (get @saved "potholes-map-center")))
+        (is (= 15 (get @saved "potholes-map-zoom")))
+        (is (= "2026-03-21T12:00:00Z"
+               (get @saved "potholes-last-sync")))))))

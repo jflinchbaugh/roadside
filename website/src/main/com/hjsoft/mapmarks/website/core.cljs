@@ -122,7 +122,7 @@
 (defnc app [{:keys [geolocation]}]
   (let [[app-state dispatch] (hooks/use-reducer
                               state/app-reducer
-                              state/initial-app-state)
+                              (state/initial-app-state))
         {:keys [marks]} app-state
 
         [show-form set-show-form] (hooks/use-state false)

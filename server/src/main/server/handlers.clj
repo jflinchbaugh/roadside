@@ -155,9 +155,26 @@
                "Content-Disposition"
                (str "attachment; filename=\"" filename "\"")}
      :body kml}))
-
 (defn not-found [& _]
   (api-response 404 {:error "Not Found"}))
+
+(defn get-site-feed-handler [req]
+  (let [filename (get-in req [:path-params :filename])
+        site (get-site req)
+        cfg (config/get-config site)
+        plural-name (str/lower-case (:mark-name-plural cfg))
+        allowed-filenames #{"feed.rss" "feed.kml" "feed.csv"
+                            (str plural-name ".rss")
+                            (str plural-name ".kml")
+                            (str plural-name ".csv")}
+        lower-filename (str/lower-case (or filename ""))]
+    (if (allowed-filenames lower-filename)
+      (cond
+        (str/ends-with? lower-filename ".rss") (get-marks-rss-handler req)
+        (str/ends-with? lower-filename ".kml") (get-marks-kml-handler req)
+        (str/ends-with? lower-filename ".csv") (get-marks-csv-handler req)
+        :else (not-found req))
+      (not-found req))))
 
 (defn ping-handler [_]
   (api-response 200 "pong"))

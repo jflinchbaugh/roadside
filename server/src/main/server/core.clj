@@ -16,12 +16,8 @@
 (def app
   (-> [config/base-url
        ["/s/:site"
-        ["/feed.rss" {:middleware [auth/wrap-auth]
-                      :get handlers/get-marks-rss-handler}]
-        ["/marks.kml" {:middleware [auth/wrap-auth]
-                       :get handlers/get-marks-kml-handler}]
-        ["/marks.csv" {:middleware [auth/wrap-auth]
-                       :get handlers/get-marks-csv-handler}]
+        ["/:filename" {:middleware [auth/wrap-auth]
+                       :get handlers/get-site-feed-handler}]
         ["/api"
          ["/geocode" {:middleware [auth/wrap-auth auth/identity-required-wrapper]
                       :get handlers/geocode-handler}]

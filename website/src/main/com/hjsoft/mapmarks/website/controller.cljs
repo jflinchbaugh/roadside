@@ -1,6 +1,7 @@
 (ns com.hjsoft.mapmarks.website.controller
   (:require [com.hjsoft.mapmarks.website.api :as api]
             [com.hjsoft.mapmarks.website.storage :as storage]
+            [com.hjsoft.mapmarks.website.config :as config]
             [com.hjsoft.mapmarks.website.domain.mark :as mark-domain]
             [taoensso.telemere :as tel]
             [clojure.string :as str]
@@ -16,11 +17,12 @@
    :reverse-geocode api/reverse-geocode})
 
 (defn save-local-data! [marks settings map-center map-zoom last-sync]
-  (storage/set-item! "mapmarks-marks" marks)
-  (storage/set-item! "mapmarks-settings" settings)
-  (storage/set-item! "mapmarks-map-center" map-center)
-  (storage/set-item! "mapmarks-map-zoom" map-zoom)
-  (storage/set-item! "mapmarks-last-sync" last-sync))
+  (let [site-name (:site config/config)]
+    (storage/set-item! (str site-name "-marks") marks)
+    (storage/set-item! (str site-name "-settings") settings)
+    (storage/set-item! (str site-name "-map-center") map-center)
+    (storage/set-item! (str site-name "-map-zoom") map-zoom)
+    (storage/set-item! (str site-name "-last-sync") last-sync)))
 
 (defn- has-credentials? [settings]
   (and (seq (:user settings))

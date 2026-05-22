@@ -2,6 +2,8 @@
   (:require
    [cljs.test :refer [deftest testing is]]
    [com.hjsoft.mapmarks.website.state :as sut]
+   [com.hjsoft.mapmarks.website.storage :as storage]
+   [com.hjsoft.mapmarks.website.config :as config]
    [com.hjsoft.mapmarks.website.utils :as utils]))
 
 (def ^:const one-day (* 24 60 60 1000))
@@ -94,3 +96,17 @@
       (let [result (sut/select-marks-by-expiry {:marks marks :show-expired? true})]
         (is (= 2 (count result)))
         (is (= #{"Active" "Expired"} (set (map :name result))))))))
+
+(deftest initial-app-state-fallback-test
+  (testing "initial-app-state falls back to legacy mapmarks-"
+    (with-redefs [config/config (assoc config/config :site "potholes")
+                  storage/get-item
+                  (fn [k]
+                    (cond
+                      (= k "potholes-marks") nil
+                      (= k "mapmarks-marks") [{:id "1" :tags ["Apple"]}]
+                      (= k "mapmarks-map-center") [10.0 20.0]
+                      :else nil))]
+      (let [state (sut/initial-app-state)]
+        (is (= [{:id "1" :tags ["apple"]}] (:marks state)))
+        (is (= [10.0 20.0] (:map-center state)))))))

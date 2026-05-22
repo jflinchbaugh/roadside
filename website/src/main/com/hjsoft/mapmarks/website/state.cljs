@@ -33,16 +33,28 @@
                          (assoc s :id (utils/random-uuid-str)))]
                  (update s :tags (fn [ps] (mapv str/lower-case ps))))))))
 
-(def initial-app-state
-  {:marks (migrate-marks (storage/get-item "mapmarks-marks"))
+(defn- get-stored-item [suffix default-val]
+  (let [site-name (:site config/config)
+        namespaced-key (str site-name "-" suffix)
+        legacy-key (str "mapmarks-" suffix)
+        val (storage/get-item namespaced-key)]
+    (if (some? val)
+      val
+      (let [legacy-val (storage/get-item legacy-key)]
+        (if (some? legacy-val)
+          legacy-val
+          default-val)))))
+
+(defn initial-app-state []
+  {:marks (migrate-marks (get-stored-item "marks" nil))
    :tag-filter nil
    :selected-mark nil
-   :map-center (or (storage/get-item "mapmarks-map-center") map-home)
-   :map-zoom (or (storage/get-item "mapmarks-map-zoom") 11)
-   :settings (or (storage/get-item "mapmarks-settings") {})
+   :map-center (get-stored-item "map-center" map-home)
+   :map-zoom (get-stored-item "map-zoom" 11)
+   :settings (get-stored-item "settings" {})
    :config config/config
    :is-synced false
-   :last-sync (storage/get-item "mapmarks-last-sync")
+   :last-sync (get-stored-item "last-sync" nil)
    :loading-marks? false
    :notification nil
    :show-expired? false})

@@ -32,7 +32,7 @@
          (d/div
           {:class "export-link-item"}
           (d/label "KML Feed (Live):")
-          (let [kml-url (str base-url "s/" site "/marks.kml")]
+          (let [kml-url (str base-url "s/" site "/feed.kml")]
             (d/div
              {:class "export-url-container"}
              (d/input
@@ -62,14 +62,14 @@
           (d/label "KML for Import:")
           (d/a
            {:class "download-link"
-            :href (str base-url "s/" site "/marks.kml")
-            :download "marks.kml"}
+            :href (str base-url "s/" site "/feed.kml")
+            :download "feed.kml"}
            "Download KML"))
          (d/div
           {:class "export-link-item"}
           (d/label "CSV for Import:")
           (d/a
            {:class "download-link"
-            :href (str base-url "s/" site "/marks.csv")
-            :download "marks.csv"}
+            :href (str base-url "s/" site "/feed.csv")
+            :download "feed.csv"}
            "Download CSV")))))))))

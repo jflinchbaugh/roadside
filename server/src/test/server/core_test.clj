@@ -832,5 +832,39 @@
               ;; the server doesn't.
               ;; Wait, the get-marks-handler doesn't pass 'since' to
               ;; list-marks.
-              (is (= 2 (count (:marks data)))))))))))
+          (is (= 2 (count (:marks data)))))))))))
+
+(deftest dynamic-feed-routing-test
+  (testing "Dynamic feed routing resolves both generic and plural endpoints"
+    (xt/execute-tx
+     @db/node
+     [[:put-docs :users {:xt/id "u-alice"
+                         :login "alice"
+                         :password (hashers/derive "secret")
+                         :enabled? true
+                         :site test-site}]])
+    (let [auth-hdr "Basic YWxpY2U6c2VjcmV0"
+          request (fn [path]
+                    (core/app {:request-method :get
+                               :scheme :http
+                               :server-name "localhost"
+                               :server-port 80
+                               :uri (str "/mapmarks/s/" test-site path)
+                               :headers {"authorization" auth-hdr}}))
+          ;; 1. Request feed.kml (generic)
+          resp-kml-gen (request "/feed.kml")
+          ;; 2. Request marks.kml (plural)
+          resp-kml-pl (request "/marks.kml")
+          ;; 3. Request feed.csv (generic)
+          resp-csv-gen (request "/feed.csv")
+          ;; 4. Request feed.rss (generic)
+          resp-rss-gen (request "/feed.rss")
+          ;; 5. Request non-existent (e.g. unknown.kml)
+          resp-invalid (request "/unknown.kml")]
+      (is (= 200 (:status resp-kml-gen)))
+      (is (= 200 (:status resp-kml-pl)))
+      (is (= 200 (:status resp-csv-gen)))
+      (is (= 200 (:status resp-rss-gen)))
+      (is (= 404 (:status resp-invalid))))))
+
 
