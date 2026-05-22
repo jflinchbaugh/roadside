@@ -3,22 +3,21 @@
 ;; These settings must be configured at compile-time
 ;; using shadow-cljs :closure-defines
 
-(goog-define APP_NAME "Map Marks")
-(goog-define SITE "mapmarks")
-(goog-define APP_DESCRIPTION "Find and share interesting locations")
+(goog-define APP_NAME "Roadside Stands")
+(goog-define SITE "roadside")
+(goog-define APP_DESCRIPTION "Find and share roadside produce stands")
 ;; string emoji or image url
-(goog-define APP_LOGO "\uD83D\uDCCD") ;; pin emoji
-(goog-define APP_ICON "favicon.ico")
-(goog-define DEFAULT_EXPIRATION_DAYS 30)
+(goog-define APP_LOGO "images/apples.png") ;; pin emoji
+(goog-define DEFAULT_EXPIRATION_DAYS 28)
+(goog-define TAGS_NAME_SINGULAR "Product")
+(goog-define TAGS_NAME_PLURAL "Products")
 (goog-define TAGS_NAME_ARTICLE "a")
-(goog-define TAGS_NAME_SINGULAR "Tag")
-(goog-define TAGS_NAME_PLURAL "Tags")
+(goog-define MARK_NAME_SINGULAR "Stand")
+(goog-define MARK_NAME_PLURAL "Stands")
 (goog-define MARK_NAME_ARTICLE "a")
-(goog-define MARK_NAME_SINGULAR "Mark")
-(goog-define MARK_NAME_PLURAL "Marks")
 (goog-define DISABLE_TAGS false)
 (goog-define DISABLE_NAME false)
-(goog-define FEEDBACK_EMAIL "mapmarks@hjsoft.com")
+(goog-define FEEDBACK_EMAIL "roadside@hjsoft.com")
 
 (def config
   {:app-name APP_NAME

@@ -24,27 +24,6 @@
     :devtools {:preloads [devtools.preload]}
     :js-options {:resolve {"cldr-data" false}}
     :compiler-options {:source-map true}
-    :closure-defines
-    {com.hjsoft.mapmarks.website.config/APP_NAME
-     "Roadside Stands"
-     com.hjsoft.mapmarks.website.config/SITE
-     "roadside"
-     com.hjsoft.mapmarks.website.config/APP_DESCRIPTION
-     "Find and share roadside produce stands"
-     com.hjsoft.mapmarks.website.config/APP_LOGO
-     "images/apples.png"
-     com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS
-     28
-     com.hjsoft.mapmarks.website.config/TAGS_NAME_SINGULAR
-     "Product"
-     com.hjsoft.mapmarks.website.config/TAGS_NAME_PLURAL
-     "Products"
-     com.hjsoft.mapmarks.website.config/MARK_NAME_SINGULAR
-     "Stand"
-     com.hjsoft.mapmarks.website.config/MARK_NAME_PLURAL
-     "Stands"
-     com.hjsoft.mapmarks.website.config/FEEDBACK_EMAIL
-     "roadside@hjsoft.com"}
     :build-hooks
     [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]
      [com.hjsoft.mapmarks.website.build-hooks/version-index-resources]]}
