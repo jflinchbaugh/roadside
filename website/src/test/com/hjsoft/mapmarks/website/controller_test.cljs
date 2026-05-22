@@ -237,3 +237,70 @@
         (is (= 15 (get @saved "potholes-map-zoom")))
         (is (= "2026-03-21T12:00:00Z"
                (get @saved "potholes-last-sync")))))))
+
+(defn- has-notif? [actions type pattern]
+  (some (fn [[act-type payload]]
+          (and (= act-type :set-notification)
+               (= (:type payload) type)
+               (str/includes? (:message payload) pattern)))
+        actions))
+
+(deftest notification-message-config-test
+  (async done
+    (testing "notifications use custom configured singular and plural names"
+      (let [orig-config config/config
+            cleanup (fn []
+                      (set! config/config orig-config)
+                      (done))
+            dispatched (atom [])
+            dispatch (fn [action] (swap! dispatched conj action))
+            app-state {:settings {:user "alice" :password "secret"}
+                       :config {:site "test"}
+                       :marks [{:id "m1" :name "Old" :creator "bob"}]}
+            editing-mark {:id "m1" :name "Old" :creator "bob"}
+            form-data {:id "m1" :name "New" :lat 1.0 :lon 2.0}]
+        (set! config/config (assoc config/config
+                              :mark-name-singular "Pothole"
+                              :mark-name-plural "Potholes"))
+        ;; Test ownership warning on update (synchronous check)
+        (is (false? (sut/update-mark!
+                      app-state
+                      dispatch
+                      form-data
+                      editing-mark
+                      mock-deps)))
+        (is (has-notif? @dispatched :error "pothole"))
+        (swap! dispatched empty)
+
+        ;; Test ownership warning on delete (synchronous check)
+        (is (false? (sut/delete-mark!
+                      app-state
+                      dispatch
+                      editing-mark
+                      mock-deps)))
+        (is (has-notif? @dispatched :error "pothole"))
+        (swap! dispatched empty)
+
+        ;; Test remote success message on create (async check)
+        (sut/create-mark! (assoc app-state :marks [])
+                          dispatch
+                          {:name "New" :lat 1.0 :lon 2.0}
+                          mock-deps)
+        (wait-for dispatched
+                  #(has-notif? % :success "Pothole added!")
+                  (fn []
+                    (swap! dispatched empty)
+                    ;; Test upload-all-marks! (async check)
+                    (let [marks [{:id "m2"
+                                  :name "To Upload"
+                                  :creator "alice"}]]
+                      (sut/upload-all-marks!
+                        (assoc app-state :marks marks)
+                        dispatch
+                        mock-deps)
+                      (wait-for dispatched
+                                (fn [acts]
+                                  (and (has-notif? acts :info "potholes")
+                                       (has-notif? acts :success "potholes")))
+                                cleanup 1000)))
+                  1000)))))

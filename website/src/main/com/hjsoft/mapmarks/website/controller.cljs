@@ -86,7 +86,9 @@
                                          (:password settings)
                                          mark))]
         (if success
-          (notify! dispatch :success "Mark added!" (:id mark))
+          (notify! dispatch :success
+                   (str (:mark-name-singular config/config) " added!")
+                   (:id mark))
           (do
             (tel/log! :error {:msg "Failed to create mark" :error error})
             (notify!
@@ -106,7 +108,9 @@
                                          (:password settings)
                                          mark))]
         (if success
-          (notify! dispatch :success "Mark updated!" (:id mark))
+          (notify! dispatch :success
+                   (str (:mark-name-singular config/config) " updated!")
+                   (:id mark))
           (do
             (tel/log! :error {:msg "Failed to update mark" :error error})
             (notify!
@@ -125,7 +129,8 @@
                                          (:password settings)
                                          mark-id))]
         (if success
-          (notify! dispatch :success "Mark deleted!")
+          (notify! dispatch :success
+                   (str (:mark-name-singular config/config) " deleted!"))
           (do
             (tel/log! :error {:msg "Failed to delete mark" :error error})
             (notify!
@@ -178,7 +183,14 @@
 
        :else
        (go
-         (notify! dispatch :info (str "Uploading " (count marks-to-upload) " marks..."))
+         (notify!
+           dispatch
+           :info
+           (str "Uploading "
+                (count marks-to-upload)
+                " "
+                (str/lower-case (:mark-name-plural config/config))
+                "..."))
          (let [results (atom [])]
            (doseq [mark marks-to-upload]
              (let [res (<! (create-mark site (:user settings) (:password settings) mark))]
@@ -201,7 +213,10 @@
                  (str
                    "Successfully uploaded "
                    success-count
-                   " marks!"))))))))))
+                   " "
+                   (str/lower-case
+                     (:mark-name-plural config/config))
+                   "!"))))))))))
 
 ;; Controller Intent Functions
 
@@ -236,10 +251,15 @@
    (let [user (get-in app-state [:settings :user])
          site (get-in app-state [:config :site])
          editing-creator (:creator editing-mark)]
-     (if (and (seq (str editing-creator)) (not= user editing-creator))
-       (do
-         (notify! dispatch :error "Forbidden: You do not own this mark")
-         false)
+      (if (and (seq (str editing-creator)) (not= user editing-creator))
+        (do
+          (notify!
+            dispatch
+            :error
+            (str "Forbidden: You do not own this "
+                 (str/lower-case
+                   (:mark-name-singular config/config))))
+          false)
        (let [{:keys [success
                      marks
                      error
@@ -265,10 +285,15 @@
   ([app-state dispatch mark deps]
    (let [user (get-in app-state [:settings :user])
          creator (:creator mark)]
-     (if (and (seq (str creator)) (not= user creator))
-       (do
-         (notify! dispatch :error "Forbidden: You do not own this mark")
-         false)
+      (if (and (seq (str creator)) (not= user creator))
+        (do
+          (notify!
+            dispatch
+            :error
+            (str "Forbidden: You do not own this "
+                 (str/lower-case
+                   (:mark-name-singular config/config))))
+          false)
        (do
          (dispatch [:remove-mark mark])
          (remote-delete-mark! app-state dispatch (:id mark) deps)
