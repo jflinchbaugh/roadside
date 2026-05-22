@@ -1,5 +1,7 @@
 # mapmarks-server
 
+Multi-tenant backend for map bookmarks from the website client.
+
 run the server:
 ```
 $ clj -M:run
