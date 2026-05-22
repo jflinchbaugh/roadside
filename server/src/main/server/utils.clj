@@ -1,5 +1,5 @@
 (ns server.utils
-  (:require [com.hjsoft.roadside.common.utils :as common-utils]))
+  (:require [com.hjsoft.mapmarks.common.utils :as common-utils]))
 
 (def parse-coordinate common-utils/parse-coordinates)
 (def haversine-distance common-utils/haversine-distance)

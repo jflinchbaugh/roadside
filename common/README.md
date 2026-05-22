@@ -1,6 +1,6 @@
-# roadside-common
+# mapmarks-common
 
-Common logic and utilities for the roadside project.
+Common logic and utilities for the mapmarks project.
 
 ## License
 

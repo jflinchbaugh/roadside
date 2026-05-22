@@ -21,4 +21,4 @@ release:
 	npx shadow-cljs release frontend
 
 clean:
-	rm -rf out .shadow-cljs public/js public/index.html src/main/com/hjsoft/roadside/website/version.cljs
+	rm -rf out .shadow-cljs public/js public/index.html src/main/com/hjsoft/mapmarks/website/version.cljs

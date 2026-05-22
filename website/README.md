@@ -1,4 +1,4 @@
-# Roadside Web - ClojureScript + Helix Single Page App
+# MapMarks Web - ClojureScript + Helix Single Page App
 
 A single page application built with ClojureScript and Helix (React wrapper).
 

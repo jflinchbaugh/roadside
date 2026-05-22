@@ -14,13 +14,13 @@ target/.uberjar-built: $(SRC_FILES)
 	touch target/.uberjar-built
 
 container: test target/.uberjar-built Containerfile
-	podman build -t roadside-server:latest .
+	podman build -t mapmarks-server:latest .
 
 clean:
 	clj -T:build clean
 
 run-server:
-	podman kube play --wait roadside-server.yaml
+	podman kube play --wait mapmarks-server.yaml
 
 run-xtdb:
-	podman kube play --wait roadside-xtdb.yaml
+	podman kube play --wait mapmarks-xtdb.yaml

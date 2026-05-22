@@ -11,9 +11,9 @@
             [malli.error :as me]
             [taoensso.telemere :as tel]
             [hiccup2.core :as h]
-            [com.hjsoft.roadside.common.logic :as logic]
-            [com.hjsoft.roadside.common.utils :as common-utils]
-            [com.hjsoft.roadside.common.domain.stand :as common-stand]))
+            [com.hjsoft.mapmarks.common.logic :as logic]
+            [com.hjsoft.mapmarks.common.utils :as common-utils]
+            [com.hjsoft.mapmarks.common.domain.mark :as common-mark]))
 
 (defn- api-response
   [code document]
@@ -21,48 +21,57 @@
    :headers {"Content-Type" "application/json"}
    :body (json/write-str document)})
 
-(defn- stands->csv [stands]
-  (let [header ["Name" "Latitude" "Longitude" "Address" "Town" "State" "Products" "Notes"]
-        rows (map (fn [{:keys [name lat lon address products notes town state]}]
+(defn- marks->csv [marks cfg]
+  (let [header ["Name" "Latitude" "Longitude" "Address" "Town" "State"
+                (:tags-name-plural cfg) "Notes"]
+        rows (map (fn [{:keys [name lat lon address tags notes town state]}]
                     [name
                      (str lat)
                      (str lon)
                      address
                      town
                      state
-                     (str/join "; " products)
+                     (str/join "; " tags)
                      notes])
-                  stands)]
+                  marks)]
     (with-out-str
       (csv/write-csv *out* (into [header] rows)))))
 
-(defn get-stands-csv-handler [req]
+(defn- get-site [req]
+  (or (get-in req [:path-params :site])
+      config/site))
+
+(defn get-marks-csv-handler [req]
   (let [identity (:identity req)
-        stands (db/list-stands identity)
-        csv (stands->csv stands)]
+        site (get-site req)
+        cfg (config/get-config site)
+        marks (db/list-marks identity site)
+        csv (marks->csv marks cfg)
+        filename (str (str/lower-case (:mark-name-plural cfg)) ".csv")]
     {:status 200
      :headers {"Content-Type" "text/csv"
-               "Content-Disposition" "attachment; filename=\"stands.csv\""}
+               "Content-Disposition"
+               (str "attachment; filename=\"" filename "\"")}
      :body csv}))
 
-(defn- stand->placemark [stand]
-  (let [{:keys [name lat lon address products notes]} stand]
+(defn- mark->placemark [cfg mark]
+  (let [{:keys [name lat lon address tags notes]} mark]
     [:Placemark
-     [:name (or name "Roadside Stand")]
+     [:name (or name (:mark-name-singular cfg))]
      [:description (str "Address: " address "\n"
-                        "Products: " (str/join ", " products) "\n"
+                        (:tags-name-plural cfg) ": " (str/join ", " tags) "\n"
                         "Notes: " (or notes ""))]
      [:Point
       [:coordinates (format "%f,%f,0" lon lat)]]]))
 
-(defn- stands->kml [stands]
+(defn- marks->kml [marks cfg]
   (str (h/html
         {:mode :xml}
         (h/raw "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
         [:kml {:xmlns "http://www.opengis.net/kml/2.2"}
          [:Document
-          [:name "Roadside Stands"]
-          (map stand->placemark stands)]])))
+          [:name (:app-name cfg)]
+          (map (partial mark->placemark cfg) marks)]])))
 
 (defn- format-rfc822 [iso-str]
   (try
@@ -73,64 +82,99 @@
     (catch Exception _
       nil)))
 
-(defn- stand->rss-item [base-url stand]
-  (let [{:keys [name address town state products expiration notes updated xt/id lat lon shared? creator]} stand
+(defn- mark->rss-item [base-url cfg mark]
+  (let [{:keys [name address town state tags expiration notes updated
+                xt/id lat lon shared? creator]} mark
         title (or
                (when (not (str/blank? name)) name)
-               (when (seq products) (str/join ", " products))
-               "Roadside Stand")
+               (when (seq tags) (str/join ", " tags))
+               (:mark-name-singular cfg))
         full-address (str/join ", " (remove str/blank? [address town state]))
         description (str/join "\n"
                               (remove nil?
-                                      [(when (seq full-address) (str "Address: " full-address))
-                                       (when (seq products) (str "Products: " (str/join ", " products)))
-                                       (when (seq expiration) (str "Expires: " expiration))
-                                       (when (seq notes) (str "Notes: " notes))
+                                      [(when (seq full-address)
+                                         (str "Address: " full-address))
+                                       (when (seq tags)
+                                         (str (:tags-name-plural cfg)
+                                              ": " (str/join ", " tags)))
+                                       (when (seq expiration)
+                                         (str "Expires: " expiration))
+                                       (when (seq notes)
+                                         (str "Notes: " notes))
                                        (str "Coordinates: " lat ", " lon)
-                                       (when (some? shared?) (str "Shared: " (if shared? "Yes" "No")))
-                                       (when (seq creator) (str "Creator: " creator))]))]
+                                       (when (some? shared?)
+                                         (str "Shared: "
+                                              (if shared? "Yes" "No")))
+                                       (when (seq creator)
+                                         (str "Creator: " creator))]))
+        anchor (str/lower-case (:mark-name-singular cfg))]
     [:item
      [:title title]
-     [:link (str base-url "#stand=" id)]
+     [:link (str base-url "#" anchor "=" id)]
      [:description description]
      (when-let [pub-date (format-rfc822 updated)]
        [:pubDate pub-date])
      [:guid {:isPermaLink "false"} id]]))
 
-(defn- stands->rss [stands base-url]
+(defn- marks->rss [marks base-url site cfg]
   (str (h/html
         {:mode :xml}
         (h/raw "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
         [:rss {:version "2.0"
                :xmlns:atom "http://www.w3.org/2005/Atom"}
          [:channel
-          [:title "Roadside Stands"]
+          [:title (:app-name cfg)]
           [:link base-url]
-          [:description "Latest Roadside Stands"]
-          [:atom:link {:href (str base-url "api/stands.rss") :rel "self" :type "application/rss+xml"}]
-          (map (partial stand->rss-item base-url) stands)]])))
+          [:description (:app-description cfg)]
+          [:atom:link {:href (str base-url "s/" site "/feed.rss")
+                       :rel "self"
+                       :type "application/rss+xml"}]
+          (map (partial mark->rss-item base-url cfg) marks)]])))
 
-(defn get-stands-rss-handler [req]
+(defn get-marks-rss-handler [req]
   (let [identity (:identity req)
-        stands (db/list-stands identity)
+        site (get-site req)
+        cfg (config/get-config site)
+        marks (db/list-marks identity site)
         base-url config/external-base-url
-        rss (stands->rss stands base-url)]
+        rss (marks->rss marks base-url site cfg)]
     {:status 200
      :headers {"Content-Type" "application/rss+xml"
                "Content-Disposition" "inline"}
      :body rss}))
 
-(defn get-stands-kml-handler [req]
+(defn get-marks-kml-handler [req]
   (let [identity (:identity req)
-        stands (db/list-stands identity)
-        kml (stands->kml stands)]
+        site (get-site req)
+        cfg (config/get-config site)
+        marks (db/list-marks identity site)
+        kml (marks->kml marks cfg)
+        filename (str (str/lower-case (:mark-name-plural cfg)) ".kml")]
     {:status 200
      :headers {"Content-Type" "application/vnd.google-earth.kml+xml"
-               "Content-Disposition" "attachment; filename=\"stands.kml\""}
+               "Content-Disposition"
+               (str "attachment; filename=\"" filename "\"")}
      :body kml}))
-
 (defn not-found [& _]
   (api-response 404 {:error "Not Found"}))
+
+(defn get-site-feed-handler [req]
+  (let [filename (get-in req [:path-params :filename])
+        site (get-site req)
+        cfg (config/get-config site)
+        plural-name (str/lower-case (:mark-name-plural cfg))
+        allowed-filenames #{"feed.rss" "feed.kml" "feed.csv"
+                            (str plural-name ".rss")
+                            (str plural-name ".kml")
+                            (str plural-name ".csv")}
+        lower-filename (str/lower-case (or filename ""))]
+    (if (allowed-filenames lower-filename)
+      (cond
+        (str/ends-with? lower-filename ".rss") (get-marks-rss-handler req)
+        (str/ends-with? lower-filename ".kml") (get-marks-kml-handler req)
+        (str/ends-with? lower-filename ".csv") (get-marks-csv-handler req)
+        :else (not-found req))
+      (not-found req))))
 
 (defn ping-handler [_]
   (api-response 200 "pong"))
@@ -156,18 +200,19 @@
 
 (def UserSchema logic/UserSchema)
 
-(def StandSchema logic/StandSchema)
+(def MarkSchema logic/MarkSchema)
 
 (defn register-handler [req]
   (let [id (or (get-in req [:params :id]) (common-utils/random-uuid-str))
         login (get-in req [:params :login])
         password (get-in req [:params :password])
         email (get-in req [:params :email])
-        user-data {:login login :password password :email email :enabled? true}]
+        site (or (get-in req [:params :site]) (get-site req))
+        user-data {:login login :password password :email email :enabled? true :site site}]
     (if-not (m/validate UserSchema user-data)
       (api-response 400 {:status "failed"
                          :errors (me/humanize (m/explain UserSchema user-data))})
-      (if (db/get-user login)
+      (if (db/get-user login site)
         (api-response 403 {:status "failed" :errors {:login ["not available"]}})
         (do
           (db/save-user (assoc
@@ -176,92 +221,100 @@
                           :password (hashers/derive password)))
           (api-response 201 {:login login}))))))
 
- (defn get-stands-handler
+ (defn get-marks-handler
   [req]
-  (tel/log! :info {:get-stands req})
+  (tel/log! :info {:get-marks req})
   (let [identity (:identity req)
         params (:params req)
+        site (get-site req)
         lat (some-> (get params :lat) Double/parseDouble)
         lon (some-> (get params :lon) Double/parseDouble)
         since (get params :since)
-        stands (db/list-stands identity {:lat lat
-                                         :lon lon
-                                         :radius logic/search-radius-km})
-        results (mapv common-stand/select-stand-fields stands)
+        marks (db/list-marks identity site {:lat lat
+                                             :lon lon
+                                             :radius logic/search-radius-km})
+        results (mapv common-mark/select-mark-fields marks)
         now (common-utils/get-current-timestamp)
         deleted-ids (if since
-                      (db/list-deletions identity since {:lat lat :lon lon :radius logic/search-radius-km})
+                      (db/list-deletions identity site since {:lat lat :lon lon :radius logic/search-radius-km})
                       [])]
-    (api-response 200 {:stands results :deleted-ids deleted-ids :new-sync now})))
+    (api-response 200 {:marks results :deleted-ids deleted-ids :new-sync now})))
 
-(defn get-stand-handler [req]
-  (tel/log! :info {:get-stand req})
+(defn get-mark-handler [req]
+  (tel/log! :info {:get-mark req})
   (let [identity (:identity req)
         id (get-in req [:path-params :id])
-        stand (db/get-stand id identity)]
-    (if stand
-      (api-response 200 (common-stand/select-stand-fields stand))
+        site (get-site req)
+        mark (db/get-mark id identity site)]
+    (if mark
+      (api-response 200 (common-mark/select-mark-fields mark))
       (not-found))))
 
-(defn create-stand-handler [req]
-  (let [stand (-> (json/read-str (rur/body-string req) :key-fn keyword)
-                  common-stand/select-stand-fields
+(defn create-mark-handler [req]
+  (let [mark (-> (json/read-str (rur/body-string req) :key-fn keyword)
+                  common-mark/select-mark-fields
                   (dissoc :creator))
-        id (or (:id stand) (:xt/id stand) (common-utils/random-uuid-str))
-        existing-stand (when id (db/get-stand-unfiltered id))
-        stand-to-validate (dissoc stand :id :xt/id)]
-    (tel/log! :info {:create-stand stand})
-    (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
-      (api-response 403 {:error "Forbidden: You do not own this stand"})
-      (if-not (m/validate StandSchema stand-to-validate)
+        id (or (:id mark) (:xt/id mark) (common-utils/random-uuid-str))
+        site (or (:site mark) (get-site req))
+        existing-mark (when id (db/get-mark-unfiltered id site))
+        mark-to-validate (assoc (dissoc mark :id :xt/id) :site site)]
+    (tel/log! :info {:create-mark mark})
+    (if (and existing-mark (not= (:creator existing-mark) (:identity req)))
+      (api-response 403 {:error "Forbidden: You do not own this mark"})
+      (if-not (m/validate MarkSchema mark-to-validate)
         (api-response 400 {:status "failed"
-                           :errors (me/humanize (m/explain StandSchema stand-to-validate))})
-        (let [stand (assoc
-                      stand
+                           :errors (me/humanize (m/explain MarkSchema mark-to-validate))})
+        (let [mark (assoc
+                      mark
                       :xt/id id
-                      :creator (or (:creator existing-stand) (:identity req)))
-              stand (dissoc stand :id)]
-          (db/save-stand stand)
-          (api-response 201 (assoc stand :id id)))))))
+                      :site site
+                      :creator (or (:creator existing-mark) (:identity req)))
+              mark (dissoc mark :id)]
+          (db/save-mark mark)
+          (api-response 201 (assoc mark :id id)))))))
 
-(defn update-stand-handler [req]
+(defn update-mark-handler [req]
   (let [id (or (get-in req [:path-params :id])
                (get-in req [:params :id]))
-        stand (-> (json/read-str (rur/body-string req) :key-fn keyword)
-                  common-stand/select-stand-fields
+        mark (-> (json/read-str (rur/body-string req) :key-fn keyword)
+                  common-mark/select-mark-fields
                   (dissoc :creator))
-        existing-stand (when id (db/get-stand-unfiltered id))]
-    (tel/log! :info {:update-stand stand})
-    (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
-      (api-response 403 {:error "Forbidden: You do not own this stand"})
-      (let [stand-to-validate (dissoc stand :id :xt/id)]
-        (if-not (m/validate StandSchema stand-to-validate)
+        site (or (:site mark) (get-site req))
+        existing-mark (when id (db/get-mark-unfiltered id site))]
+    (tel/log! :info {:update-mark mark})
+    (if (and existing-mark (not= (:creator existing-mark) (:identity req)))
+      (api-response 403 {:error "Forbidden: You do not own this mark"})
+      (let [mark-to-validate (assoc (dissoc mark :id :xt/id) :site site)]
+        (if-not (m/validate MarkSchema mark-to-validate)
           (api-response 400 {:status "failed"
-                             :errors (me/humanize (m/explain StandSchema stand-to-validate))})
-          (let [final-id (or id (:id stand) (:xt/id stand)
+                             :errors (me/humanize (m/explain MarkSchema mark-to-validate))})
+          (let [final-id (or id (:id mark) (:xt/id mark)
                            (common-utils/random-uuid-str))
-                stand (assoc
-                        stand
+                mark (assoc
+                        mark
                         :xt/id final-id
-                        :creator (or (:creator existing-stand) (:identity req)))
-                stand (dissoc stand :id)]
-            (db/save-stand stand)
-            (api-response 200 (assoc stand :id final-id))))))))
+                        :site site
+                        :creator (or (:creator existing-mark) (:identity req)))
+                mark (dissoc mark :id)]
+            (db/save-mark mark)
+            (api-response 200 (assoc mark :id final-id))))))))
 
-(defn delete-stand-handler [req]
-  (tel/log! :info {:delete-stand req})
+(defn delete-mark-handler [req]
+  (tel/log! :info {:delete-mark req})
   (let [id (get-in req [:path-params :id])
-        existing-stand (db/get-stand-unfiltered id)]
-    (if (and existing-stand (not= (:creator existing-stand) (:identity req)))
-      (api-response 403 {:error "Forbidden: You do not own this stand"})
+        site (get-site req)
+        existing-mark (db/get-mark-unfiltered id site)]
+    (if (and existing-mark (not= (:creator existing-mark) (:identity req)))
+      (api-response 403 {:error "Forbidden: You do not own this mark"})
       (do
-        (db/delete-stand id)
+        (db/delete-mark id)
         (api-response 200 {:message (format "'%s' deleted" id)})))))
 
-(defn vote-stand-handler [req]
-  (tel/log! :info {:vote-stand req})
+(defn vote-mark-handler [req]
+  (tel/log! :info {:vote-mark req})
   (let [id (get-in req [:path-params :id])
         identity (:identity req)
+        site (get-site req)
         body (json/read-str (rur/body-string req) :key-fn keyword)
         value (:value body)]
     (if (not identity)
@@ -269,5 +322,5 @@
       (if (not (contains? #{1 -1 0} value))
         (api-response 400 {:error "Invalid vote value"})
         (do
-          (db/vote-stand id identity value)
+          (db/vote-mark id identity value site)
           (api-response 200 {:status "success"}))))))

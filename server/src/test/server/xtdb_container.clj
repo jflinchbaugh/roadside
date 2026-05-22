@@ -21,7 +21,7 @@
     (let [tables (->> (xt/q node '(from :xt/tables [table-name]))
                       (map :table-name)
                       (remove #(str/starts-with? (name %) "xt"))
-                      (into #{:users :stands :votes}))]
+                      (into #{:users :marks :votes}))]
       (doseq [table tables]
         (let [docs (xt/q node (list 'from table '[xt/id]))]
           (when (seq docs)

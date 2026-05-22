@@ -1,0 +1,19 @@
+{
+  "name": "{app-name}",
+  "short_name": "{app-name}",
+  "description": "{app-description}",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4a7c44",
+  "icons": [],
+  "shortcuts": [
+    {
+      "name": "Add {mark-name-singular}",
+      "short_name": "Add",
+      "description": "Open the form to add a new {mark-name-singular-lc}",
+      "url": "./?action=add",
+      "icons": []
+    }
+  ]
+}

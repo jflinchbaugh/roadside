@@ -9,7 +9,7 @@
   (let [query-params {:q address :format "json" :limit 1}
         {:keys [status body error]} @(hkc/get nominatim-search-url
                                                {:query-params query-params
-                                                :headers {"User-Agent" "RoadsideStandsApp/1.0"}})]
+                                                :headers {"User-Agent" "MapMarksApp/1.0"}})]
     (if (or error (not= status 200))
       {:error (str "Nominatim error: " (or error status))}
       {:data (json/read-str body :key-fn keyword)})))
@@ -18,7 +18,7 @@
   (let [query-params {:lat lat :lon lon :format "json"}
         {:keys [status body error]} @(hkc/get nominatim-reverse-url
                                                {:query-params query-params
-                                                :headers {"User-Agent" "RoadsideStandsApp/1.0"}})]
+                                                :headers {"User-Agent" "MapMarksApp/1.0"}})]
     (if (or error (not= status 200))
       {:error (str "Nominatim error: " (or error status))}
       {:data (json/read-str body :key-fn keyword)})))

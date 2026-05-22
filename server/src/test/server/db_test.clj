@@ -3,7 +3,7 @@
             [server.db :as db]
             [server.xtdb-container :as xtn]
             [xtdb.api :as xt]
-            [com.hjsoft.roadside.common.utils :as common-utils]))
+            [com.hjsoft.mapmarks.common.utils :as common-utils]))
 
 (defn with-db [f]
   (xtn/with-xtdb-client
@@ -13,26 +13,28 @@
 
 (use-fixtures :each with-db)
 
-(deftest list-stands-duplication-test
+(deftest list-marks-duplication-test
   (let [user-id "test-user"
-        stand-id "test-stand"]
-    ;; Setup data: one user with two records, and one stand
+        mark-id "test-mark"
+        site "test"]
+    ;; Setup data: one user with two records, and one mark
     (xt/execute-tx @db/node
-                   [[:put-docs :users {:xt/id "u1" :login user-id :enabled? true}]
-                    [:put-docs :users {:xt/id "u2" :login user-id :enabled? true}]
-                    [:put-docs :stands {:xt/id stand-id
+                   [[:put-docs :users {:xt/id "u1" :login user-id :enabled? true :site site}]
+                    [:put-docs :users {:xt/id "u2" :login user-id :enabled? true :site site}]
+                    [:put-docs :marks {:xt/id mark-id
                                         :creator user-id
-                                        :name "Test Stand"
+                                        :site site
+                                        :name "Test Mark"
                                         :lat 40.0 :lon -76.0
                                         :shared? true
                                         :updated (common-utils/get-current-timestamp)}]])
 
-    (testing "list-stands (default) should not produce duplicate entries"
-      (let [stands (db/list-stands user-id)]
-        (is (= 1 (count stands))
-            (str "Expected 1 stand, got " (count stands)))))
+    (testing "list-marks (default) should not produce duplicate entries"
+      (let [marks (db/list-marks user-id site)]
+        (is (= 1 (count marks))
+            (str "Expected 1 mark, got " (count marks)))))
 
-    (testing "list-stands (with location) should not produce duplicate entries"
-      (let [stands (db/list-stands user-id {:lat 40.0 :lon -76.0 :radius 10.0})]
-        (is (= 1 (count stands))
-            (str "Expected 1 stand in radius, got " (count stands)))))))
+    (testing "list-marks (with location) should not produce duplicate entries"
+      (let [marks (db/list-marks user-id site {:lat 40.0 :lon -76.0 :radius 10.0})]
+        (is (= 1 (count marks))
+            (str "Expected 1 mark in radius, got " (count marks)))))))
