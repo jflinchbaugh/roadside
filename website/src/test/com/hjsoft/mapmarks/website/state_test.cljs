@@ -110,3 +110,21 @@
       (let [state (sut/initial-app-state)]
         (is (= [{:id "1" :tags ["apple"]}] (:marks state)))
         (is (= [10.0 20.0] (:map-center state)))))))
+
+(deftest initial-app-state-config-effect-test
+  (testing "initial-app-state uses different keys depending on config/site"
+    (testing "when site is potholes, loads potholes keys"
+      (with-redefs [config/config (assoc config/config :site "potholes")
+                    storage/get-item (fn [k]
+                                       (when (= k "potholes-marks")
+                                         [{:id "p1" :tags ["pothole"]}]))]
+        (let [state (sut/initial-app-state)]
+          (is (= [{:id "p1" :tags ["pothole"]}] (:marks state))))))
+
+    (testing "when site is coffee-marks, loads coffee-marks keys"
+      (with-redefs [config/config (assoc config/config :site "coffee-marks")
+                    storage/get-item (fn [k]
+                                       (when (= k "coffee-marks-marks")
+                                         [{:id "c1" :tags ["coffee"]}]))]
+        (let [state (sut/initial-app-state)]
+          (is (= [{:id "c1" :tags ["coffee"]}] (:marks state))))))))

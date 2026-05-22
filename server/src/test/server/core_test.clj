@@ -867,4 +867,261 @@
       (is (= 200 (:status resp-rss-gen)))
       (is (= 404 (:status resp-invalid))))))
 
+(deftest server-config-effect-test
+  (testing "Server-side site configs customize feed routing and content"
+    (xt/execute-tx
+     @db/node
+     [[:put-docs :users {:xt/id "u-potholes-alice"
+                         :login "alice"
+                         :password (hashers/derive "secret")
+                         :enabled? true
+                         :site "potholes"}]
+      [:put-docs :users {:xt/id "u-coffee-alice"
+                         :login "alice"
+                         :password (hashers/derive "secret")
+                         :enabled? true
+                         :site "coffee-marks"}]])
+    (let [auth-hdr "Basic YWxpY2U6c2VjcmV0"
+          request (fn [site path]
+                    (core/app {:request-method :get
+                               :scheme :http
+                               :server-name "localhost"
+                               :server-port 80
+                               :uri (str "/mapmarks/s/" site path)
+                               :headers {"authorization" auth-hdr}}))
+          mock-configs {"potholes" {:app-name "Pothole Derby"
+                                    :app-description "Potholes list"
+                                    :mark-name-singular "Pothole"
+                                    :mark-name-plural "Potholes"
+                                    :tags-name-singular "Tag"
+                                    :tags-name-plural "Tags"}
+                        "coffee-marks" {:app-name "Coffee Shops"
+                                        :app-description "Coffee shops list"
+                                        :mark-name-singular "Shop"
+                                        :mark-name-plural "Shops"
+                                        :tags-name-singular "Tag"
+                                        :tags-name-plural "Tags"}}]
+      (with-redefs [config/site-configs mock-configs]
+        (testing "Potholes site configuration routing"
+          (is (= 200 (:status (request "potholes" "/potholes.kml"))))
+          (is (= 404 (:status (request "potholes" "/shops.kml"))))
+          (is (= 200 (:status (request "potholes" "/feed.kml")))))
 
+        (testing "Coffee Shops site configuration routing"
+          (is (= 200 (:status (request "coffee-marks" "/shops.kml"))))
+          (is (= 404 (:status (request "coffee-marks" "/potholes.kml"))))
+          (is (= 200 (:status (request "coffee-marks" "/feed.kml")))))
+
+        (testing "Potholes feed content customization"
+          (let [resp (request "potholes" "/feed.rss")
+                body (:body resp)]
+            (is (= 200 (:status resp)))
+            (is (str/includes? body "<title>Pothole Derby</title>"))
+            (is (str/includes?
+                 body
+                 "<description>Potholes list</description>"))))
+
+        (testing "Coffee Shops feed content customization"
+          (let [resp (request "coffee-marks" "/feed.rss")
+                body (:body resp)]
+            (is (= 200 (:status resp)))
+            (is (str/includes? body "<title>Coffee Shops</title>"))
+            (is (str/includes?
+                 body
+                 "<description>Coffee shops list</description>"))))))))
+
+(deftest csv-export-config-test
+  (testing "CSV export headers and filenames are customized by site config"
+    (xt/execute-tx
+     @db/node
+     [[:put-docs :users {:xt/id "u-csv-alice"
+                         :login "alice"
+                         :password (hashers/derive "secret")
+                         :enabled? true
+                         :site "csv-site"}]])
+    (let [auth-hdr "Basic YWxpY2U6c2VjcmV0"
+          request (fn [site path]
+                    (core/app {:request-method :get
+                               :scheme :http
+                               :server-name "localhost"
+                               :server-port 80
+                               :uri (str "/mapmarks/s/" site path)
+                               :headers {"authorization" auth-hdr}}))
+          mock-configs {"csv-site" {:app-name "CSV App"
+                                    :app-description "CSV Desc"
+                                    :mark-name-singular "Pothole"
+                                    :mark-name-plural "Potholes"
+                                    :tags-name-singular "Label"
+                                    :tags-name-plural "Labels"}}]
+      (with-redefs [config/site-configs mock-configs]
+        (let [resp (request "csv-site" "/feed.csv")
+              headers (:headers resp)
+              body (:body resp)]
+          (is (= 200 (:status resp)))
+          (is (str/includes? (get headers "Content-Disposition")
+                             "filename=\"potholes.csv\""))
+          (is (str/includes?
+               body
+               "Name,Latitude,Longitude,Address,Town,State,Labels,Notes")))))))
+
+(deftest kml-export-config-test
+  (testing "KML export layouts are customized by site config"
+    (xt/execute-tx
+     @db/node
+     [[:put-docs :users {:xt/id "u-kml-alice"
+                         :login "alice"
+                         :password (hashers/derive "secret")
+                         :enabled? true
+                         :site "kml-site"}]])
+    (let [auth-hdr "Basic YWxpY2U6c2VjcmV0"
+          request (fn [site path]
+                    (core/app {:request-method :get
+                               :scheme :http
+                               :server-name "localhost"
+                               :server-port 80
+                               :uri (str "/mapmarks/s/" site path)
+                               :headers {"authorization" auth-hdr}}))
+          mock-configs {"kml-site" {:app-name "Custom KML App"
+                                    :app-description "Custom KML Desc"
+                                    :mark-name-singular "Shop"
+                                    :mark-name-plural "Shops"
+                                    :tags-name-singular "Label"
+                                    :tags-name-plural "Labels"}}]
+      (with-redefs [config/site-configs mock-configs]
+        (db/save-mark {:xt/id "kml-mark-1"
+                       :name nil
+                       :address "123 Main St"
+                       :lat 40.0
+                       :lon -76.0
+                       :tags ["coffee" "pastry"]
+                       :notes "Great espresso"
+                       :creator "alice"
+                       :shared? true
+                       :site "kml-site"})
+        (let [resp (request "kml-site" "/feed.kml")
+              body (:body resp)]
+          (is (= 200 (:status resp)))
+          (is (str/includes? body "<name>Custom KML App</name>"))
+          (is (str/includes? body "<name>Shop</name>"))
+          (is (str/includes? body "Labels: coffee, pastry"))
+          (is (str/includes? body "Notes: Great espresso")))))))
+
+(deftest rss-export-config-test
+  (testing "RSS export layouts and external URL are customized by config"
+    (xt/execute-tx
+     @db/node
+     [[:put-docs :users {:xt/id "u-rss-alice"
+                         :login "alice"
+                         :password (hashers/derive "secret")
+                         :enabled? true
+                         :site "rss-site"}]])
+    (let [auth-hdr "Basic YWxpY2U6c2VjcmV0"
+          request (fn [site path]
+                    (core/app {:request-method :get
+                               :scheme :http
+                               :server-name "localhost"
+                               :server-port 80
+                               :uri (str "/mapmarks/s/" site path)
+                               :headers {"authorization" auth-hdr}}))
+          mock-configs {"rss-site" {:app-name "Custom RSS App"
+                                    :app-description "Custom RSS Desc"
+                                    :mark-name-singular "Shop"
+                                    :mark-name-plural "Shops"
+                                    :tags-name-singular "Label"
+                                    :tags-name-plural "Labels"}}]
+      (with-redefs [config/site-configs mock-configs
+                    config/external-base-url "https://test-external.com/"]
+        (db/save-mark {:xt/id "rss-mark-1"
+                       :name nil
+                       :address "123 Main St"
+                       :lat 40.0
+                       :lon -76.0
+                       :tags []
+                       :notes "No tags name fallback"
+                       :creator "alice"
+                       :shared? true
+                       :site "rss-site"})
+        (let [resp (request "rss-site" "/feed.rss")
+              body (:body resp)]
+          (is (= 200 (:status resp)))
+          (is (str/includes?
+               body
+               "href=\"https://test-external.com/s/rss-site/feed.rss\""))
+          (is (str/includes? body "<title>Shop</title>"))
+          (is (str/includes?
+               body
+               "<link>https://test-external.com/#shop=rss-mark-1</link>")))))))
+
+(deftest migration-site-fallback-test
+  (testing "Database migration defaults nil site values to config/site"
+    (xt/execute-tx
+     @db/node
+     [[:put-docs :marks {:xt/id "mig-m1"
+                         :name "Mig Mark"
+                         :lat 40.0
+                         :lon -76.0
+                         :creator "alice"
+                         :site nil}]
+      [:put-docs :users {:xt/id "mig-u1"
+                         :login "alice"
+                         :password "secret"
+                         :email "alice@example.com"
+                         :enabled? true
+                         :site nil}]
+      [:put-docs :votes {:xt/id "mig-v1"
+                         :mark-id "mig-m1"
+                         :user-id "alice"
+                         :value 1
+                         :site nil}]])
+    (with-redefs [config/site "mig-fallback-site"]
+      (db/migrate!)
+      (let [migrated-mark (db/get-mark-unfiltered
+                           "mig-m1" "mig-fallback-site")
+            migrated-user (first
+                           (xt/q @db/node
+                                 ['(fn [uid site]
+                                     (-> (from :users [{:xt/id uid}
+                                                      {:site s}
+                                                      site])
+                                         (where (= s site))))
+                                  "mig-u1" "mig-fallback-site"]))
+            migrated-vote (first
+                           (xt/q @db/node
+                                 ['(fn [vid site]
+                                     (-> (from :votes [{:xt/id vid}
+                                                      {:site s}
+                                                      site])
+                                         (where (= s site))))
+                                  "mig-v1" "mig-fallback-site"]))]
+        (is (= "mig-fallback-site" (:site migrated-mark)))
+        (is (= "mig-fallback-site" (:site migrated-user)))
+        (is (= "mig-fallback-site" (:site migrated-vote)))))))
+
+(deftest config-env-var-test
+  (testing "Config variables initialize from environment variables"
+    (try
+      (with-redefs [config/env (fn [name]
+                                 (case name
+                                   "BASE_URL" "/env-base"
+                                   "SITE" "env-site"
+                                   "EXTERNAL_BASE_URL" "https://env-ext.com"
+                                   "APP_NAME" "Env App"
+                                   "APP_DESCRIPTION" "Env Desc"
+                                   "MARK_NAME_SINGULAR" "EnvSing"
+                                   "MARK_NAME_PLURAL" "EnvPlur"
+                                   "TAGS_NAME_SINGULAR" "EnvTag"
+                                   "TAGS_NAME_PLURAL" "EnvTags"
+                                   nil))]
+        (require 'server.config :reload)
+        (is (= "/env-base" config/base-url))
+        (is (= "env-site" config/site))
+        (is (= "https://env-ext.com" config/external-base-url))
+        (is (= {:app-name "Env App"
+                :app-description "Env Desc"
+                :mark-name-singular "EnvSing"
+                :mark-name-plural "EnvPlur"
+                :tags-name-singular "EnvTag"
+                :tags-name-plural "EnvTags"}
+               config/default-site-config)))
+      (finally
+        (require 'server.config :reload)))))
