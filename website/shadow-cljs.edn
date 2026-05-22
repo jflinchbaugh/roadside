@@ -6,7 +6,7 @@
                 [com.taoensso/telemere "1.2.1"]
                 [cider/cider-nrepl "0.59.0"]
                 [binaryage/devtools "1.0.7"]
-                [refactor-nrepl "3.11.0"]
+                [refactor-nrepl "3.13.0"]
                 [cljs-http "0.1.49"]
                 [http-kit "2.8.1"]
                 [metosin/malli "0.20.1"]]
