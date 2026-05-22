@@ -1,5 +1,7 @@
 # MapMarks
 
+A generic app for tracking and sharing map bookmarks.
+
 ## Modules
 - website - single-page application
 - server - backend for sync and sharing
