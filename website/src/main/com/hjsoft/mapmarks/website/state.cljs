@@ -8,6 +8,9 @@
 
 (def map-home [40.0379 -76.3055])
 
+(def legacy-prefix (:site config/config))
+
+
 (def app-context (create-context))
 
 (defn use-app []
@@ -36,7 +39,7 @@
 (defn- get-stored-item [suffix default-val]
   (let [site-name (:site config/config)
         namespaced-key (str site-name "-" suffix)
-        legacy-key (str "mapmarks-" suffix)
+        legacy-key (str legacy-prefix "-" suffix)
         val (storage/get-item namespaced-key)]
     (if (some? val)
       val

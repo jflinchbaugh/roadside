@@ -35,14 +35,17 @@
 
 (deftest save-local-data-test
   (testing "save-local-data! persists all provided fields to storage"
-    (let [saved (atom {})]
+    (let [saved (atom {})
+          site (:site config/config)]
       (with-redefs [storage/set-item! (fn [k v] (swap! saved assoc k v))]
-        (sut/save-local-data! ["mark1"] {:user "alice"} [10 20] 15 "2026-03-21T12:00:00Z")
-        (is (= ["mark1"] (get @saved "mapmarks-marks")))
-        (is (= {:user "alice"} (get @saved "mapmarks-settings")))
-        (is (= [10 20] (get @saved "mapmarks-map-center")))
-        (is (= 15 (get @saved "mapmarks-map-zoom")))
-        (is (= "2026-03-21T12:00:00Z" (get @saved "mapmarks-last-sync")))))))
+        (sut/save-local-data! ["mark1"] {:user "alice"}
+                              [10 20] 15 "2026-03-21T12:00:00Z")
+        (is (= ["mark1"] (get @saved (str site "-marks"))))
+        (is (= {:user "alice"} (get @saved (str site "-settings"))))
+        (is (= [10 20] (get @saved (str site "-map-center"))))
+        (is (= 15 (get @saved (str site "-map-zoom"))))
+        (is (= "2026-03-21T12:00:00Z"
+               (get @saved (str site "-last-sync"))))))))
 
 (deftest create-mark-test
   (async done

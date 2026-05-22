@@ -98,14 +98,17 @@
         (is (= #{"Active" "Expired"} (set (map :name result))))))))
 
 (deftest initial-app-state-fallback-test
-  (testing "initial-app-state falls back to legacy mapmarks-"
+  (testing (str "initial-app-state falls back to legacy "
+                sut/legacy-prefix "-")
     (with-redefs [config/config (assoc config/config :site "potholes")
                   storage/get-item
                   (fn [k]
                     (cond
                       (= k "potholes-marks") nil
-                      (= k "mapmarks-marks") [{:id "1" :tags ["Apple"]}]
-                      (= k "mapmarks-map-center") [10.0 20.0]
+                      (= k (str sut/legacy-prefix "-marks"))
+                      [{:id "1" :tags ["Apple"]}]
+                      (= k (str sut/legacy-prefix "-map-center"))
+                      [10.0 20.0]
                       :else nil))]
       (let [state (sut/initial-app-state)]
         (is (= [{:id "1" :tags ["apple"]}] (:marks state)))
