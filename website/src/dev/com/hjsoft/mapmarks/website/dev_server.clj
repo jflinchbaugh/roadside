@@ -2,7 +2,7 @@
   (:require [org.httpkit.client :as http]
             [clojure.string :as str]))
 
-(def target "http://localhost:7000/mapmarks")
+(def target "http://localhost:7000/roadside")
 
 (defn handler [req]
   (let [uri (:uri req)]
