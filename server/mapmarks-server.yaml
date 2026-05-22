@@ -21,6 +21,8 @@ spec:
           value: 7000
         - name: dbhost
           value: xtdb
+        - name: BASE_URL
+          value: /roadside
         - name: EXTERNAL_BASE_URL
           value: https://www.hjsoft.com/roadside/
   volumes:
