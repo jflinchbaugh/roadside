@@ -1,7 +1,7 @@
 # MapMarks Web - ClojureScript + Helix Single Page App
 
 A single page application built with ClojureScript and Helix (React wrapper).
-It works offline.
+It works offline or connects to the backend server.
 
 ## What's Built
 
