@@ -2,6 +2,7 @@
 website/node_modules
 website/public/js
 website/public/index.html
+website/public/manifest.json
 website/out
 server/target
-/website/public/manifest.json
+version.cljs
