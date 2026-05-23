@@ -1,21 +1,21 @@
 (ns com.hjsoft.mapmarks.website.config)
 
-;; These settings can be configured at compile-time using shadow-cljs :closure-defines
-;; or by modifying this file directly.
+;; These settings must be configured at compile-time
+;; using shadow-cljs :closure-defines
 
-(goog-define APP_NAME "MapMarks")
+(goog-define APP_NAME "Map Marks")
 (goog-define SITE "mapmarks")
 (goog-define APP_DESCRIPTION "Find and share interesting locations")
 ;; string emoji or image url
 (goog-define APP_LOGO "\uD83D\uDCCD") ;; pin emoji
 (goog-define APP_ICON "favicon.ico")
 (goog-define DEFAULT_EXPIRATION_DAYS 30)
+(goog-define TAGS_NAME_ARTICLE "a")
 (goog-define TAGS_NAME_SINGULAR "Tag")
 (goog-define TAGS_NAME_PLURAL "Tags")
-(goog-define TAGS_NAME_ARTICLE "a")
+(goog-define MARK_NAME_ARTICLE "a")
 (goog-define MARK_NAME_SINGULAR "Mark")
 (goog-define MARK_NAME_PLURAL "Marks")
-(goog-define MARK_NAME_ARTICLE "a")
 (goog-define DISABLE_TAGS false)
 (goog-define DISABLE_NAME false)
 (goog-define FEEDBACK_EMAIL "mapmarks@hjsoft.com")

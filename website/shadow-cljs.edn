@@ -22,6 +22,22 @@
     {:main {:init-fn com.hjsoft.mapmarks.website.browser-main/init}}
     :devtools {:preloads [devtools.preload]}
     :compiler-options {:source-map true}
+    :closure-defines
+    {com.hjsoft.mapmarks.website.config/APP_NAME "Map Marks"
+     com.hjsoft.mapmarks.website.config/SITE "mapmarks"
+     com.hjsoft.mapmarks.website.config/APP_DESCRIPTION "Find and share your interesting locations."
+     com.hjsoft.mapmarks.website.config/APP_LOGO "\uD83D\uDCCD" ;; pin emoji
+     com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS 30
+     com.hjsoft.mapmarks.website.config/TAGS_NAME_ARTICLE "a"
+     com.hjsoft.mapmarks.website.config/TAGS_NAME_SINGULAR "Tag"
+     com.hjsoft.mapmarks.website.config/TAGS_NAME_PLURAL "Tags"
+     com.hjsoft.mapmarks.website.config/MARK_NAME_ARTICLE "a"
+     com.hjsoft.mapmarks.website.config/MARK_NAME_SINGULAR "Mark"
+     com.hjsoft.mapmarks.website.config/MARK_NAME_PLURAL "Marks"
+     com.hjsoft.mapmarks.website.config/DISABLE_NAME false
+     com.hjsoft.mapmarks.website.config/DISABLE_TAGS false
+     com.hjsoft.mapmarks.website.config/FEEDBACK_EMAIL "mapmarks.hjsoft.com"
+     }
     :build-hooks
     [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]
      [com.hjsoft.mapmarks.website.build-hooks/version-index-resources]]}
