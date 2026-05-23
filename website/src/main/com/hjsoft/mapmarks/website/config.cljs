@@ -12,12 +12,14 @@
 (goog-define TAGS_NAME_SINGULAR "Product")
 (goog-define TAGS_NAME_PLURAL "Products")
 (goog-define TAGS_NAME_ARTICLE "a")
-(goog-define MARK_NAME_SINGULAR "Stand")
-(goog-define MARK_NAME_PLURAL "Stands")
+(goog-define TAGS_NAME_SINGULAR "Tag")
+(goog-define TAGS_NAME_PLURAL "Tags")
 (goog-define MARK_NAME_ARTICLE "a")
+(goog-define MARK_NAME_SINGULAR "Mark")
+(goog-define MARK_NAME_PLURAL "Marks")
 (goog-define DISABLE_TAGS false)
 (goog-define DISABLE_NAME false)
-(goog-define FEEDBACK_EMAIL "roadside@hjsoft.com")
+(goog-define FEEDBACK_EMAIL "mapmarks@hjsoft.com")
 
 (def config
   {:app-name APP_NAME
