@@ -4,6 +4,7 @@
             ["@testing-library/react" :as tlr]
             [com.hjsoft.mapmarks.website.ui.layout :as layout]
             [com.hjsoft.mapmarks.website.state :as state]
+            [com.hjsoft.mapmarks.website.config :as config]
             [goog.object :as gobj]))
 
 ;; Automatically unmount components after each test
@@ -50,3 +51,10 @@
           container (.-container res)
           title (tlr/getByText container "MapMarks")]
         (is (some? title) "Should render the main header title"))))
+
+(deftest config-icon-test
+  (testing "config has :app-icon configured"
+    (is (some? (:app-icon config/config))
+        "config map should contain :app-icon")
+    (is (= "favicon.ico" (:app-icon config/config))
+        "default :app-icon should be favicon.ico")))

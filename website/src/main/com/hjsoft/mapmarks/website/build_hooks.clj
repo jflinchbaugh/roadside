@@ -15,11 +15,15 @@
         closure-defines (get-in state [:shadow.build/config :closure-defines])
         app-name (get closure-defines 'com.hjsoft.mapmarks.website.config/APP_NAME "MapMarks")
         app-description (get closure-defines 'com.hjsoft.mapmarks.website.config/APP_DESCRIPTION "Find and share interesting locations")
+        app-icon (get closure-defines
+                      'com.hjsoft.mapmarks.website.config/APP_ICON
+                      "favicon.ico")
         mark-name-singular (get closure-defines 'com.hjsoft.mapmarks.website.config/MARK_NAME_SINGULAR "Mark")
         site (get closure-defines 'com.hjsoft.mapmarks.website.config/SITE "mapmarks")
         replacements {"ts" ts
                       "app-name" app-name
                       "app-description" app-description
+                      "app-icon" app-icon
                       "mark-name-singular" mark-name-singular
                       "mark-name-singular-lc" (str/lower-case (str mark-name-singular))
                       "site" site}]
