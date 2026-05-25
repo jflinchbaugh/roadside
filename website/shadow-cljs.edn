@@ -51,14 +51,16 @@
     :preloads [node-init]
     :closure-defines {com.hjsoft.mapmarks.website.ui.forms.mark/NODE_TEST true
                       com.hjsoft.mapmarks.website.ui.forms.inputs/NODE_TEST true
-                      node-init/ENABLE_JSDOM true}}
+                      node-init/ENABLE_JSDOM true}
+   :build-hooks [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]]}
 
   :test-browser
   {:target :browser-test
-    :test-dir "out/browser/test"
-    :autorun true
-    :devtools {:http-port 3021
-               :http-root "out/browser/test"}}
+   :test-dir "out/browser/test"
+   :autorun true
+   :devtools {:http-port 3021
+              :http-root "out/browser/test"}
+   :build-hooks [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]]}
 
   :coffee-marks
   {:target :browser
