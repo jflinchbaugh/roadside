@@ -19,10 +19,10 @@
                                login password email enabled?])))
           username site])))
 
-(defn get-mark-unfiltered [id site]
+(defn get-mark-any-site [id]
   (first
    (xt/q @node
-         ['(fn [id-param site-param]
+         ['(fn [id-param]
              (-> (from :marks
                        [{:xt/id sid}
                         {:site s}
@@ -40,8 +40,8 @@
                         updated
                         lat
                         lon])
-                 (where (and (= sid id-param) (= s site-param)))))
-          id site])))
+                 (where (= sid id-param))))
+          id])))
 
 (defn get-mark [id-param user-id site]
   (first

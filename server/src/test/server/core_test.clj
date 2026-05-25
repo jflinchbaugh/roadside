@@ -196,7 +196,7 @@
         (testing "Delete mark"
           (let [del-resp (handlers/delete-mark-handler (with-test-site {:path-params {:id id} :identity "alice"}))]
             (is (= 200 (:status del-resp)))
-            (is (nil? (db/get-mark-unfiltered id test-site)))))
+            (is (nil? (db/get-mark-any-site id)))))
 
         (testing "Delete non-existent mark"
           (let [del-resp (handlers/delete-mark-handler (with-test-site {:path-params {:id "non-existent"} :identity "alice"}))]
@@ -523,7 +523,7 @@
     (let [old-mark {:xt/id "old-1" :name "Old" :coordinate "40.0, -76.0" :creator "alice" :site test-site}]
       (xt/execute-tx @db/node [[:put-docs :marks old-mark]])
       (db/migrate-marks!)
-      (let [migrated (db/get-mark-unfiltered "old-1" test-site)]
+      (let [migrated (db/get-mark-any-site "old-1")]
         (is (= 40.0 (:lat migrated)))
         (is (= -76.0 (:lon migrated)))
         (is (nil? (:coordinate migrated)))))))
@@ -1082,8 +1082,7 @@
                          :site nil}]])
     (with-redefs [config/site "mig-fallback-site"]
       (db/migrate!)
-      (let [migrated-mark (db/get-mark-unfiltered
-                           "mig-m1" "mig-fallback-site")
+      (let [migrated-mark (db/get-mark-any-site "mig-m1")
             migrated-user (first
                            (xt/q @db/node
                                  ['(fn [uid site]
@@ -1103,3 +1102,53 @@
         (is (= "mig-fallback-site" (:site migrated-mark)))
         (is (= "mig-fallback-site" (:site migrated-user)))
         (is (= "mig-fallback-site" (:site migrated-vote)))))))
+
+(deftest cross-site-id-conflict-test
+  (testing "Disallow operations on a mark with ID in another site"
+    (let [conflict-id "conflict-mark-id"
+          site-1 "site-1"
+          site-2 "site-2"]
+      ;; Put the mark into site-1
+      (xt/submit-tx
+       @db/node
+       [[:put-docs :marks {:xt/id conflict-id
+                           :name "Site 1 Mark"
+                           :site site-1
+                           :creator "alice"
+                           :lat 40.0
+                           :lon -76.0}]])
+
+      (testing "Create mark on site-2 with ID from site-1 is forbidden"
+        (let [req {:path-params {:site site-2}
+                   :body (ByteArrayInputStream.
+                          (.getBytes
+                           (json/write-str {:id conflict-id
+                                            :name "Site 2 Mark"
+                                            :lat 40.0
+                                            :lon -76.0})))
+                   :identity "bob"}
+              resp (handlers/create-mark-handler req)]
+          (is (= 403 (:status resp)))
+          (is (= "Forbidden: Mark belongs to another site"
+                 (:error (json/read-str (:body resp) :key-fn keyword))))))
+
+      (testing "Update mark on site-2 with ID from site-1 is forbidden"
+        (let [req {:path-params {:site site-2 :id conflict-id}
+                   :body (ByteArrayInputStream.
+                          (.getBytes
+                           (json/write-str {:name "Site 2 Update"
+                                            :lat 40.0
+                                            :lon -76.0})))
+                   :identity "bob"}
+              resp (handlers/update-mark-handler req)]
+          (is (= 403 (:status resp)))
+          (is (= "Forbidden: Mark belongs to another site"
+                 (:error (json/read-str (:body resp) :key-fn keyword))))))
+
+      (testing "Delete mark on site-2 with ID from site-1 is forbidden"
+        (let [req {:path-params {:site site-2 :id conflict-id}
+                   :identity "bob"}
+              resp (handlers/delete-mark-handler req)]
+          (is (= 403 (:status resp)))
+          (is (= "Forbidden: Mark belongs to another site"
+                 (:error (json/read-str (:body resp) :key-fn keyword)))))))))

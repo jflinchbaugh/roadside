@@ -255,22 +255,31 @@
                   (dissoc :creator))
         id (or (:id mark) (:xt/id mark) (common-utils/random-uuid-str))
         site (get-site req)
-        existing-mark (when id (db/get-mark-unfiltered id site))
+        existing-mark (when id (db/get-mark-any-site id))
         mark-to-validate (assoc (dissoc mark :id :xt/id) :site site)]
     (tel/log! :info {:create-mark mark})
-    (if (and existing-mark (not= (:creator existing-mark) (:identity req)))
+    (cond
+      (and existing-mark (not= (:site existing-mark) site))
+      (api-response 403 {:error "Forbidden: Mark belongs to another site"})
+
+      (and existing-mark (not= (:creator existing-mark) (:identity req)))
       (api-response 403 {:error "Forbidden: You do not own this mark"})
-      (if-not (m/validate MarkSchema mark-to-validate)
-        (api-response 400 {:status "failed"
-                           :errors (me/humanize (m/explain MarkSchema mark-to-validate))})
-        (let [mark (assoc
-                      mark
-                      :xt/id id
-                      :site site
-                      :creator (or (:creator existing-mark) (:identity req)))
-              mark (dissoc mark :id)]
-          (db/save-mark mark)
-          (api-response 201 (assoc mark :id id)))))))
+
+      (not (m/validate MarkSchema mark-to-validate))
+      (api-response 400
+                    {:status "failed"
+                     :errors (me/humanize
+                              (m/explain MarkSchema mark-to-validate))})
+
+      :else
+      (let [mark (assoc
+                    mark
+                    :xt/id id
+                    :site site
+                    :creator (or (:creator existing-mark) (:identity req)))
+            mark (dissoc mark :id)]
+        (db/save-mark mark)
+        (api-response 201 (assoc mark :id id))))))
 
 (defn update-mark-handler [req]
   (let [id (or (get-in req [:path-params :id])
@@ -279,21 +288,30 @@
                   common-mark/select-mark-fields
                   (dissoc :creator))
         site (get-site req)
-        existing-mark (when id (db/get-mark-unfiltered id site))]
+        existing-mark (when id (db/get-mark-any-site id))]
     (tel/log! :info {:update-mark mark})
-    (if (and existing-mark (not= (:creator existing-mark) (:identity req)))
+    (cond
+      (and existing-mark (not= (:site existing-mark) site))
+      (api-response 403 {:error "Forbidden: Mark belongs to another site"})
+
+      (and existing-mark (not= (:creator existing-mark) (:identity req)))
       (api-response 403 {:error "Forbidden: You do not own this mark"})
+
+      :else
       (let [mark-to-validate (assoc (dissoc mark :id :xt/id) :site site)]
         (if-not (m/validate MarkSchema mark-to-validate)
-          (api-response 400 {:status "failed"
-                             :errors (me/humanize (m/explain MarkSchema mark-to-validate))})
+          (api-response 400
+                        {:status "failed"
+                         :errors (me/humanize
+                                  (m/explain MarkSchema mark-to-validate))})
           (let [final-id (or id (:id mark) (:xt/id mark)
                            (common-utils/random-uuid-str))
                 mark (assoc
                         mark
                         :xt/id final-id
                         :site site
-                        :creator (or (:creator existing-mark) (:identity req)))
+                        :creator (or (:creator existing-mark)
+                                     (:identity req)))
                 mark (dissoc mark :id)]
             (db/save-mark mark)
             (api-response 200 (assoc mark :id final-id))))))))
@@ -302,9 +320,15 @@
   (tel/log! :info {:delete-mark req})
   (let [id (get-in req [:path-params :id])
         site (get-site req)
-        existing-mark (db/get-mark-unfiltered id site)]
-    (if (and existing-mark (not= (:creator existing-mark) (:identity req)))
+        existing-mark (db/get-mark-any-site id)]
+    (cond
+      (and existing-mark (not= (:site existing-mark) site))
+      (api-response 403 {:error "Forbidden: Mark belongs to another site"})
+
+      (and existing-mark (not= (:creator existing-mark) (:identity req)))
       (api-response 403 {:error "Forbidden: You do not own this mark"})
+
+      :else
       (do
         (db/delete-mark id)
         (api-response 200 {:message (format "'%s' deleted" id)})))))
