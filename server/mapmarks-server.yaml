@@ -22,9 +22,9 @@ spec:
         - name: dbhost
           value: xtdb
         - name: BASE_URL
-          value: /roadside
+          value: /mapmarks
         - name: EXTERNAL_BASE_URL
-          value: https://www.hjsoft.com/roadside/
+          value: https://www.hjsoft.com/mapmarks/
   volumes:
     - name: xtdb-data
       persistentVolumeClaim:
