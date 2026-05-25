@@ -25,21 +25,21 @@
     :js-options {:resolve {"cldr-data" false}}
     :compiler-options {:source-map true}
     :closure-defines
-    {com.hjsoft.mapmarks.website.config/APP_NAME "Map Marks"
-     com.hjsoft.mapmarks.website.config/SITE "mapmarks"
-     com.hjsoft.mapmarks.website.config/APP_DESCRIPTION "Find and share your interesting locations."
-     com.hjsoft.mapmarks.website.config/APP_LOGO "\uD83D\uDCCD" ;; pin emoji
+    {com.hjsoft.mapmarks.website.config/APP_NAME "Pothole Derby"
+     com.hjsoft.mapmarks.website.config/SITE "potholes"
+     com.hjsoft.mapmarks.website.config/APP_DESCRIPTION "Report those potholes."
+     com.hjsoft.mapmarks.website.config/APP_LOGO "\uD83E\uDE8F" ; shovel
      com.hjsoft.mapmarks.website.config/APP_ICON "favicon.ico"
-     com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS 30
+     com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS 365
      com.hjsoft.mapmarks.website.config/TAGS_NAME_ARTICLE "a"
      com.hjsoft.mapmarks.website.config/TAGS_NAME_SINGULAR "Tag"
      com.hjsoft.mapmarks.website.config/TAGS_NAME_PLURAL "Tags"
      com.hjsoft.mapmarks.website.config/MARK_NAME_ARTICLE "a"
-     com.hjsoft.mapmarks.website.config/MARK_NAME_SINGULAR "Mark"
-     com.hjsoft.mapmarks.website.config/MARK_NAME_PLURAL "Marks"
-     com.hjsoft.mapmarks.website.config/DISABLE_NAME false
-     com.hjsoft.mapmarks.website.config/DISABLE_TAGS false
-     com.hjsoft.mapmarks.website.config/FEEDBACK_EMAIL "mapmarks@hjsoft.com"
+     com.hjsoft.mapmarks.website.config/MARK_NAME_SINGULAR "Pothole"
+     com.hjsoft.mapmarks.website.config/MARK_NAME_PLURAL "Potholes"
+     com.hjsoft.mapmarks.website.config/DISABLE_NAME true
+     com.hjsoft.mapmarks.website.config/DISABLE_TAGS true
+     com.hjsoft.mapmarks.website.config/FEEDBACK_EMAIL "potholes@hjsoft.com"
      }
     :build-hooks
     [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]
