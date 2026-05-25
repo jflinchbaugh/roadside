@@ -21,8 +21,6 @@ spec:
           value: 7000
         - name: dbhost
           value: xtdb
-        - name: EXTERNAL_BASE_URL
-          value: https://www.hjsoft.com/mapmarks/
   volumes:
     - name: xtdb-data
       persistentVolumeClaim:

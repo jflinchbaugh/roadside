@@ -135,7 +135,7 @@
         site (get-site req)
         cfg (config/get-config site)
         marks (db/list-marks identity site)
-        base-url config/external-base-url
+        base-url (:external-base-url cfg)
         rss (marks->rss marks base-url site cfg)]
     {:status 200
      :headers {"Content-Type" "application/rss+xml"

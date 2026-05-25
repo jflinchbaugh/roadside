@@ -260,7 +260,10 @@
           (is (str/includes? rss "Coordinates: 40.0, -76.0"))
           (is (str/includes? rss "peaches"))
           (is (str/includes? rss "Juicy"))
-          (is (str/includes? rss (str config/external-base-url "s/test/feed.rss"))))
+          (is (str/includes?
+               rss
+               (str (:external-base-url (config/get-config "test"))
+                    "s/test/feed.rss"))))
         (let [mark-docs [{:name ""
                            :address ""
                            :town ""
@@ -285,7 +288,10 @@
           (is (str/includes? rss "Coordinates: 40.0, -76.0"))
           (is (str/includes? rss "peaches"))
           (is (str/includes? rss "apples"))
-          (is (str/includes? rss (str config/external-base-url "s/test/feed.rss"))))))))
+          (is (str/includes?
+               rss
+               (str (:external-base-url (config/get-config "test"))
+                    "s/test/feed.rss"))))))))
 
 (deftest rss-site-param-test
   (testing "RSS feed with site in URL"
@@ -1028,9 +1034,10 @@
                                     :mark-name-singular "Shop"
                                     :mark-name-plural "Shops"
                                     :tags-name-singular "Label"
-                                    :tags-name-plural "Labels"}}]
-      (with-redefs [config/site-configs mock-configs
-                    config/external-base-url "https://test-external.com/"]
+                                    :tags-name-plural "Labels"
+                                    :external-base-url
+                                    "https://test-external.com/"}}]
+      (with-redefs [config/site-configs mock-configs]
         (db/save-mark {:xt/id "rss-mark-1"
                        :name nil
                        :address "123 Main St"
@@ -1096,32 +1103,3 @@
         (is (= "mig-fallback-site" (:site migrated-mark)))
         (is (= "mig-fallback-site" (:site migrated-user)))
         (is (= "mig-fallback-site" (:site migrated-vote)))))))
-
-(deftest config-env-var-test
-  (testing "Config variables initialize from environment variables"
-    (try
-      (with-redefs [config/env (fn [name]
-                                 (case name
-                                   "BASE_URL" "/env-base"
-                                   "SITE" "env-site"
-                                   "EXTERNAL_BASE_URL" "https://env-ext.com"
-                                   "APP_NAME" "Env App"
-                                   "APP_DESCRIPTION" "Env Desc"
-                                   "MARK_NAME_SINGULAR" "EnvSing"
-                                   "MARK_NAME_PLURAL" "EnvPlur"
-                                   "TAGS_NAME_SINGULAR" "EnvTag"
-                                   "TAGS_NAME_PLURAL" "EnvTags"
-                                   nil))]
-        (require 'server.config :reload)
-        (is (= "/env-base" config/base-url))
-        (is (= "env-site" config/site))
-        (is (= "https://env-ext.com" config/external-base-url))
-        (is (= {:app-name "Env App"
-                :app-description "Env Desc"
-                :mark-name-singular "EnvSing"
-                :mark-name-plural "EnvPlur"
-                :tags-name-singular "EnvTag"
-                :tags-name-plural "EnvTags"}
-               config/default-site-config)))
-      (finally
-        (require 'server.config :reload)))))

@@ -6,17 +6,14 @@
 
 (def site (or (env "SITE") "mapmarks"))
 
-(def external-base-url (or (env "EXTERNAL_BASE_URL")
-                           (str "http://localhost:3000" base-url "/")))
-
 (def default-site-config
-  {:app-name (or (env "APP_NAME") "MapMarks Marks")
-   :app-description (or (env "APP_DESCRIPTION")
-                        "Latest MapMarks Marks")
-   :mark-name-singular (or (env "MARK_NAME_SINGULAR") "Mark")
-   :mark-name-plural (or (env "MARK_NAME_PLURAL") "Marks")
-   :tags-name-singular (or (env "TAGS_NAME_SINGULAR") "Tag")
-   :tags-name-plural (or (env "TAGS_NAME_PLURAL") "Tags")})
+  {:app-name "MapMarks Marks"
+   :app-description "Latest MapMarks Marks"
+   :mark-name-singular "Mark"
+   :mark-name-plural "Marks"
+   :tags-name-singular "Tag"
+   :tags-name-plural "Tags"
+   :external-base-url (str "http://localhost:3000" base-url "/")})
 
 (def site-configs
   {"mapmarks" default-site-config
@@ -25,7 +22,8 @@
                :mark-name-singular "Stand"
                :mark-name-plural "Stands"
                :tags-name-singular "Product"
-               :tags-name-plural "Products"}})
+               :tags-name-plural "Products"
+               :external-base-url "https://www.hjsoft.com/roadside/"}})
 
 (defn get-config [site]
   (get site-configs site default-site-config))
