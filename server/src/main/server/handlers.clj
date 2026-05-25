@@ -38,8 +38,7 @@
       (csv/write-csv *out* (into [header] rows)))))
 
 (defn- get-site [req]
-  (or (get-in req [:path-params :site])
-      config/site))
+  (get-in req [:path-params :site]))
 
 (defn get-marks-csv-handler [req]
   (let [identity (:identity req)
@@ -207,7 +206,7 @@
         login (get-in req [:params :login])
         password (get-in req [:params :password])
         email (get-in req [:params :email])
-        site (or (get-in req [:params :site]) (get-site req))
+        site (get-site req)
         user-data {:login login :password password :email email :enabled? true :site site}]
     (if-not (m/validate UserSchema user-data)
       (api-response 400 {:status "failed"
@@ -255,7 +254,7 @@
                   common-mark/select-mark-fields
                   (dissoc :creator))
         id (or (:id mark) (:xt/id mark) (common-utils/random-uuid-str))
-        site (or (:site mark) (get-site req))
+        site (get-site req)
         existing-mark (when id (db/get-mark-unfiltered id site))
         mark-to-validate (assoc (dissoc mark :id :xt/id) :site site)]
     (tel/log! :info {:create-mark mark})
@@ -279,7 +278,7 @@
         mark (-> (json/read-str (rur/body-string req) :key-fn keyword)
                   common-mark/select-mark-fields
                   (dissoc :creator))
-        site (or (:site mark) (get-site req))
+        site (get-site req)
         existing-mark (when id (db/get-mark-unfiltered id site))]
     (tel/log! :info {:update-mark mark})
     (if (and existing-mark (not= (:creator existing-mark) (:identity req)))

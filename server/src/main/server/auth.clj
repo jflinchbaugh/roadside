@@ -2,7 +2,6 @@
   (:require [buddy.auth.backends :as backends]
             [buddy.hashers :as hashers]
             [server.db :as db]
-            [server.config :as config]
             [clojure.data.json :as json]
             [buddy.auth.middleware :as buddy]))
 
@@ -17,8 +16,7 @@
 
 (defn- authfn
   [req {:keys [username password]}]
-  (let [site (or (get-in req [:path-params :site])
-                 config/site)
+  (let [site (get-in req [:path-params :site])
         user (db/get-user username site)]
     (when (and user
                (:enabled? user)
