@@ -23,7 +23,22 @@
                :mark-name-plural "Stands"
                :tags-name-singular "Product"
                :tags-name-plural "Products"
-               :external-base-url "https://www.hjsoft.com/roadside/"}})
+               :external-base-url "https://www.hjsoft.com/roadside/"}
+   "potholes" {:app-name "Pothole Derby"
+               :app-description "Latest Potholes"
+               :mark-name-singular "Pothole"
+               :mark-name-plural "Potholes"
+               :tags-name-singular "Tag"
+               :tags-name-plural "Tags"
+               :external-base-url "https://www.hjsoft.com/potholes/"}
+   "roadside" {:app-name "Little Free Libraries"
+               :app-description "Latest Little Free Libraries"
+               :mark-name-singular "Library"
+               :mark-name-plural "Libraries"
+               :tags-name-singular "Tag"
+               :tags-name-plural "Tags"
+               :external-base-url "https://www.hjsoft.com/library/"}
+   })
 
 (defn get-config [site]
   (get site-configs site default-site-config))
