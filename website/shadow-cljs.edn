@@ -27,7 +27,7 @@
     :closure-defines
     {com.hjsoft.mapmarks.website.config/APP_NAME "Roadside Stands"
      com.hjsoft.mapmarks.website.config/SITE "roadside"
-     com.hjsoft.mapmarks.website.config/APP_DESCRIPTION "Find and share your faovorite stands."
+     com.hjsoft.mapmarks.website.config/APP_DESCRIPTION "Find and share your favorite stands."
      com.hjsoft.mapmarks.website.config/APP_LOGO "images/apples.png"
      com.hjsoft.mapmarks.website.config/APP_ICON "images/apples.png"
      com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS 30
