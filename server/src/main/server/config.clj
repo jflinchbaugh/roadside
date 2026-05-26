@@ -31,7 +31,7 @@
                :tags-name-singular "Tag"
                :tags-name-plural "Tags"
                :external-base-url "https://www.hjsoft.com/potholes/"}
-   "roadside" {:app-name "Little Free Libraries"
+   "library" {:app-name "Little Free Libraries"
                :app-description "Latest Little Free Libraries"
                :mark-name-singular "Library"
                :mark-name-plural "Libraries"
