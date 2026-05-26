@@ -1,23 +1,23 @@
 .PHONY: all install dev dev-test test test-browser release clean
 
-all: install release
+all: release
 
 install:
 	npm install
 
-dev:
+dev: install
 	npx shadow-cljs watch frontend
 
-dev-test:
+dev-test: install
 	npx shadow-cljs watch frontend test test-browser
 
-test:
+test: install
 	npx shadow-cljs compile test
 
-test-browser:
+test-browser: install
 	npx shadow-cljs watch test-browser
 
-release:
+release: install
 	npx shadow-cljs release frontend
 
 clean:
