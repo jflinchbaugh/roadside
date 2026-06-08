@@ -16,7 +16,7 @@
 (def info-icon "\u24d8")
 
 (defnc header []
-  (let [{:keys [state ui]} (state/use-app)
+  (let [{:keys [state dispatch ui]} (state/use-app)
         {:keys [set-show-about-dialog]} ui
         {:keys [config]} state
         logo (:app-logo config)
@@ -27,12 +27,15 @@
        (d/img
         {:src logo
          :alt "Logo"
-         :class "logo"})
+         :class "logo"
+         :onClick #(dispatch [:set-selected-mark nil])})
        (d/span
-        {:class "logo"}
+        {:class "logo"
+         :onClick #(dispatch [:set-selected-mark nil])}
         logo))
      (d/h1
-      {:class "main-header"}
+      {:class "main-header"
+       :onClick #(dispatch [:set-selected-mark nil])}
       (:app-name config))
      (d/button
       {:class "about-btn"

@@ -69,7 +69,9 @@
                                                           (when (fn? on-error) (on-error msg)))))]
                            (when-not @locating-ref
                              (tel/log! :debug {:geolocation :starting})
-                             (when dispatch
+                             (when (and dispatch
+                                        (or (not (exists? js/window))
+                                            (empty? (.. js/window -location -hash))))
                                (dispatch [:set-selected-mark nil]))
                              (reset! locating-ref true)
                              (reset! cancelled-ref false)

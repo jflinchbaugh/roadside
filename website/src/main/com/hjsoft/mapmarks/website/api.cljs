@@ -57,6 +57,20 @@
          {:success false
           :error (extract-error response (str "HTTP Error: " url ", " (:status response)))})))))
 
+(defn fetch-mark
+  ([site user password mark-id]
+   (fetch-mark site user password mark-id default-http-deps))
+  ([site user password mark-id {:keys [get]}]
+   (go
+     (let [url (site-url site (str "marks/" mark-id))
+           response (<! (get url (with-auth-opts user password)))]
+       (if (:success response)
+         {:success true :data (:body response)}
+         {:success false
+          :error (extract-error
+                  response
+                  (str "HTTP Error: " url ", " (:status response)))})))))
+
 (defn create-mark
   ([site user password mark] (create-mark site user password mark default-http-deps))
   ([site user password mark {:keys [post]}]

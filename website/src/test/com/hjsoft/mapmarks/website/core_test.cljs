@@ -5,6 +5,7 @@
             [com.hjsoft.mapmarks.website.leaflet-init]
             [com.hjsoft.mapmarks.website.core :as sut]
             [com.hjsoft.mapmarks.website.config :as config]
+            [com.hjsoft.mapmarks.website.state :as state]
             [com.hjsoft.mapmarks.website.controller :as controller]
             [com.hjsoft.mapmarks.website.ui.map :as ui-map]))
 
@@ -67,3 +68,63 @@
                         (str "Add New " (:mark-name-singular config/config))))
               "Add New Mark form should be present"))
           (js/window.history.pushState #js {} "" "/"))))))
+
+(deftest app-select-mark-permalink-test
+  (testing "selecting a mark updates the URL hash, and URL hash selects mark on load"
+    (let [mock-l (create-mock-leaflet)
+          _ (ui-map/set-leaflet! mock-l)]
+      (with-redefs [controller/fetch-remote-marks! (fn
+                                                      ([_ _] nil)
+                                                      ([_ _ _] nil))
+                    controller/save-local-data! (fn [_ _ _ _] nil)]
+        (let [mock-geo #js {:getCurrentPosition (fn [success _ _])}]
+          ;; 1. Load with hash selects the mark
+          (set! (.-hash js/window.location) "#mark=xyz-123")
+          (let [mock-mark {:id "xyz-123" :name "Apple Stand" :lat 40.0379 :lon -76.3055}
+                state-with-marks (assoc (state/initial-app-state)
+                                   :marks [mock-mark]
+                                   :selected-mark mock-mark)]
+            (js/console.log "MOCK STATE:" (clj->js state-with-marks))
+            (with-redefs [state/initial-app-state (constantly state-with-marks)]
+              (let [res (tlr/render ($ sut/app {:geolocation mock-geo}))
+                    container (.-container res)]
+                (js/console.log "RENDERED HTML:" (.-innerHTML container))
+                (is (some? (.querySelector container ".selected-mark"))
+                    "Mark should be selected when loaded with permalink hash"))))
+          ;; 2. Selecting a mark updates URL hash
+          (set! (.-hash js/window.location) "")
+          (let [state-with-marks (assoc (state/initial-app-state)
+                                   :marks [{:id "xyz-123" :name "Apple Stand" :lat 40.0379 :lon -76.3055}])]
+            (with-redefs [state/initial-app-state (constantly state-with-marks)]
+              (let [res (tlr/render ($ sut/app {:geolocation mock-geo}))
+                    container (.-container res)
+                    mark-item (.querySelector container ".mark-item")]
+                (is (nil? (.querySelector container ".selected-mark"))
+                    "Mark should not be selected initially")
+                (tlr/fireEvent.click mark-item)
+                (is (= "#mark=xyz-123" js/window.location.hash)
+                    "URL hash should be updated to permalink format when mark is clicked")
+                (is (some? (.querySelector container ".selected-mark"))
+                    "Mark should be selected in UI"))))
+          (set! (.-hash js/window.location) ""))))))
+
+(deftest app-permalink-missing-mark-test
+  (testing "fetches remote mark if not in local list"
+    (let [mock-l (create-mock-leaflet)
+          _ (ui-map/set-leaflet! mock-l)
+          fetch-called (atom nil)]
+      (with-redefs [controller/fetch-remote-marks! (fn
+                                                      ([_ _] nil)
+                                                      ([_ _ _] nil))
+                    controller/fetch-remote-mark! (fn
+                                                     ([_ _ mark-id]
+                                                      (reset! fetch-called
+                                                              mark-id))
+                                                     ([_ _ _ _] nil))
+                    controller/save-local-data! (fn [_ _ _ _] nil)]
+        (let [mock-geo #js {:getCurrentPosition (fn [success _ _])}]
+          (set! (.-hash js/window.location) "#mark=missing-id")
+          (tlr/render ($ sut/app {:geolocation mock-geo}))
+          (is (= "missing-id" @fetch-called)
+              "Should fetch missing mark-id from URL hash")
+          (set! (.-hash js/window.location) ""))))))

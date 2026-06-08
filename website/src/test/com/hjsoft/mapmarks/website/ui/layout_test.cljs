@@ -50,7 +50,45 @@
                   ($ layout/header)))
           container (.-container res)
           title (tlr/getByText container "MapMarks")]
-        (is (some? title) "Should render the main header title"))))
+        (is (some? title) "Should render the main header title")))
+
+  (testing "clicking title or image logo clears selected mark"
+    (let [ctx state/app-context
+          dispatched (atom [])
+          res (tlr/render
+               ($ (gobj/get ctx "Provider")
+                  {:value {:state {:config {:app-name "MapMarks"
+                                            :app-logo "logo.png"
+                                            :tags-name-article "a"
+                                            :mark-name-article "a"}}
+                           :dispatch #(swap! dispatched conj %)
+                           :ui {:set-show-about-dialog (fn [_])}}}
+                  ($ layout/header)))
+          container (.-container res)
+          title (tlr/getByText container "MapMarks")
+          logo (.querySelector container ".logo")]
+      (tlr/fireEvent.click title)
+      (is (= [[:set-selected-mark nil]] @dispatched))
+      (reset! dispatched [])
+      (tlr/fireEvent.click logo)
+      (is (= [[:set-selected-mark nil]] @dispatched))))
+
+  (testing "clicking text logo clears selected mark"
+    (let [ctx state/app-context
+          dispatched (atom [])
+          res (tlr/render
+               ($ (gobj/get ctx "Provider")
+                  {:value {:state {:config {:app-name "MapMarks"
+                                            :app-logo "📍"
+                                            :tags-name-article "a"
+                                            :mark-name-article "a"}}
+                           :dispatch #(swap! dispatched conj %)
+                           :ui {:set-show-about-dialog (fn [_])}}}
+                  ($ layout/header)))
+          container (.-container res)
+          logo (.querySelector container ".logo")]
+      (tlr/fireEvent.click logo)
+      (is (= [[:set-selected-mark nil]] @dispatched)))))
 
 (deftest config-icon-test
   (testing "config has :app-icon configured"

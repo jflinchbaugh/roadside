@@ -9,6 +9,7 @@
 
 (def default-deps
   {:fetch-marks api/fetch-marks
+   :fetch-mark api/fetch-mark
    :create-mark api/create-mark
    :update-mark api/update-mark
    :delete-mark api/delete-mark
@@ -74,6 +75,35 @@
                  dispatch
                  :error
                  (str "Sync failed: " (format-error error)))))))))))
+
+(defn fetch-remote-mark!
+  ([app-state dispatch mark-id]
+   (fetch-remote-mark! app-state dispatch mark-id default-deps))
+  ([{:keys [settings config]} dispatch mark-id {:keys [fetch-mark]}]
+   (when (remote-allowed? settings)
+     (dispatch [:set-loading-marks true])
+     (go
+       (let [site (:site config)
+             {:keys [success data error]} (<! (fetch-mark
+                                               site
+                                               (:user settings)
+                                               (:password settings)
+                                               mark-id))]
+         (dispatch [:set-loading-marks false])
+         (if success
+           (do
+             (dispatch [:set-marks [data]])
+             (dispatch [:set-selected-mark data])
+             (dispatch [:set-map-center [(:lat data) (:lon data)]]))
+           (do
+             (tel/log! :error {:msg "Failed to fetch single mark"
+                               :error error})
+             (when (has-credentials? settings)
+               (notify!
+                dispatch
+                :error
+                (str "Failed to load shared mark: "
+                     (format-error error)))))))))))
 
 (defn- remote-create-mark!
   [{:keys [settings config]} dispatch mark {:keys [create-mark]}]

@@ -51,16 +51,39 @@
         (set! (.-title js/document) (str "Add " (:mark-name-singular config) " - " (:app-name config)))
         (when (not= current-action "add")
           (.set params "action" "add")
-          (js/window.history.pushState #js {} "" (str "?" (.toString params)))))
+          (let [hash (.. js/window -location -hash)]
+            (js/window.history.pushState #js {} "" (str "?" (.toString params) hash)))))
       (do
         (set! (.-title js/document) (:app-name config))
         (when (= current-action "add")
           (.delete params "action")
           (let [query (.toString params)
+                hash (.. js/window -location -hash)
                 new-url (if (seq query)
                           (str "?" query)
                           (.. js/window -location -pathname))]
-            (js/window.history.replaceState #js {} "" new-url)))))))
+            (js/window.history.replaceState #js {} "" (str new-url hash))))))))
+
+(defn sync-selected-mark-to-url!
+  "Synchronizes the selected mark state to the browser URL hash."
+  [selected-mark marks config]
+  (let [anchor (str/lower-case (:mark-name-singular config))
+        current-hash (.. js/window -location -hash)
+        expected-hash (if selected-mark
+                        (str "#" anchor "=" (:id selected-mark))
+                        "")]
+    (when (not= current-hash expected-hash)
+      (if (seq expected-hash)
+        (js/window.history.pushState #js {} "" expected-hash)
+        (let [prefix (str "#" anchor "=")]
+          (when (str/starts-with? current-hash prefix)
+            (let [hash-id (subs current-hash (count prefix))]
+              (when (some #(= (:id %) hash-id) marks)
+                (let [pathname (.. js/window -location -pathname)
+                      search (.. js/window -location -search)]
+                  (js/window.history.pushState
+                   #js {} ""
+                   (str pathname search)))))))))))
 
 (defn use-app-side-effects
   [app-state dispatch user-location show-form set-show-form editing-mark]
@@ -130,6 +153,7 @@
         [show-settings-dialog set-show-settings-dialog] (hooks/use-state false)
         [show-export-dialog set-show-export-dialog] (hooks/use-state false)
         [show-about-dialog set-show-about-dialog] (hooks/use-state false)
+        fetched-mark-ids-ref (hooks/use-ref (atom #{}))
 
         user-location (use-user-location
                        dispatch
@@ -152,6 +176,48 @@
                              (set-show-form (= action "add"))))]
              (js/window.addEventListener "popstate" handler)
              #(js/window.removeEventListener "popstate" handler)))
+
+        ;; Synchronize selected-mark state with URL/permalink
+        _ (hooks/use-effect
+           [marks (:selected-mark app-state) (:config app-state)]
+           (sync-selected-mark-to-url!
+            (:selected-mark app-state)
+            marks
+            (:config app-state)))
+
+        ;; Select mark from URL hash on load, popstate, or when marks change
+        _ (hooks/use-effect
+           [marks (:config app-state) dispatch (:selected-mark app-state)
+            app-state]
+           (let [select-from-hash
+                 (fn []
+                   (let [hash (.. js/window -location -hash)
+                         anchor (str/lower-case
+                                 (:mark-name-singular (:config app-state)))
+                         prefix (str "#" anchor "=")]
+                     (if (str/starts-with? hash prefix)
+                       (let [mark-id (subs hash (count prefix))
+                             mark (some #(when (= (:id %) mark-id) %) marks)]
+                         (if mark
+                           (when (not= (:id (:selected-mark app-state))
+                                       mark-id)
+                             (dispatch [:set-selected-mark mark])
+                             (dispatch [:set-map-center [(:lat mark)
+                                                         (:lon mark)]]))
+                           (let [fetched-ids (.-current fetched-mark-ids-ref)]
+                             (when (and (not= (:id (:selected-mark app-state))
+                                              mark-id)
+                                        (not (contains? @fetched-ids
+                                                        mark-id)))
+                               (swap! fetched-ids conj mark-id)
+                               (controller/fetch-remote-mark!
+                                app-state dispatch mark-id)))))
+                       (when (and (:selected-mark app-state)
+                                  (not (str/starts-with? hash prefix)))
+                         (dispatch [:set-selected-mark nil])))))]
+             (select-from-hash)
+             (js/window.addEventListener "popstate" select-from-hash)
+             #(js/window.removeEventListener "popstate" select-from-hash)))
 
         marks-by-expiry (hooks/use-memo
                           [marks (:show-expired? app-state) (:location user-location)]

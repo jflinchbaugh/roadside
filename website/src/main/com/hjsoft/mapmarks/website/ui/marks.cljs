@@ -62,6 +62,7 @@
        (set-confirming false)))
     (d/div
      {:key (mark-domain/mark-key mark)
+      :id (str (str/lower-case (:mark-name-singular config)) "=" (:id mark))
       :ref item-ref
       :class (str
               "mark-item"
@@ -180,9 +181,10 @@
      [selected-mark]
      (when selected-mark
        (when-let [mark-el (get @mark-refs (mark-domain/mark-key selected-mark))]
-         (.scrollIntoView
-          mark-el
-          (clj->js {:behavior "smooth" :block "nearest"})))))
+         (when (fn? (.-scrollIntoView mark-el))
+           (.scrollIntoView
+            mark-el
+            (clj->js {:behavior "smooth" :block "nearest"}))))))
 
     (d/div
      {:class "marks-list"}

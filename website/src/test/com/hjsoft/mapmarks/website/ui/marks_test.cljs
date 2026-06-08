@@ -149,3 +149,14 @@
           container (.-container res)]
       (is (nil? (.querySelector container ".mark-voting"))
           "Voting widget should be hidden when not selected"))))
+
+(deftest mark-item-anchor-id-test
+  (testing "Anchor ID is set on mark-item element to match RSS format"
+    (let [state {:settings {:user "alice"}
+                 :config {:mark-name-singular "Stand"}}
+          mark {:id "xyz-123" :name "Apple Stand" :creator "alice"}
+          res (render-mark-item state mark)
+          container (.-container res)
+          item-div (.querySelector container ".mark-item")]
+      (is (= "stand=xyz-123" (.getAttribute item-div "id"))
+          "The ID of the mark-item element should match the RSS anchor id"))))

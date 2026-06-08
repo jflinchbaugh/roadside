@@ -49,18 +49,29 @@
           default-val)))))
 
 (defn initial-app-state []
-  {:marks (migrate-marks (get-stored-item "marks" nil))
-   :tag-filter nil
-   :selected-mark nil
-   :map-center (get-stored-item "map-center" map-home)
-   :map-zoom (get-stored-item "map-zoom" 11)
-   :settings (get-stored-item "settings" {})
-   :config config/config
-   :is-synced false
-   :last-sync (get-stored-item "last-sync" nil)
-   :loading-marks? false
-   :notification nil
-   :show-expired? false})
+  (let [marks (migrate-marks (get-stored-item "marks" nil))
+        config config/config
+        hash (when (exists? js/window) (.. js/window -location -hash))
+        anchor (str/lower-case (:mark-name-singular config))
+        prefix (str "#" anchor "=")
+        selected-mark (when (and hash (str/starts-with? hash prefix))
+                        (let [mark-id (subs hash (count prefix))]
+                          (some #(when (= (:id %) mark-id) %) marks)))
+        initial-center (if (and selected-mark (:lat selected-mark) (:lon selected-mark))
+                         [(:lat selected-mark) (:lon selected-mark)]
+                         (get-stored-item "map-center" map-home))]
+    {:marks marks
+     :tag-filter nil
+     :selected-mark selected-mark
+     :map-center initial-center
+     :map-zoom (get-stored-item "map-zoom" 11)
+     :settings (get-stored-item "settings" {})
+     :config config
+     :is-synced false
+     :last-sync (get-stored-item "last-sync" nil)
+     :loading-marks? false
+     :notification nil
+     :show-expired? false}))
 
 (defn set-value [state key payload]
   (if (fn? payload)
