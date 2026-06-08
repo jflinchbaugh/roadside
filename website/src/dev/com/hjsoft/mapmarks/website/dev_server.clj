@@ -6,8 +6,14 @@
 
 (defn handler [req]
   (let [uri (:uri req)]
-    (if (or (str/starts-with? uri "/api")
-            (str/starts-with? uri "/s/"))
+    (cond
+      (= uri "/")
+      {:status 302
+       :headers {"Location" "/index.html"}
+       :body ""}
+
+      (or (str/starts-with? uri "/api")
+          (str/starts-with? uri "/s/"))
       (let [url (str target uri (when-let [qs (:query-string req)] (str "?" qs)))]
         (let [{:keys [status headers body error]}
               @(http/request
@@ -23,4 +29,5 @@
             {:status status
              :headers (update-keys (or headers {}) (fn [k] (if (keyword? k) (name k) (str k))))
              :body body})))
+      :else
       nil)))
