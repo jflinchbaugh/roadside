@@ -128,3 +128,23 @@
           (is (= "missing-id" @fetch-called)
               "Should fetch missing mark-id from URL hash")
           (set! (.-hash js/window.location) ""))))))
+
+(deftest app-no-gps-on-permalink-test
+  (testing "does not query user location if permalink hash is present"
+    (let [mock-l (create-mock-leaflet)
+          _ (ui-map/set-leaflet! mock-l)
+          gps-called (atom false)]
+      (with-redefs [controller/fetch-remote-marks! (fn
+                                                      ([_ _] nil)
+                                                      ([_ _ _] nil))
+                    controller/fetch-remote-mark! (fn
+                                                     ([_ _ _] nil)
+                                                     ([_ _ _ _] nil))
+                    controller/save-local-data! (fn [_ _ _ _] nil)]
+        (let [mock-geo #js {:getCurrentPosition (fn [success _ _]
+                                                  (reset! gps-called true))}]
+          (set! (.-hash js/window.location) "#mark=xyz-123")
+          (tlr/render ($ sut/app {:geolocation mock-geo}))
+          (is (false? @gps-called)
+              "Should not query GPS when loaded with permalink")
+          (set! (.-hash js/window.location) ""))))))

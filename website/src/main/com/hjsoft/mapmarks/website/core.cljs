@@ -29,14 +29,24 @@
 (defn handle-initial-url-params!
   "Parses URL parameters on startup to set initial map center
    and show the add form."
-  [dispatch get-location set-show-form]
+  [dispatch get-location set-show-form config]
   (let [params (js/URLSearchParams. (.. js/window -location -search))
+        hash (when (exists? js/window) (.. js/window -location -hash))
+        anchor (str/lower-case (:mark-name-singular config))
+        prefix (str "#" anchor "=")
+        has-mark-hash? (and hash (str/starts-with? hash prefix))
         action (.get params "action")
         lat (js/parseFloat (.get params "lat"))
         lon (js/parseFloat (.get params "lon"))
         has-coords? (and (not (js/isNaN lat)) (not (js/isNaN lon)))]
-    (if has-coords?
+    (cond
+      has-coords?
       (dispatch [:set-map-center [lat lon]])
+
+      has-mark-hash?
+      nil
+
+      :else
       (get-location (fn [loc] (dispatch [:set-map-center loc]))))
     (when (= action "add")
       (set-show-form true))))
@@ -87,7 +97,7 @@
 
 (defn use-app-side-effects
   [app-state dispatch user-location show-form set-show-form editing-mark]
-  (let [{:keys [marks settings map-center map-zoom last-sync]} app-state
+  (let [{:keys [marks settings map-center map-zoom last-sync config]} app-state
         {:keys [get-location]} user-location
         [last-fetched-center set-last-fetched-center] (hooks/use-state map-center)
         app-state-ref (hooks/use-ref app-state)]
@@ -140,7 +150,8 @@
     ;; Initial location fetch, center map, and handle URL parameters
     (hooks/use-effect
      :once
-     (handle-initial-url-params! dispatch get-location set-show-form))))
+     (handle-initial-url-params!
+      dispatch get-location set-show-form config))))
 
 (defnc app [{:keys [geolocation]}]
   (let [[app-state dispatch] (hooks/use-reducer
