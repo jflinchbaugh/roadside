@@ -94,5 +94,5 @@
   (testing "config has :app-icon configured"
     (is (some? (:app-icon config/config))
         "config map should contain :app-icon")
-    (is (= "favicon.ico" (:app-icon config/config))
-        "default :app-icon should be favicon.ico")))
+    (is (= "images/apples.png" (:app-icon config/config))
+        "default :app-icon should be apples.png")))

@@ -7,13 +7,12 @@
 (goog-define SITE "roadside")
 (goog-define APP_DESCRIPTION "Find and share roadside produce stands")
 ;; string emoji or image url
-(goog-define APP_LOGO "images/apples.png") ;; pin emoji
+(goog-define APP_LOGO "images/apples.png")
+(goog-define APP_ICON "images/apples.png")
 (goog-define DEFAULT_EXPIRATION_DAYS 28)
 (goog-define TAGS_NAME_SINGULAR "Product")
 (goog-define TAGS_NAME_PLURAL "Products")
 (goog-define TAGS_NAME_ARTICLE "a")
-(goog-define TAGS_NAME_SINGULAR "Tag")
-(goog-define TAGS_NAME_PLURAL "Tags")
 (goog-define MARK_NAME_ARTICLE "a")
 (goog-define MARK_NAME_SINGULAR "Mark")
 (goog-define MARK_NAME_PLURAL "Marks")
