@@ -83,7 +83,7 @@
                                 on-geoposition-success
                                 on-geoposition-error
                                 #js {:enableHighAccuracy false
-                                     :timeout 30000
+                                     :timeout 15000
                                      :maximumAge 30000})
                                (do
                                  (tel/log! :warn {:geolocation :not-supported})
