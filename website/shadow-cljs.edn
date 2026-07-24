@@ -22,6 +22,7 @@
     :modules
     {:main {:init-fn com.hjsoft.mapmarks.website.browser-main/init}}
     :devtools {:preloads [devtools.preload]}
+    :js-options {:resolve {"cldr-data" false}}
     :compiler-options {:source-map true}
     :closure-defines
     {com.hjsoft.mapmarks.website.config/APP_NAME "Map Marks"
@@ -50,6 +51,7 @@
     :output-to "out/node-tests.js"
     :autorun true
     :preloads [node-init]
+    :js-options {:resolve {"cldr-data" false}}
     :closure-defines {com.hjsoft.mapmarks.website.ui.forms.mark/NODE_TEST true
                       com.hjsoft.mapmarks.website.ui.forms.inputs/NODE_TEST true
                       node-init/ENABLE_JSDOM true}
@@ -59,6 +61,7 @@
   {:target :browser-test
    :test-dir "out/browser/test"
    :autorun true
+   :js-options {:resolve {"cldr-data" false}}
    :devtools {:http-port 3021
               :http-root "out/browser/test"}
    :build-hooks [[com.hjsoft.mapmarks.website.build-hooks/version-cljs]]}
