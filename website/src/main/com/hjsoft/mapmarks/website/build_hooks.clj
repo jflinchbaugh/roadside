@@ -1,6 +1,7 @@
 (ns com.hjsoft.mapmarks.website.build-hooks
   (:require [clojure.string :as str]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [tick.core :as t]))
 
 (defn- replace-placeholders [content replacements]
   (reduce (fn [c [k v]]
@@ -42,7 +43,7 @@
 (defn version-cljs
   {:shadow.build/stage :configure}
   [state]
-  (let [ts (str (java.time.Instant/now))
+  (let [ts (str (t/now))
         content (str "(ns com.hjsoft.mapmarks.website.version)\n\n"
                      "(def build-date \"" ts "\")\n")]
     (io/make-parents "src/main/com/hjsoft/mapmarks/website/version.cljs")

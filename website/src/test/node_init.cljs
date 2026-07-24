@@ -1,4 +1,5 @@
-(ns node-init)
+(ns node-init
+  (:require [com.hjsoft.mapmarks.website.init-locale]))
 
 (goog-define ENABLE_JSDOM false)
 

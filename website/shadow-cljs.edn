@@ -9,7 +9,8 @@
                 [refactor-nrepl "3.13.0"]
                 [cljs-http "0.1.49"]
                 [http-kit "2.8.1"]
-                [metosin/malli "0.20.1"]]
+                [metosin/malli "0.20.1"]
+                [tick/tick "1.0.1"]]
  :dev-http {3000 {:root "public"
                   :handler com.hjsoft.mapmarks.website.dev-server/handler}}
  :builds

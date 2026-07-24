@@ -11,6 +11,8 @@
             [malli.error :as me]
             [taoensso.telemere :as tel]
             [hiccup2.core :as h]
+            [tick.core :as t]
+            [cljc.java-time.format.date-time-formatter :as dtf]
             [com.hjsoft.mapmarks.common.logic :as logic]
             [com.hjsoft.mapmarks.common.utils :as common-utils]
             [com.hjsoft.mapmarks.common.domain.mark :as common-mark]))
@@ -74,10 +76,8 @@
 
 (defn- format-rfc822 [iso-str]
   (try
-    (let [inst (java.time.Instant/parse iso-str)
-          zdt (java.time.ZonedDateTime/ofInstant inst (java.time.ZoneId/of "UTC"))
-          formatter java.time.format.DateTimeFormatter/RFC_1123_DATE_TIME]
-      (.format formatter zdt))
+    (t/format dtf/rfc-1123-date-time
+              (t/in (t/instant iso-str) (t/zone "UTC")))
     (catch Exception _
       nil)))
 

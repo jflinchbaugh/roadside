@@ -1,20 +1,18 @@
 (ns com.hjsoft.mapmarks.common.utils
   (:require [clojure.string :as str]
-            [com.hjsoft.mapmarks.common.logic :as logic]))
+            [com.hjsoft.mapmarks.common.logic :as logic]
+            [tick.core :as t]))
 
 (defn get-current-timestamp []
-  #?(:clj (.format java.time.format.DateTimeFormatter/ISO_INSTANT (java.time.Instant/now))
-     :cljs (.toISOString (js/Date.))))
+  (str (t/now)))
 
 (defn in-days [d]
-  #?(:clj (str (.plus (java.time.LocalDate/now) d java.time.temporal.ChronoUnit/DAYS))
-     :cljs (.substring (.toISOString (js/Date. (+ (.getTime (js/Date.)) (* d 24 60 60 1000)))) 0 10)))
+  (str (t/>> (t/today) (t/new-period d :days))))
 
 (defn past-expiration? [expiration-str]
   (if (str/blank? expiration-str)
     false
-    (let [today #?(:clj (str (java.time.LocalDate/now))
-                   :cljs (.substring (.toISOString (js/Date.)) 0 10))]
+    (let [today (str (t/today))]
       (neg? (compare expiration-str today)))))
 
 (defn random-uuid-str []

@@ -2,17 +2,23 @@
   (:require [clojure.string :as str]
             [goog.string]
             [goog.i18n.DateTimeFormat]
+            [com.hjsoft.mapmarks.website.init-locale]
+            [tick.core :as t]
+            ["@js-joda/timezone"]
             [com.hjsoft.mapmarks.common.utils :as common-utils]))
 
 (def get-current-timestamp common-utils/get-current-timestamp)
 
 (defn format-timestamp [iso-str]
   (when (seq iso-str)
-    (let [date (js/Date. iso-str)]
-      (if (js/isNaN (.getTime date))
-        iso-str
-        (let [formatter (goog.i18n.DateTimeFormat. "yyyy-MM-dd HH:mm")]
-          (.format formatter date))))))
+    (try
+      (let [inst (t/instant iso-str)
+            zdt (t/in inst (t/zone))
+            formatter (t/formatter "yyyy-MM-dd HH:mm")]
+        (t/format formatter zdt))
+      (catch :default e
+        (.error js/console "FAIL:" (.-stack e) (.-message e) e)
+        iso-str))))
 
 (def in-days common-utils/in-days)
 (def past-expiration? common-utils/past-expiration?)

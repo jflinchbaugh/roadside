@@ -1,18 +1,21 @@
 (ns com.hjsoft.mapmarks.website.utils-test
   (:require [com.hjsoft.mapmarks.website.utils :as sut]
             [clojure.string :as str]
+            [tick.core :as t]
+            ["@js-joda/timezone"]
             [cljs.test :refer [are deftest is testing]]))
 
 (deftest get-current-timestamp
-  (is (js/Date. (sut/get-current-timestamp))
-        "current timestamp string is well-formed as a date"))
+  (t/with-clock (t/clock (t/instant "2023-01-01T12:34:56Z"))
+    (is (= "2023-01-01T12:34:56Z" (sut/get-current-timestamp))
+        "returns the mock current timestamp")))
 
 (deftest format-timestamp-test
   (testing "formats ISO strings to local date/time"
     (let [;; Create a date in the LOCAL timezone with seconds
-          local-date (js/Date. 2023 0 1 12 34 56)
+          local-zdt (t/in (t/date-time "2023-01-01T12:34:56") (t/zone))
           ;; Convert it to UTC ISO string
-          iso-utc (.toISOString local-date)
+          iso-utc (str (t/instant local-zdt))
           ;; The formatter should convert it back to local time and truncate seconds
           expected "2023-01-01 12:34"]
       (is (= expected (sut/format-timestamp iso-utc))
@@ -24,16 +27,9 @@
     (is (= "not-a-date" (sut/format-timestamp "not-a-date")))))
 
 (deftest in-days
-  (is (re-matches #"\d{4}-\d{2}-\d{2}" (sut/in-days 7))
-        "iso date format")
-  (is (not= (js/Date.) (js/Date. (sut/in-days 7)))
-        "it's not now")
-  (is (< (js/Date.) (js/Date. (sut/in-days 7)))
-        "it's in the future")
-  (is (= 7
-           (- (int (/ (.getTime (js/Date. (sut/in-days 7))) 1000 60 60 24))
-              (int (/ (.getTime (js/Date.)) 1000 60 60 24))))
-        "7 days into the future"))
+  (t/with-clock (t/clock (t/instant "2023-01-01T12:34:56Z"))
+    (is (= "2023-01-08" (sut/in-days 7))
+        "7 days into the future")))
 
 (deftest random-uuid-str-test
   (is (string? (sut/random-uuid-str)))
