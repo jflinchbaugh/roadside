@@ -41,13 +41,17 @@
         has-coords? (and (not (js/isNaN lat)) (not (js/isNaN lon)))]
     (cond
       has-coords?
-      (dispatch [:set-map-center [lat lon]])
+      (do
+        (dispatch [:set-follow-user false])
+        (dispatch [:set-map-center [lat lon]]))
 
       has-mark-hash?
-      nil
+      (dispatch [:set-follow-user false])
 
       :else
-      (get-location (fn [loc] (dispatch [:set-map-center loc]))))
+      (do
+        (dispatch [:set-follow-user true])
+        (get-location (fn [loc] (dispatch [:set-map-center loc])))))
     (when (= action "add")
       (set-show-form true))))
 
@@ -97,8 +101,9 @@
 
 (defn use-app-side-effects
   [app-state dispatch user-location show-form set-show-form editing-mark]
-  (let [{:keys [marks settings map-center map-zoom last-sync config]} app-state
-        {:keys [get-location]} user-location
+  (let [{:keys [marks settings map-center map-zoom
+                last-sync config follow-user?]} app-state
+        {:keys [get-location location]} user-location
         [last-fetched-center set-last-fetched-center] (hooks/use-state map-center)
         app-state-ref (hooks/use-ref app-state)]
 
@@ -106,6 +111,12 @@
     (hooks/use-effect
      [app-state]
      (set! (.-current app-state-ref) app-state))
+
+    ;; Follow user location when follow-user? is true
+    (hooks/use-effect
+     [location follow-user?]
+     (when (and follow-user? location)
+       (dispatch [:set-map-center location])))
 
     ;; Local persistence
     (hooks/use-effect
@@ -273,6 +284,7 @@
                {:div-id "map-container"
                 :marks filtered-marks
                 :zoom-level initial-zoom-level
+                :on-user-move #(dispatch [:set-follow-user false])
                 :set-coordinate-form-data set-coordinate-form-data})
             ($ loading-indicator))
          (d/div
@@ -295,8 +307,12 @@
             (d/button
              {:type "button"
               :class "location-btn"
-              :onClick #((:get-location user-location)
-                         (fn [loc] (dispatch [:set-map-center loc])))}
+              :onClick #(do
+                          (dispatch [:set-follow-user true])
+                          (when-let [loc (:location user-location)]
+                            (dispatch [:set-map-center loc]))
+                          ((:get-location user-location)
+                           (fn [loc] (dispatch [:set-map-center loc]))))}
              "\u2316")))
           ($ tag-list {:marks marks-by-expiry})
           (when show-form ($ mark-form))

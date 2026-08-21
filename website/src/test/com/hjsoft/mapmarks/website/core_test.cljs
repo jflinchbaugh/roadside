@@ -148,3 +148,110 @@
           (is (false? @gps-called)
               "Should not query GPS when loaded with permalink")
           (set! (.-hash js/window.location) ""))))))
+
+(deftest app-location-tracking-and-recenter-test
+  (testing (str "tracks location, centers map initially, "
+                "stops on pan, resumes on btn")
+    (let [set-view-calls (atom [])
+          event-handlers (atom {})
+          mock-map #js {:setView (fn [center zoom opts]
+                                   (swap! set-view-calls conj (js->clj center))
+                                   (this-as this this))
+                        :addTo (fn [& _] (this-as this this))
+                        :on (fn [event-names handler]
+                              (doseq [evt (.split event-names " ")]
+                                (swap! event-handlers update evt
+                                       (fnil conj []) handler))
+                              (this-as this this))
+                        :getCenter (fn [] #js {:lat 0 :lng 0})
+                        :getZoom (fn [] 10)
+                        :invalidateSize (fn [] (this-as this this))
+                        :removeLayer (fn [& _] (this-as this this))}
+          mock-l #js {:map (fn [_] mock-map)
+                      :tileLayer (fn [_]
+                                   #js {:addTo (fn [& _] (this-as this this))})
+                      :marker (fn [_]
+                                #js {:bindPopup (fn [& _] (this-as this this))
+                                     :on (fn [& _] (this-as this this))
+                                     :addTo (fn [& _] (this-as this this))
+                                     :openPopup (fn [] (this-as this this))})
+                      :point (fn [x y] #js {:x x :y y})
+                      :circleMarker (fn [_ _]
+                                      #js {:addTo (fn [& _]
+                                                    (this-as this this))})
+                      :layerGroup (fn [_]
+                                    #js {:addTo (fn [& _]
+                                                  (this-as this this))})}
+          _ (ui-map/set-leaflet! mock-l)
+          geo-cb (atom nil)
+          mock-geo #js {:watchPosition (fn [success-cb _ _]
+                                         (reset! geo-cb success-cb)
+                                         1)}
+          state-clean (assoc (state/initial-app-state) :marks [])]
+      (with-redefs [controller/fetch-remote-marks! (fn
+                                                      ([_ _] nil)
+                                                      ([_ _ _] nil))
+                    controller/save-local-data! (fn [_ _ _ _] nil)
+                    state/initial-app-state (constantly state-clean)]
+        (let [res (tlr/render ($ sut/app {:geolocation mock-geo}))
+              container (.-container res)]
+          ;; 1. Initial geolocation tick should center the map
+          (tlr/act
+           (fn []
+             (when @geo-cb
+               (@geo-cb #js {:coords #js {:latitude 40.1
+                                          :longitude -76.1}}))))
+          (is (some (fn [c] (and (= 40.1 (first c)) (= -76.1 (second c))))
+                    @set-view-calls)
+              "Map should be centered on initial user location")
+
+          ;; 2. Subsequent location tick should move map (follow-user mode)
+          (reset! set-view-calls [])
+          (tlr/act
+           (fn []
+             (when @geo-cb
+               (@geo-cb #js {:coords #js {:latitude 40.2
+                                          :longitude -76.2}}))))
+          (is (some (fn [c] (and (= 40.2 (first c)) (= -76.2 (second c))))
+                    @set-view-calls)
+              "Map should follow user location updates")
+
+          ;; 3. User manually moves map (simulate dragstart with originalEvent)
+          (reset! set-view-calls [])
+          (tlr/act
+           (fn []
+             (doseq [h (get @event-handlers "dragstart")]
+               (h #js {:type "dragstart" :originalEvent #js {}}))))
+
+          ;; 4. Next location tick should NOT recenter the map
+          (reset! set-view-calls [])
+          (tlr/act
+           (fn []
+             (when @geo-cb
+               (@geo-cb #js {:coords #js {:latitude 40.3
+                                          :longitude -76.3}}))))
+          (is (empty? @set-view-calls)
+              "Map should not recenter after user manually moved the map")
+
+          ;; 5. User clicks the location button
+          (let [loc-btn (.querySelector container ".location-btn")]
+            (is (some? loc-btn) "Location button should exist")
+            (tlr/act
+             (fn []
+               (tlr/fireEvent.click loc-btn)))
+            (is (some (fn [c] (and (= 40.3 (first c)) (= -76.3 (second c))))
+                      @set-view-calls)
+                (str "Map should recenter to current location on location "
+                     "button click"))
+
+            ;; 6. Subsequent location tick should follow again
+            (reset! set-view-calls [])
+            (tlr/act
+             (fn []
+               (when @geo-cb
+                 (@geo-cb #js {:coords #js {:latitude 40.4
+                                            :longitude -76.4}}))))
+            (is (some (fn [c] (and (= 40.4 (first c)) (= -76.4 (second c))))
+                      @set-view-calls)
+                (str "Map should follow location updates after location "
+                     "button clicked"))))))))

@@ -71,7 +71,8 @@
      :last-sync (get-stored-item "last-sync" nil)
      :loading-marks? false
      :notification nil
-     :show-expired? false}))
+     :show-expired? false
+     :follow-user? (nil? selected-mark)}))
 
 (defn set-value [state key payload]
   (if (fn? payload)
@@ -125,6 +126,12 @@
       true (assoc :marks (vec (vals final-map)))
       last-sync (assoc :last-sync last-sync))))
 
+(defn- handle-set-selected-mark [state payload]
+  (let [new-state (set-value state :selected-mark payload)]
+    (if (and payload (:follow-user? state))
+      (assoc new-state :follow-user? false)
+      new-state)))
+
 (def action-handlers
   {:set-marks handle-set-marks
    :sync-marks handle-sync-marks
@@ -133,13 +140,14 @@
    :set-notification #(set-value %1 :notification %2)
    :set-is-synced #(set-value %1 :is-synced %2)
    :set-loading-marks #(set-value %1 :loading-marks? %2)
-   :set-selected-mark #(set-value %1 :selected-mark %2)
+   :set-selected-mark handle-set-selected-mark
    :set-tag-filter #(set-value %1 :tag-filter %2)
    :set-show-expired #(set-value %1 :show-expired? %2)
    :set-settings #(set-value %1 :settings %2)
    :set-config #(set-value %1 :config %2)
    :set-map-center #(set-value %1 :map-center %2)
-   :set-map-zoom #(set-value %1 :map-zoom %2)})
+   :set-map-zoom #(set-value %1 :map-zoom %2)
+   :set-follow-user #(set-value %1 :follow-user? %2)})
 
 (defn app-reducer [state [action-type payload]]
   (if-let [handler (get action-handlers action-type)]

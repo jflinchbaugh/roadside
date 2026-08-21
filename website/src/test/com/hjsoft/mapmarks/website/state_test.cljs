@@ -131,3 +131,21 @@
                                          [{:id "c1" :tags ["coffee"]}]))]
         (let [state (sut/initial-app-state)]
           (is (= [{:id "c1" :tags ["coffee"]}] (:marks state))))))))
+
+(deftest follow-user-state-test
+  (testing "set-follow-user updates follow-user? flag"
+    (let [s1 (sut/app-reducer {} [:set-follow-user true])
+          s2 (sut/app-reducer s1 [:set-follow-user false])]
+      (is (= true (:follow-user? s1)))
+      (is (= false (:follow-user? s2)))))
+
+  (testing "selecting a mark sets follow-user? to false"
+    (let [s (sut/app-reducer {:follow-user? true}
+                             [:set-selected-mark {:id "123"}])]
+      (is (= false (:follow-user? s)))))
+
+  (testing (str "initial-app-state defaults follow-user? to true "
+                "when no mark selected")
+    (with-redefs [storage/get-item (constantly nil)]
+      (let [state (sut/initial-app-state)]
+        (is (= true (:follow-user? state)))))))

@@ -13,14 +13,16 @@
 (defn set-leaflet! [l]
   (reset! leaflet-ref l))
 
-(def L (delay (or @leaflet-ref (throw (js/Error. "Leaflet not initialized. Call set-leaflet! first.")))))
+(defn- leaflet []
+  (or @leaflet-ref
+      (throw (js/Error. "Leaflet not initialized. Call set-leaflet! first."))))
 
 (def ^:const crosshairs-zoom-level 14)
 
 (defn- make-marker
   [{:keys [coord mark set-selected-mark auto-pan? config]
     :or {auto-pan? true}}]
-  (let [l @L
+  (let [l (leaflet)
         marker-fn (gobj/get l "marker")
         marker ^js (marker-fn (clj->js coord))
         popup-content (utils/mark-popup-html mark config)
@@ -35,7 +37,7 @@
 
 (defn- make-current-location-marker
   [coord]
-  (let [l @L
+  (let [l (leaflet)
         cm-fn (gobj/get l "circleMarker")]
     (cm-fn (clj->js coord)
            (clj->js {:radius 6
@@ -45,7 +47,7 @@
                      :weight 1}))))
 
 (defn- init-map [div-id center zoom-level]
-  (let [l @L
+  (let [l (leaflet)
         map-fn (gobj/get l "map")
         m ^js (map-fn div-id)
         tl-fn (gobj/get l "tileLayer")
@@ -110,7 +112,7 @@
                         (remove (comp nil? :coord))
                         (map (partial prepare-marker should-auto-pan? dispatch config)))
              new-layer-group (when (seq locations)
-                               (let [l ^js @L
+                               (let [l ^js (leaflet)
                                      lg-fn (gobj/get l "layerGroup")]
                                  (lg-fn (clj->js (map second locations)))))]
          (reset! prev-selected-ref selected-mark)
@@ -166,7 +168,7 @@
            (when @fade-timeout-ref (js/clearTimeout @fade-timeout-ref))
            (when @marker-ref (.removeLayer ^js mark-map @marker-ref))
            (if (view-wider-than-diameter? mark-map search-radius-m)
-             (let [l ^js @L
+             (let [l ^js (leaflet)
                    circle-fn (gobj/get l "circle")
                    marker (circle-fn
                            (.getCenter ^js mark-map)
@@ -209,9 +211,14 @@
          (.removeLayer ^js mark-map @marker-ref)
          (reset! marker-ref nil))))))
 
+(defn- user-initiated-event? [^js e]
+  (or (nil? e)
+      (some? (.-originalEvent e))
+      (= (.-type e) "dragstart")))
+
 (defn use-leaflet-map
   [{:keys [div-id center marks selected-mark zoom-level
-           set-coordinate-form-data auto-pan?]
+           set-coordinate-form-data auto-pan? on-user-move]
     :or {auto-pan? true}}]
   (let [app-state (state/use-app-state)
         dispatch (state/use-dispatch)
@@ -221,6 +228,7 @@
         center (or center (:map-center app-state))
         center-ref (hooks/use-ref center)
         reported-center-ref (hooks/use-ref nil)
+        on-user-move-ref (hooks/use-ref on-user-move)
         [mark-map set-mark-map] (hooks/use-state nil)
         [current-zoom set-current-zoom] (hooks/use-state zoom-level)]
 
@@ -228,12 +236,22 @@
      [center]
      (reset! center-ref center))
 
+    (hooks/use-effect
+     [on-user-move]
+     (reset! on-user-move-ref on-user-move))
+
     ;; Initialization
     (hooks/use-effect
      :once
      (let [m ^js (init-map div-id center zoom-level)]
        (when set-coordinate-form-data
          (dispatch [:set-map-zoom zoom-level]))
+       (.on
+        m
+        "dragstart movestart"
+        (fn [^js e]
+          (when (and @on-user-move-ref (user-initiated-event? e))
+            (@on-user-move-ref))))
        (.on
         m
         "moveend zoomend"
@@ -251,17 +269,17 @@
        (set-mark-map m)
        ;; Ensure map is correctly sized after modal animation/render
        (js/setTimeout
-       (fn []
-         (.invalidateSize m)
-         (.setView m (clj->js @center-ref) zoom-level))
-       100)))
+        (fn []
+          (.invalidateSize m)
+          (.setView m (clj->js @center-ref) zoom-level))
+        100)))
 
-       (use-map-center mark-map center reported-center-ref)
-       (use-map-markers mark-map marks selected-mark auto-pan? dispatch (:config app-state))
-       (use-user-location-marker mark-map location)
-       (use-search-radius-marker mark-map (:loading-marks? app-state))
-       {:mark-map mark-map
-       :zoom current-zoom}))
+    (use-map-center mark-map center reported-center-ref)
+    (use-map-markers mark-map marks selected-mark auto-pan? dispatch (:config app-state))
+    (use-user-location-marker mark-map location)
+    (use-search-radius-marker mark-map (:loading-marks? app-state))
+    {:mark-map mark-map
+     :zoom current-zoom}))
 (defnc leaflet-map
   [{:keys [div-id show-crosshairs] :as props}]
   (let [{:keys [is-locating cancel-location]} (state/use-user-location-state)
