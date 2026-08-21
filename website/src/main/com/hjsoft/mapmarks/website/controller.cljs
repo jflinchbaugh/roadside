@@ -3,6 +3,7 @@
             [com.hjsoft.mapmarks.website.storage :as storage]
             [com.hjsoft.mapmarks.website.config :as config]
             [com.hjsoft.mapmarks.website.domain.mark :as mark-domain]
+            [com.hjsoft.mapmarks.website.utils :as utils]
             [taoensso.telemere :as tel]
             [clojure.string :as str]
             [cljs.core.async :refer [go <!]]))
@@ -192,15 +193,22 @@
 (defn upload-all-marks!
   ([app-state dispatch]
    (upload-all-marks! app-state dispatch default-deps))
-  ([{:keys [marks settings config]} dispatch {:keys [create-mark]}]
+  ([{:keys [marks settings config show-expired?]}
+    dispatch
+    {:keys [create-mark]}]
    (let [user (:user settings)
          site (:site config)
+         eligible-marks (if show-expired?
+                          marks
+                          (filterv
+                           #(not (utils/past-expiration? (:expiration %)))
+                           marks))
          marks-to-upload (filter (fn [s]
-                                    (let [creator (:creator s)]
-                                      (or (nil? creator)
-                                          (empty? (str creator))
-                                          (= creator user))))
-                                  marks)]
+                                   (let [creator (:creator s)]
+                                     (or (nil? creator)
+                                         (empty? (str creator))
+                                         (= creator user))))
+                                 eligible-marks)]
      (cond
        (not (remote-allowed? settings))
        (notify! dispatch :error "Remote operations disabled by settings")

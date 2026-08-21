@@ -304,3 +304,41 @@
                                        (has-notif? acts :success "potholes")))
                                 cleanup 1000)))
                   1000)))))
+
+(deftest upload-all-marks-expiration-test
+  (async done
+    (testing "upload-all-marks! skips expired marks when show-expired? is false"
+      (let [dispatched (atom [])
+            dispatch (fn [action] (swap! dispatched conj action))
+            uploaded (atom [])
+            deps (assoc mock-deps
+                        :create-mark (fn [_site _user _pass mark]
+                                       (swap! uploaded conj mark)
+                                       (go {:success true})))
+            active-mark {:id "m1" :name "Active" :creator "alice"
+                         :expiration "2099-01-01T00:00:00Z"}
+            expired-mark {:id "m2" :name "Expired" :creator "alice"
+                          :expiration "2020-01-01T00:00:00Z"}
+            app-state {:settings {:user "alice" :password "secret"}
+                       :config {:site "test"}
+                       :show-expired? false
+                       :marks [active-mark expired-mark]}]
+        (sut/upload-all-marks! app-state dispatch deps)
+        (wait-for uploaded
+                  (fn [marks] (= 1 (count marks)))
+                  (fn []
+                    (is (= ["m1"] (mapv :id @uploaded)))
+                    ;; Now test with show-expired? true
+                    (reset! uploaded [])
+                    (swap! dispatched empty)
+                    (sut/upload-all-marks!
+                     (assoc app-state :show-expired? true)
+                     dispatch
+                     deps)
+                    (wait-for uploaded
+                              (fn [marks] (= 2 (count marks)))
+                              (fn []
+                                (is (= ["m1" "m2"] (mapv :id @uploaded)))
+                                (done))
+                              1000))
+                  1000)))))
