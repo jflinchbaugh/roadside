@@ -2,39 +2,56 @@
 
 Multi-tenant backend for map bookmarks from the website client.
 
+## Multi-Tenancy and Site Routing
+
+The server supports multi-tenancy by scoping tenant datasets under a `:site`
+identifier (e.g. `mapmarks`, `roadside`, `potholes`, `library`).
+
+All site-specific endpoints are nested under `/s/:site/`
+(e.g., `<base-url>/s/:site/api/...` and `<base-url>/s/:site/:filename`).
+The `/s/` path segment acts as a dedicated namespace prefix, ensuring that
+dynamic site identifiers never collide with other top-level API routes (such as
+`/api/ping`) or static asset paths (such as `/css/style.css` or `/js/main.js`).
+
 run the server:
 ```
 $ clj -M:run
 ```
 
-register a new mapmarks account with login and password:
+register a new account for a site with login and password:
 ```
 $ curl -s -v \
-  -d login=u -d password=p \
-  http://localhost:8080/mapmarks/api/register
+  -d login=u -d password=p -d email=u@example.com \
+  http://localhost:8080/mapmarks/s/mapmarks/api/register
 ```
 
-Download the mapmarks mark data:
+download the marks data for a site:
 ```
-$ curl -s -v -u u:p http://localhost:8080/mapmarks/api/marks
+$ curl -s -v -u u:p http://localhost:8080/mapmarks/s/mapmarks/api/marks
 ```
 
-Post new document data:
+create a new mark for a site:
 ```
 $ curl -s -v -u u:p \
   -H 'Content-Type: application/json' \
-  -d '{"categories": [{"thing": true,"whatever": 2}]}' \
-  http://localhost:8080/storage/api/logger/z
+  -d '{"name": "Sample Mark", "lat": 40.0, "lon": -76.0}' \
+  http://localhost:8080/mapmarks/s/mapmarks/api/marks
 ```
 
 delete a mark:
 ```
-$ curl -s -v -u u:p -X delete http://localhost:8080/mapmarks/api/marks/:id
+$ curl -s -v -u u:p -X delete \
+  http://localhost:8080/mapmarks/s/mapmarks/api/marks/:id
 ```
 
-static content, like the stylesheet, is available as well:
+download site feeds (RSS, KML, CSV):
 ```
-$ curl -s -v http://localhost:8080/css/style.css
+$ curl -s -v http://localhost:8080/mapmarks/s/mapmarks/feed.rss
+```
+
+static content, like the stylesheet, is available at top-level paths:
+```
+$ curl -s -v http://localhost:8080/mapmarks/css/style.css
 ```
 
 run the tests:
