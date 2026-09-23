@@ -5,6 +5,7 @@
             [helix.dom :as d]
             [clojure.string :as str]
             [com.hjsoft.mapmarks.website.utils :as utils]
+            [com.hjsoft.mapmarks.website.domain.mark :as mark-domain]
             [com.hjsoft.mapmarks.website.state :as state]
             [com.hjsoft.mapmarks.website.controller :as controller]
             [com.hjsoft.mapmarks.website.ui.hooks :refer [use-user-location]]
@@ -127,6 +128,47 @@
      [last-reviewed]
      (when last-reviewed
        (controller/save-last-reviewed! last-reviewed)))
+
+    ;; Browser notification when review is recommended
+    (let [notified-ref (hooks/use-ref false)
+          review-rec? (mark-domain/review-recommended? app-state)]
+      (hooks/use-effect
+       [review-rec?]
+       (if review-rec?
+         (when-not (.-current notified-ref)
+           (set! (.-current notified-ref) true)
+           (controller/notify-review-due! (.-current app-state-ref)))
+         (set! (.-current notified-ref) false))))
+
+    ;; Register service worker on startup
+    (hooks/use-effect
+     :once
+     (controller/register-service-worker!))
+
+    ;; Sync review configuration to service worker
+    (hooks/use-effect
+     [marks settings last-reviewed (:config app-state)]
+     (controller/sync-service-worker-review-state! app-state))
+
+    ;; Periodic in-session check (daily and on tab visibility change)
+    (hooks/use-effect
+     :once
+     (when (exists? js/window)
+       (let [check #(controller/notify-review-due! (.-current app-state-ref))
+             interval-id (js/setInterval check (* 24 60 60 1000))
+             visibility-handler (fn []
+                                  (when (and (exists? js/document)
+                                             (= (.-visibilityState js/document)
+                                                "visible"))
+                                    (check)))]
+         (when (exists? js/document)
+           (js/document.addEventListener "visibilitychange" visibility-handler))
+         (fn []
+           (js/clearInterval interval-id)
+           (when (exists? js/document)
+             (js/document.removeEventListener
+              "visibilitychange"
+              visibility-handler))))))
 
     ;; Fetch from Remote API on settings change
     (hooks/use-effect

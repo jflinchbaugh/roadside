@@ -397,3 +397,105 @@
             selected-mark (second (first selected-actions))]
         (t/is (= "m1" (:id selected-mark)))
         (t/is (not= "2026-08-01" (:expiration selected-mark)))))))
+
+(t/deftest review-notification-test
+  (let [created (atom [])
+        mock-api (fn [title opts]
+                   (swap! created conj
+                          {:title title
+                           :options (js->clj opts :keywordize-keys true)})
+                   #js {:title title :options opts})]
+    (set! (.-permission mock-api) "granted")
+
+    (t/testing "sends browser notification when review is recommended"
+      (reset! created [])
+      (let [app-state {:marks [{:id "m1" :creator "alice"
+                                :expiration "2026-08-01"}]
+                       :settings {:user "alice"}
+                       :config {:app-name "Roadside"
+                                :mark-name-plural "Potholes"
+                                :review-interval-days 30}
+                       :last-reviewed "2026-01-01"}]
+        (sut/notify-review-due! app-state mock-api)
+        (t/is (= 1 (count @created)))
+        (let [notif (first @created)]
+          (t/is (= "Roadside" (:title notif)))
+          (t/is (= "Some potholes are due to be reviewed."
+                   (get-in notif [:options :body]))))))
+
+    (t/testing "does not send browser notification when review is not due"
+      (reset! created [])
+      (let [app-state {:marks [{:id "m1" :creator "alice"
+                                :expiration "2026-08-01"}]
+                       :settings {:user "alice"}
+                       :config {:app-name "Roadside"
+                                :mark-name-plural "Potholes"
+                                :review-interval-days 30}
+                       :last-reviewed "2099-01-01"}]
+        (sut/notify-review-due! app-state mock-api)
+        (t/is (empty? @created))))
+
+    (t/testing "requests permission when default, sends if granted"
+      (reset! created [])
+      (let [requested (atom false)
+            default-api (fn [title opts]
+                          (swap! created conj
+                                 {:title title
+                                  :options (js->clj opts :keywordize-keys true)})
+                          #js {:title title :options opts})
+            app-state {:marks [{:id "m1" :creator "alice"
+                                :expiration "2026-08-01"}]
+                       :settings {:user "alice"}
+                       :config {:app-name "Roadside"
+                                :mark-name-plural "Potholes"
+                                :review-interval-days 30}
+                       :last-reviewed "2026-01-01"}]
+        (set! (.-permission default-api) "default")
+        (set! (.-requestPermission default-api)
+              (fn [cb]
+                (reset! requested true)
+                (cb "granted")))
+        (sut/notify-review-due! app-state default-api)
+        (t/is (true? @requested))
+        (t/is (= 1 (count @created)))))
+
+    (t/testing "does not send notification when permission is denied"
+      (reset! created [])
+      (let [denied-api (fn [title opts]
+                         (swap! created conj {:title title})
+                         #js {:title title :options opts})
+            app-state {:marks [{:id "m1" :creator "alice"
+                                :expiration "2026-08-01"}]
+                       :settings {:user "alice"}
+                       :config {:app-name "Roadside"
+                                :mark-name-plural "Potholes"
+                                :review-interval-days 30}
+                       :last-reviewed "2026-01-01"}]
+        (set! (.-permission denied-api) "denied")
+        (sut/notify-review-due! app-state denied-api)
+        (t/is (empty? @created))))))
+
+(t/deftest sync-service-worker-review-state-test
+  (let [messages (atom [])
+        mock-controller #js {:postMessage
+                             (fn [msg]
+                               (swap! messages conj
+                                      (js->clj msg :keywordize-keys true)))}
+        mock-sw #js {:controller mock-controller}
+        app-state {:marks [{:id "m1" :creator "alice"
+                            :expiration "2026-08-01"}]
+                   :settings {:user "alice"}
+                   :config {:app-name "Roadside"
+                            :mark-name-plural "Potholes"
+                            :review-interval-days 30}
+                   :last-reviewed "2026-01-01"}]
+    (t/testing "syncs review config payload to service worker controller"
+      (sut/sync-service-worker-review-state! app-state mock-sw)
+      (t/is (= 1 (count @messages)))
+      (let [msg (first @messages)]
+        (t/is (= "SYNC_REVIEW_CONFIG" (:type msg)))
+        (t/is (= "2026-01-01" (:lastReviewed msg)))
+        (t/is (= 30 (:intervalDays msg)))
+        (t/is (= true (:hasOwnedMarks msg)))
+        (t/is (= "Roadside" (:appName msg)))
+        (t/is (= "Potholes" (:markNamePlural msg)))))))

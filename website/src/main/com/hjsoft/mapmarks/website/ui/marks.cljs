@@ -280,6 +280,8 @@
 (defnc review-button []
   (let [app-state (state/use-app-state)
         dispatch (state/use-dispatch)
+        config (:config app-state)
+        plural (str/lower-case (or (:mark-name-plural config) "marks"))
         review-mode? (:review-mode? app-state)
         recommended? (mark-domain/review-recommended? app-state)]
     (d/button
@@ -287,8 +289,8 @@
                   (when recommended? " review-recommended")
                   (when review-mode? " active"))
       :title (if recommended?
-               "Review recommended for your marks"
-               "Review your marks")
+               (str "Review recommended for your " plural)
+               (str "Review your " plural))
       :onClick #(dispatch [:set-review-mode (not review-mode?)])}
      (if recommended?
        "Review \u25CF"

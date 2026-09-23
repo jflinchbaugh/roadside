@@ -32,6 +32,104 @@
     (when last-reviewed
       (storage/set-item! (str site-name "-last-reviewed") last-reviewed))))
 
+(defn send-browser-notification!
+  "Displays a Web Notification if permission is granted, or requests
+   permission."
+  ([title options]
+   (when (exists? js/Notification)
+     (send-browser-notification! title options js/Notification)))
+  ([title options notification-api]
+   (when (some? notification-api)
+     (let [permission (.-permission notification-api)
+           create-notif #(try
+                           (new notification-api title (clj->js options))
+                           (catch :default _ nil))]
+       (cond
+         (= permission "granted")
+         (create-notif)
+
+         (= permission "default")
+         (let [called (atom false)
+               on-perm (fn [perm]
+                         (when (compare-and-set! called false true)
+                           (when (= perm "granted")
+                             (create-notif))))]
+           (try
+             (let [res (.requestPermission notification-api on-perm)]
+               (when (and res (fn? (.-then res)))
+                 (.then res on-perm)))
+             (catch :default _ nil)))
+
+         :else nil)))))
+
+(defn notify-review-due!
+  "Checks if review is recommended and sends a browser notification."
+  ([app-state]
+   (when (exists? js/Notification)
+     (notify-review-due! app-state js/Notification)))
+  ([app-state notification-api]
+   (when (mark-domain/review-recommended? app-state)
+     (let [config (or (:config app-state) config/config)
+           app-name (or (:app-name config)
+                        (:app-name config/config)
+                        "Map Marks")
+           marks-label (str/lower-case
+                        (or (:mark-name-plural config)
+                            (:mark-name-plural config/config)
+                            "marks"))
+           title app-name
+           options (cond-> {:body (str "Some " marks-label
+                                       " are due to be reviewed.")}
+                     (:app-icon config) (assoc :icon (:app-icon config)))]
+       (send-browser-notification! title options notification-api)))))
+
+(defn register-service-worker!
+  "Registers the service worker and registers periodic sync if supported."
+  ([]
+   (when (and (exists? js/navigator)
+              (exists? js/navigator.serviceWorker))
+     (register-service-worker! js/navigator.serviceWorker)))
+  ([^js sw]
+   (when (some? sw)
+     (try
+       (-> (.register sw "service-worker.js")
+           (.then (fn [^js reg]
+                    (when (and reg (some? (.-periodicSync reg)))
+                      (try
+                        (-> (.register ^js (.-periodicSync reg)
+                                       "check-review-due"
+                                       #js {:minInterval (* 24 60 60 1000)})
+                            (.catch (fn [_] nil)))
+                        (catch :default _ nil)))
+                    reg))
+           (.catch (fn [_] nil)))
+       (catch :default _ nil)))))
+
+(defn sync-service-worker-review-state!
+  "Sends review configuration and status to the service worker."
+  ([app-state]
+   (when (and (exists? js/navigator)
+              (exists? js/navigator.serviceWorker))
+     (sync-service-worker-review-state! app-state js/navigator.serviceWorker)))
+  ([app-state ^js sw]
+   (when (and (some? sw) (.-controller sw))
+     (let [config (or (:config app-state) config/config)
+           last-reviewed (:last-reviewed app-state)
+           interval-days (or (:review-interval-days config) 30)
+           user (get-in app-state [:settings :user])
+           has-owned? (boolean (seq (filter #(mark-domain/mark-owner? % user)
+                                            (:marks app-state))))
+           payload #js {:type "SYNC_REVIEW_CONFIG"
+                        :lastReviewed last-reviewed
+                        :intervalDays interval-days
+                        :hasOwnedMarks has-owned?
+                        :appName (or (:app-name config) "Map Marks")
+                        :markNamePlural (or (:mark-name-plural config)
+                                            (:mark-name-plural config/config)
+                                            "Marks")
+                        :appIcon (or (:app-icon config) "favicon.ico")}]
+       (.postMessage ^js (.-controller sw) payload)))))
+
 (defn- has-credentials? [settings]
   (and (seq (:user settings))
        (seq (:password settings))))
