@@ -1,5 +1,5 @@
 (ns com.hjsoft.mapmarks.website.core-test
-  (:require [cljs.test :refer [deftest is testing use-fixtures]]
+  (:require [cljs.test :as t :refer [deftest is testing use-fixtures]]
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.mapmarks.website.leaflet-init]
@@ -255,3 +255,33 @@
                       @set-view-calls)
                 (str "Map should follow location updates after location "
                      "button clicked"))))))))
+
+(deftest app-review-mode-toggle-test
+  (let [mock-l (create-mock-leaflet)
+        _ (ui-map/set-leaflet! mock-l)]
+    (with-redefs [controller/fetch-remote-marks! (fn
+                                                   ([_ _] nil)
+                                                   ([_ _ _] nil))
+                  controller/save-local-data! (fn [_ _ _ _] nil)
+                  controller/save-last-reviewed! (fn [_] nil)]
+      (let [mock-geo #js {:getCurrentPosition (fn [success _ _])}
+            res (tlr/render ($ sut/app {:geolocation mock-geo}))
+            container (.-container res)
+            review-btn (.querySelector container ".review-marks-btn")]
+        (is (some? review-btn) "Review button should exist in action bar")
+        (is (nil? (.querySelector container ".review-banner"))
+            "Review banner should not be visible initially")
+        ;; Click Review button to activate review mode
+        (tlr/act
+         (fn []
+           (tlr/fireEvent.click review-btn)))
+        (is (some? (.querySelector container ".review-banner"))
+            "Review banner should be visible when review mode is active")
+        ;; Click Done Reviewing button to exit review mode
+        (let [done-btn (.querySelector container ".exit-review-btn")]
+          (is (some? done-btn) "Done Reviewing button should exist")
+          (tlr/act
+           (fn []
+             (tlr/fireEvent.click done-btn)))
+          (is (nil? (.querySelector container ".review-banner"))
+              "Review banner should be hidden after clicking Done Reviewing"))))))

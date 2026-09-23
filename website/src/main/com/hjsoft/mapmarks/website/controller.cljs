@@ -26,6 +26,11 @@
     (storage/set-item! (str site-name "-map-zoom") map-zoom)
     (storage/set-item! (str site-name "-last-sync") last-sync)))
 
+(defn save-last-reviewed! [last-reviewed]
+  (let [site-name (:site config/config)]
+    (when last-reviewed
+      (storage/set-item! (str site-name "-last-reviewed") last-reviewed))))
+
 (defn- has-credentials? [settings]
   (and (seq (:user settings))
        (seq (:password settings))))
@@ -316,6 +321,30 @@
            (do
              (notify! dispatch :error (format-error error) (:id editing-mark))
              false)))))))
+
+(defn extend-mark!
+  "Extends the expiration date of a mark by specified days (default 30),
+   updates state and remote storage, and sends a notification."
+  ([app-state dispatch mark]
+   (extend-mark! app-state dispatch mark nil default-deps))
+  ([app-state dispatch mark days]
+   (extend-mark! app-state dispatch mark days default-deps))
+  ([{:keys [config] :as app-state} dispatch mark days deps]
+   (let [interval (or days
+                      (:extend-expiration-days config)
+                      (:default-expiration-days config)
+                      30)
+         new-exp (mark-domain/extend-expiration (:expiration mark) interval)
+         updated-mark (assoc mark :expiration new-exp)
+         res (update-mark! app-state dispatch updated-mark mark deps)]
+     (when res
+       (notify! dispatch :success
+                (str (if (seq (:name mark))
+                       (:name mark)
+                       (:mark-name-singular config/config))
+                     " expiration extended to " new-exp)
+                (:id mark))
+       true))))
 
 (defn delete-mark!
   ([app-state dispatch mark]

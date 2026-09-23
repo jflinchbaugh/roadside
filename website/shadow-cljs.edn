@@ -31,6 +31,8 @@
      com.hjsoft.mapmarks.website.config/APP_LOGO "\uD83D\uDCCD" ;; pin emoji
      com.hjsoft.mapmarks.website.config/APP_ICON "favicon.ico"
      com.hjsoft.mapmarks.website.config/DEFAULT_EXPIRATION_DAYS 30
+     com.hjsoft.mapmarks.website.config/EXTEND_EXPIRATION_DAYS 30
+     com.hjsoft.mapmarks.website.config/REVIEW_INTERVAL_DAYS 30
      com.hjsoft.mapmarks.website.config/TAGS_NAME_ARTICLE "a"
      com.hjsoft.mapmarks.website.config/TAGS_NAME_SINGULAR "Tag"
      com.hjsoft.mapmarks.website.config/TAGS_NAME_PLURAL "Tags"

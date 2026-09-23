@@ -18,6 +18,8 @@
                         (set-show-form false)))
      :delete-mark! (fn [mark]
                       (controller/delete-mark! app-state dispatch mark))
+     :extend-mark! (fn [mark & [days]]
+                     (controller/extend-mark! app-state dispatch mark days))
      :vote-mark! (fn [mark value]
                     (controller/vote-mark! app-state dispatch mark value))
      :lookup-address! (fn [on-update address-data]

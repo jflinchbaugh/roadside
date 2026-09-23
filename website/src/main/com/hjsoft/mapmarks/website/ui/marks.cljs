@@ -6,6 +6,7 @@
             [com.hjsoft.mapmarks.website.domain.mark :as mark-domain]
             [com.hjsoft.mapmarks.website.state :as state]
             [clojure.string :as str]
+            [tick.core :as t]
             [com.hjsoft.mapmarks.website.ui.hooks :as ui-hooks]
             [com.hjsoft.mapmarks.website.ui.layout :refer [mark-notification-toast]]))
 
@@ -38,13 +39,12 @@
       icon-down-arrow))))
 
 (defnc mark-item
-  [{:keys [mark selected? on-click on-edit on-delete on-vote item-ref]}]
+  [{:keys [mark selected? review-mode? on-click on-edit on-delete on-vote
+           on-extend item-ref]}]
   (let [[confirming? set-confirming] (hooks/use-state false)
         app-state (state/use-app-state)
         current-user (get-in app-state [:settings :user])
-        creator (:creator mark)
-        owner? (or (empty? (str creator))
-                   (= (str current-user) (str creator)))
+        owner? (mark-domain/mark-owner? mark current-user)
         expired? (utils/past-expiration? (:expiration mark))
         config (:config app-state)
         incomplete? (and owner?
@@ -104,6 +104,11 @@
          {:class "mark-notes"}
          (d/strong "Notes: ")
          (:notes mark)))
+      (when (and (not selected?) review-mode? (seq (:expiration mark)))
+        (d/p
+         {:class "expiration-date review-expiration"}
+         (d/strong (if expired? "Expired: " "Expires: "))
+         (:expiration mark)))
       (when selected?
         (d/div
          {:class "mark-extra-info"}
@@ -140,6 +145,18 @@
               :rel "noopener noreferrer"
               :class "go-mark-btn"}
              "Go"))
+      (when (and owner? review-mode?)
+        (let [days (or (:extend-expiration-days config)
+                       (:default-expiration-days config)
+                       30)
+              handle-extend (fn [e]
+                              (.stopPropagation e)
+                              (when on-extend (on-extend mark days)))]
+          (d/button
+           {:class "extend-mark-btn"
+            :onClick handle-extend
+            :title (str "Extend expiration by " days " days")}
+           (str "Extend (+" days "d)"))))
       (when owner?
         (let [handle-edit (fn [e]
                             (.stopPropagation e)
@@ -175,7 +192,8 @@
         selected-mark (:selected-mark app-state)
         dispatch (state/use-dispatch)
         {:keys [set-editing-mark set-show-form]} (state/use-ui)
-        {:keys [delete-mark! vote-mark!]} (ui-hooks/use-actions)
+        {:keys [delete-mark! vote-mark! extend-mark!]} (ui-hooks/use-actions)
+        review-mode? (:review-mode? app-state)
         mark-refs (hooks/use-ref {})]
     (hooks/use-effect
      [selected-mark]
@@ -189,7 +207,13 @@
     (d/div
      {:class "marks-list"}
      (if (empty? marks)
-       (d/p (str "No " (str/lower-case (:mark-name-plural (:config app-state))) " added yet."))
+       (d/p (if review-mode?
+              (str "No "
+                   (str/lower-case (:mark-name-plural (:config app-state)))
+                   " to review.")
+              (str "No "
+                   (str/lower-case (:mark-name-plural (:config app-state)))
+                   " added yet.")))
        (<>
         (map
          (fn [mark]
@@ -198,10 +222,12 @@
                 {:key key
                  :mark mark
                  :selected? (= key (mark-domain/mark-key selected-mark))
+                 :review-mode? review-mode?
                  :on-click #(dispatch [:set-selected-mark mark])
                  :on-edit #(do
                              (set-editing-mark %)
                              (set-show-form true))
+                 :on-extend (fn [m & [d]] (extend-mark! m d))
                  :on-delete #(delete-mark! %)
                  :on-vote #(vote-mark! mark %)
                  :item-ref (fn [el] (swap! mark-refs assoc key el))})))
@@ -251,3 +277,37 @@
              :onClick #(dispatch [:set-tag-filter nil])}
             "Clear Filter"))))))))
 
+(defnc review-button []
+  (let [app-state (state/use-app-state)
+        dispatch (state/use-dispatch)
+        review-mode? (:review-mode? app-state)
+        recommended? (mark-domain/review-recommended? app-state)]
+    (d/button
+     {:class (str "review-marks-btn"
+                  (when recommended? " review-recommended")
+                  (when review-mode? " active"))
+      :title (if recommended?
+               "Review recommended for your marks"
+               "Review your marks")
+      :onClick #(dispatch [:set-review-mode (not review-mode?)])}
+     (if recommended?
+       "Review \u25CF"
+       "Review"))))
+
+(defnc review-banner []
+  (let [app-state (state/use-app-state)
+        dispatch (state/use-dispatch)
+        {:keys [config]} app-state]
+    (d/div
+     {:class "review-banner"}
+     (d/span
+      {:class "review-banner-text"}
+      (str "Reviewing your "
+           (str/lower-case (:mark-name-plural config))
+           " (sorted by expiration)"))
+     (d/button
+      {:class "exit-review-btn"
+       :onClick #(do
+                   (dispatch [:set-last-reviewed (str (t/today))])
+                   (dispatch [:set-review-mode false]))}
+      "Done Reviewing"))))

@@ -2,6 +2,7 @@
   (:require [com.hjsoft.mapmarks.website.storage :as storage]
             [com.hjsoft.mapmarks.website.utils :as utils]
             [com.hjsoft.mapmarks.website.config :as config]
+            [com.hjsoft.mapmarks.website.domain.mark :as mark-domain]
             [clojure.string :as str]
             [helix.core :refer [create-context]]
             [helix.hooks :as hooks]))
@@ -72,6 +73,8 @@
      :loading-marks? false
      :notification nil
      :show-expired? false
+     :review-mode? false
+     :last-reviewed (get-stored-item "last-reviewed" nil)
      :follow-user? (nil? selected-mark)}))
 
 (defn set-value [state key payload]
@@ -143,6 +146,8 @@
    :set-selected-mark handle-set-selected-mark
    :set-tag-filter #(set-value %1 :tag-filter %2)
    :set-show-expired #(set-value %1 :show-expired? %2)
+   :set-review-mode #(set-value %1 :review-mode? %2)
+   :set-last-reviewed #(set-value %1 :last-reviewed %2)
    :set-settings #(set-value %1 :settings %2)
    :set-config #(set-value %1 :config %2)
    :set-map-center #(set-value %1 :map-center %2)
@@ -168,3 +173,10 @@
       (let [[u-lat u-lng] user-location]
         (sort-by (partial distance-from u-lat u-lng) filtered))
       (sort-by :updated #(compare %2 %1) filtered))))
+
+(defn select-review-marks
+  "Selects marks owned by the user, sorted chronologically by expiration."
+  [{:keys [marks settings]}]
+  (let [current-user (get-in settings [:user])
+        owned (filterv #(mark-domain/mark-owner? % current-user) marks)]
+    (mark-domain/sort-marks-by-expiration owned)))

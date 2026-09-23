@@ -6,3 +6,4 @@
 - insert escaped unicode into source files, and not extended characters
 - when asked to run the build, `npx shadow-cljs compile frontend`
 - when writing tests, refer to the test library as `t`
+- run tests as `make test`

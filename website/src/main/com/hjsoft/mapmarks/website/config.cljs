@@ -10,6 +10,8 @@
 (goog-define APP_LOGO "\uD83D\uDCCD") ;; pin emoji
 (goog-define APP_ICON "favicon.ico")
 (goog-define DEFAULT_EXPIRATION_DAYS 30)
+(goog-define EXTEND_EXPIRATION_DAYS 30)
+(goog-define REVIEW_INTERVAL_DAYS 30)
 (goog-define TAGS_NAME_ARTICLE "a")
 (goog-define TAGS_NAME_SINGULAR "Tag")
 (goog-define TAGS_NAME_PLURAL "Tags")
@@ -27,6 +29,8 @@
    :app-logo APP_LOGO
    :app-icon APP_ICON
    :default-expiration-days DEFAULT_EXPIRATION_DAYS
+   :extend-expiration-days EXTEND_EXPIRATION_DAYS
+   :review-interval-days REVIEW_INTERVAL_DAYS
    :tags-name-singular TAGS_NAME_SINGULAR
    :tags-name-plural TAGS_NAME_PLURAL
    :tags-name-article TAGS_NAME_ARTICLE

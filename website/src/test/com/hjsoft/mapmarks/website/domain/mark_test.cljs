@@ -1,6 +1,6 @@
 (ns com.hjsoft.mapmarks.website.domain.mark-test
   (:require [com.hjsoft.mapmarks.website.domain.mark :as sut]
-            [cljs.test :refer [deftest is testing]]))
+            [cljs.test :as t :refer [deftest is testing]]))
 
 (deftest mark-key-test
   (testing "nil or empty mark"
@@ -209,3 +209,44 @@
                  :lon 4.0
                  :site "test"}]
                (map (fn [s] (dissoc s :updated :creator)) marks)))))))
+ 
+(deftest review-marks-test
+  (testing "mark-owner?"
+    (is (true? (sut/mark-owner? {:creator "alice"} "alice")))
+    (is (false? (sut/mark-owner? {:creator "alice"} "bob")))
+    (is (true? (sut/mark-owner? {:creator ""} "alice")))
+    (is (true? (sut/mark-owner? {:creator nil} "alice")))
+    (is (true? (sut/mark-owner? {:creator nil} nil))))
+
+  (testing "sort-marks-by-expiration sorts chronologically"
+    (let [marks [{:id "1" :expiration "2026-10-15"}
+                 {:id "2" :expiration "2026-08-01"}
+                 {:id "3" :expiration nil}
+                 {:id "4" :expiration "2026-09-15"}
+                 {:id "5" :expiration ""}
+                 {:id "6" :expiration "2026-09-23"}]
+          sorted (sut/sort-marks-by-expiration marks)]
+      (is (= ["2" "4" "6" "1" "3" "5"]
+             (mapv :id sorted)))))
+
+  (testing "extend-expiration"
+    (let [extended (sut/extend-expiration "2026-08-01" 30)]
+      (is (string? extended))
+      (is (not= "2026-08-01" extended))))
+
+  (testing "review-due?"
+    (is (true? (sut/review-due? nil 30)))
+    (is (true? (sut/review-due? "" 30)))
+    (is (true? (sut/review-due? "2026-01-01" 30)))
+    (is (false? (sut/review-due? "2099-01-01" 30))))
+
+  (testing "review-recommended?"
+    (is (false? (sut/review-recommended? {:marks [] :settings {:user "alice"}})))
+    (is (true? (sut/review-recommended?
+                {:marks [{:creator "alice"}]
+                 :settings {:user "alice"}
+                 :last-reviewed nil})))
+    (is (false? (sut/review-recommended?
+                 {:marks [{:creator "alice"}]
+                  :settings {:user "alice"}
+                  :last-reviewed "2099-01-01"})))))

@@ -1,9 +1,10 @@
 (ns com.hjsoft.mapmarks.website.ui.marks-test
-  (:require [cljs.test :refer [deftest is testing use-fixtures]]
+  (:require [cljs.test :as t :refer [deftest is testing use-fixtures]]
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.mapmarks.website.ui.marks :as marks]
             [com.hjsoft.mapmarks.website.state :as state]
+            [com.hjsoft.mapmarks.website.config :as config]
             [goog.object :as gobj]))
 
 (use-fixtures :each
@@ -11,15 +12,7 @@
 
 (defn render-mark-item [state mark & [props]]
   (let [ctx state/app-context
-        state-with-config (update state :config #(or % {:app-name "MapMarks"
-                                                        :app-logo "\uD83D\uDCCD"
-                                                        :default-expiration-days 30
-                                                        :tags-name-singular "Tag"
-                                                        :tags-name-plural "Tags"
-                                                        :tags-name-article "a"
-                                                        :mark-name-singular "Mark"
-                                                        :mark-name-plural "Marks"
-                                                        :mark-name-article "a"}))]
+        state-with-config (update state :config #(merge config/config %))]
     (tlr/render
      ($ (gobj/get ctx "Provider")
         {:value {:state state-with-config
@@ -31,6 +24,8 @@
             :on-delete (:on-delete props)
             :selected? (:selected? props)
             :on-edit (:on-edit props)
+            :on-extend (:on-extend props)
+            :review-mode? (:review-mode? props)
             :on-click (:on-click props)})))))
 
 (deftest mark-item-ownership-test
@@ -160,3 +155,32 @@
           item-div (.querySelector container ".mark-item")]
       (is (= "stand=xyz-123" (.getAttribute item-div "id"))
           "The ID of the mark-item element should match the RSS anchor id"))))
+
+(deftest mark-item-review-mode-test
+  (testing "Extend button is visible in review mode for owned marks"
+    (let [state {:settings {:user "alice"}}
+          mark {:id "s1" :name "Alice's Mark" :creator "alice" :expiration "2026-08-01"}
+          res (render-mark-item state mark {:review-mode? true})
+          container (.-container res)]
+      (is (some? (tlr/queryByText container "Extend (+30d)"))
+          "Extend button should be visible in review mode")
+      (is (some? (tlr/queryByText container "Edit"))
+          "Edit button should still be visible in review mode")))
+
+  (testing "Extend button is NOT visible when not in review mode"
+    (let [state {:settings {:user "alice"}}
+          mark {:id "s1" :name "Alice's Mark" :creator "alice" :expiration "2026-08-01"}
+          res (render-mark-item state mark {:review-mode? false})
+          container (.-container res)]
+      (is (nil? (tlr/queryByText container "Extend (+30d)"))
+          "Extend button should NOT be visible when not in review mode")))
+
+  (testing "Extend button uses configured extend-expiration-days"
+    (let [state {:settings {:user "alice"}
+                 :config {:extend-expiration-days 14}}
+          mark {:id "s1" :name "Alice's Mark" :creator "alice"
+                :expiration "2026-08-01"}
+          res (render-mark-item state mark {:review-mode? true})
+          container (.-container res)]
+      (is (some? (tlr/queryByText container "Extend (+14d)"))
+          "Extend button should show configured days"))))

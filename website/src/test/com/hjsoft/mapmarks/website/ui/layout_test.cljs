@@ -1,5 +1,5 @@
 (ns com.hjsoft.mapmarks.website.ui.layout-test
-  (:require [cljs.test :refer [deftest is testing use-fixtures]]
+  (:require [cljs.test :as t :refer [deftest is testing use-fixtures]]
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.mapmarks.website.ui.layout :as layout]
@@ -96,3 +96,10 @@
         "config map should contain :app-icon")
     (is (= "favicon.ico" (:app-icon config/config))
         "default :app-icon should be favicon.ico")))
+
+(deftest config-review-interval-test
+  (testing "config has :review-interval-days configured"
+    (is (some? (:review-interval-days config/config))
+        "config map should contain :review-interval-days")
+    (is (= 30 (:review-interval-days config/config))
+        "default :review-interval-days should be 30")))

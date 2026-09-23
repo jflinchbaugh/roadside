@@ -1,6 +1,6 @@
 (ns com.hjsoft.mapmarks.website.state-test
   (:require
-   [cljs.test :refer [deftest testing is]]
+   [cljs.test :as t :refer [deftest testing is]]
    [com.hjsoft.mapmarks.website.state :as sut]
    [com.hjsoft.mapmarks.website.storage :as storage]
    [com.hjsoft.mapmarks.website.config :as config]
@@ -149,3 +149,29 @@
     (with-redefs [storage/get-item (constantly nil)]
       (let [state (sut/initial-app-state)]
         (is (= true (:follow-user? state)))))))
+
+(deftest review-state-test
+  (testing "set-review-mode reducer"
+    (let [s (sut/app-reducer {} [:set-review-mode true])]
+      (is (= true (:review-mode? s)))))
+
+  (testing "set-last-reviewed reducer"
+    (let [s (sut/app-reducer {} [:set-last-reviewed "2026-09-22"])]
+      (is (= "2026-09-22" (:last-reviewed s))))))
+
+(deftest select-review-marks-test
+  (let [alice-expired {:id "1" :creator "alice" :expiration "2026-08-01"}
+        alice-active  {:id "2" :creator "alice" :expiration "2026-09-30"}
+        bob-expired   {:id "3" :creator "bob"   :expiration "2026-07-01"}
+        local-mark    {:id "4" :creator nil     :expiration "2026-08-15"}
+        marks [alice-expired alice-active bob-expired local-mark]]
+    (testing "filters only owned marks and sorts chronologically"
+      (let [result (sut/select-review-marks
+                    {:marks marks
+                     :settings {:user "alice"}})]
+        (is (= ["1" "4" "2"] (mapv :id result)))))
+    (testing "local user owns only creator-less marks"
+      (let [result (sut/select-review-marks
+                    {:marks marks
+                     :settings {:user nil}})]
+        (is (= ["4"] (mapv :id result)))))))

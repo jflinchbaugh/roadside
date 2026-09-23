@@ -1,5 +1,5 @@
 (ns com.hjsoft.mapmarks.website.controller-test
-  (:require [cljs.test :refer [deftest is testing async]]
+  (:require [cljs.test :as t :refer [deftest is testing async]]
             [com.hjsoft.mapmarks.website.controller :as sut]
             [com.hjsoft.mapmarks.website.storage :as storage]
             [com.hjsoft.mapmarks.website.config :as config]
@@ -342,3 +342,21 @@
                                 (done))
                               1000))
                   1000)))))
+
+(deftest extend-mark-test
+  (testing "extend-mark! updates mark expiration date and notifies"
+    (let [dispatched (atom [])
+          dispatch (fn [action] (swap! dispatched conj action))
+          mark {:id "m1" :name "Test Mark" :creator "alice"
+                :lat 1.0 :lon 2.0 :site "test" :expiration "2026-08-01"}
+          app-state {:settings {:user "alice" :password "secret"}
+                     :config {:site "test" :default-expiration-days 30}
+                     :marks [mark]}]
+      (is (true? (sut/extend-mark! app-state dispatch mark 30 mock-deps)))
+      (is (some (fn [[type payload]]
+                  (and (= type :set-marks)
+                       (some (fn [m]
+                               (and (= (:id m) "m1")
+                                    (not= (:expiration m) "2026-08-01")))
+                             payload)))
+                @dispatched)))))

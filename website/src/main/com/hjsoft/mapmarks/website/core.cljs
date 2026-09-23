@@ -10,7 +10,7 @@
             [com.hjsoft.mapmarks.website.ui.hooks :refer [use-user-location]]
             [com.hjsoft.mapmarks.website.ui.map :as ui-map :refer [leaflet-map]]
             [com.hjsoft.mapmarks.website.ui.marks
-             :refer [marks-list tag-list]]
+             :refer [marks-list tag-list review-button review-banner]]
             [com.hjsoft.mapmarks.website.ui.forms
              :refer [mark-form settings-dialog export-dialog about-dialog]]
             [com.hjsoft.mapmarks.website.ui.layout
@@ -102,7 +102,7 @@
 (defn use-app-side-effects
   [app-state dispatch user-location show-form set-show-form editing-mark]
   (let [{:keys [marks settings map-center map-zoom
-                last-sync config follow-user?]} app-state
+                last-sync last-reviewed config follow-user?]} app-state
         {:keys [get-location location]} user-location
         [last-fetched-center set-last-fetched-center] (hooks/use-state map-center)
         app-state-ref (hooks/use-ref app-state)]
@@ -122,6 +122,11 @@
     (hooks/use-effect
      [marks settings map-center map-zoom last-sync]
      (controller/save-local-data! marks settings map-center map-zoom last-sync))
+
+    (hooks/use-effect
+     [last-reviewed]
+     (when last-reviewed
+       (controller/save-last-reviewed! last-reviewed)))
 
     ;; Fetch from Remote API on settings change
     (hooks/use-effect
@@ -241,15 +246,23 @@
              (js/window.addEventListener "popstate" select-from-hash)
              #(js/window.removeEventListener "popstate" select-from-hash)))
 
+        review-mode? (:review-mode? app-state)
+
+        review-marks (hooks/use-memo
+                      [marks (:settings app-state)]
+                      (state/select-review-marks app-state))
+
         marks-by-expiry (hooks/use-memo
                           [marks (:show-expired? app-state) (:location user-location)]
                           (state/select-marks-by-expiry app-state (:location user-location)))
 
+        base-marks (if review-mode? review-marks marks-by-expiry)
+
         filtered-marks (hooks/use-memo
-                         [marks-by-expiry (:tag-filter app-state)]
+                         [base-marks (:tag-filter app-state)]
                          (if-let [pf (:tag-filter app-state)]
-                           (filterv #(some #{pf} (:tags %)) marks-by-expiry)
-                           marks-by-expiry))
+                           (filterv #(some #{pf} (:tags %)) base-marks)
+                           base-marks))
 
         set-coordinate-form-data (hooks/use-memo
                                   [dispatch]
@@ -298,7 +311,11 @@
               :onClick #(do
                           (set-editing-mark nil)
                           (set-show-form true))}
-             (str "Add " (:mark-name-article (:config app-state)) " " (:mark-name-singular (:config app-state)))))
+             (str "Add "
+                  (:mark-name-article (:config app-state))
+                  " "
+                  (:mark-name-singular (:config app-state))))
+            ($ review-button))
 
            (d/div
             {:class "map-actions-right"}
@@ -314,7 +331,9 @@
                           ((:get-location user-location)
                            (fn [loc] (dispatch [:set-map-center loc]))))}
              "\u2316")))
-          ($ tag-list {:marks marks-by-expiry})
+          (when review-mode?
+            ($ review-banner))
+          ($ tag-list {:marks base-marks})
           (when show-form ($ mark-form))
           ($ marks-list {:marks filtered-marks})
           (d/div
