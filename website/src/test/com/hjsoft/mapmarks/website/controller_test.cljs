@@ -360,3 +360,40 @@
                                     (not= (:expiration m) "2026-08-01")))
                              payload)))
                 @dispatched)))))
+
+(t/deftest extend-mark-review-mode-test
+  (t/testing "review mode: extending mark that moves advances selected-mark"
+    (let [dispatched (atom [])
+          dispatch (fn [action] (swap! dispatched conj action))
+          m1 {:id "m1" :name "Mark 1" :creator "alice"
+              :lat 1.0 :lon 2.0 :site "test" :expiration "2026-08-01"}
+          m2 {:id "m2" :name "Mark 2" :creator "alice"
+              :lat 3.0 :lon 4.0 :site "test" :expiration "2026-08-15"}
+          app-state {:settings {:user "alice" :password "secret"}
+                     :config {:site "test" :default-expiration-days 30}
+                     :review-mode? true
+                     :selected-mark m1
+                     :marks [m1 m2]}]
+      (t/is (true? (sut/extend-mark! app-state dispatch m1 30 mock-deps)))
+      (let [selected-actions (filter (fn [[type _]] (= type :set-selected-mark))
+                                     @dispatched)]
+        (t/is (= [[:set-selected-mark m2]] selected-actions)))))
+
+  (t/testing "review mode: extending mark that does not move keeps it selected"
+    (let [dispatched (atom [])
+          dispatch (fn [action] (swap! dispatched conj action))
+          m1 {:id "m1" :name "Mark 1" :creator "alice"
+              :lat 1.0 :lon 2.0 :site "test" :expiration "2026-08-01"}
+          m2 {:id "m2" :name "Mark 2" :creator "alice"
+              :lat 3.0 :lon 4.0 :site "test" :expiration "2099-01-01"}
+          app-state {:settings {:user "alice" :password "secret"}
+                     :config {:site "test" :default-expiration-days 1}
+                     :review-mode? true
+                     :selected-mark m1
+                     :marks [m1 m2]}]
+      (t/is (true? (sut/extend-mark! app-state dispatch m1 1 mock-deps)))
+      (let [selected-actions (filter (fn [[type _]] (= type :set-selected-mark))
+                                     @dispatched)
+            selected-mark (second (first selected-actions))]
+        (t/is (= "m1" (:id selected-mark)))
+        (t/is (not= "2026-08-01" (:expiration selected-mark)))))))

@@ -116,6 +116,22 @@
                  [0 exp])))
            marks))
 
+(defn next-review-mark
+  "Returns the next mark to review if the extended mark moved in the review
+   list, or nil if it did not move or was the last mark."
+  [before-marks after-marks mark-id]
+  (let [find-idx (fn [ms]
+                   (first (keep-indexed
+                           (fn [idx m]
+                             (when (= (:id m) mark-id) idx))
+                           ms)))
+        old-idx (find-idx before-marks)
+        new-idx (find-idx after-marks)]
+    (when (and (some? old-idx)
+               (some? new-idx)
+               (not= old-idx new-idx))
+      (get (vec before-marks) (inc old-idx)))))
+
 (defn extend-expiration
   "Calculates new expiration date string extended by days. If expired or
    blank, extends from today. If in the future, extends from current date."

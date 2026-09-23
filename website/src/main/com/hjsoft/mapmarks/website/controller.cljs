@@ -3,6 +3,7 @@
             [com.hjsoft.mapmarks.website.storage :as storage]
             [com.hjsoft.mapmarks.website.config :as config]
             [com.hjsoft.mapmarks.website.domain.mark :as mark-domain]
+            [com.hjsoft.mapmarks.website.state :as state]
             [com.hjsoft.mapmarks.website.utils :as utils]
             [taoensso.telemere :as tel]
             [clojure.string :as str]
@@ -289,8 +290,10 @@
 
 (defn update-mark!
   ([app-state dispatch form-data editing-mark]
-   (update-mark! app-state dispatch form-data editing-mark default-deps))
+   (update-mark! app-state dispatch form-data editing-mark default-deps nil))
   ([app-state dispatch form-data editing-mark deps]
+   (update-mark! app-state dispatch form-data editing-mark deps nil))
+  ([app-state dispatch form-data editing-mark deps opts]
    (let [user (get-in app-state [:settings :user])
          site (get-in app-state [:config :site])
          editing-creator (:creator editing-mark)]
@@ -312,10 +315,14 @@
                                         editing-mark
                                         user)]
          (if success
-           (do
+           (let [mark-to-select (if (contains? opts :selected-mark)
+                                  (:selected-mark opts)
+                                  processed-data)]
              (dispatch [:set-marks marks])
-             (dispatch [:set-selected-mark processed-data])
-             (dispatch [:set-map-center [(:lat processed-data) (:lon processed-data)]])
+             (when mark-to-select
+               (dispatch [:set-selected-mark mark-to-select])
+               (dispatch [:set-map-center [(:lat mark-to-select)
+                                           (:lon mark-to-select)]]))
              (remote-update-mark! app-state dispatch processed-data deps)
              true)
            (do
@@ -324,19 +331,39 @@
 
 (defn extend-mark!
   "Extends the expiration date of a mark by specified days (default 30),
-   updates state and remote storage, and sends a notification."
+   updates state and remote storage, and sends a notification.
+   In review mode, advances the current mark if the extended mark moves."
   ([app-state dispatch mark]
    (extend-mark! app-state dispatch mark nil default-deps))
   ([app-state dispatch mark days]
    (extend-mark! app-state dispatch mark days default-deps))
-  ([{:keys [config] :as app-state} dispatch mark days deps]
+  ([{:keys [config review-mode?] :as app-state} dispatch mark days deps]
    (let [interval (or days
                       (:extend-expiration-days config)
                       (:default-expiration-days config)
                       30)
          new-exp (mark-domain/extend-expiration (:expiration mark) interval)
          updated-mark (assoc mark :expiration new-exp)
-         res (update-mark! app-state dispatch updated-mark mark deps)]
+         adv-mark (when review-mode?
+                    (let [get-rev (fn [s]
+                                    (let [rev (state/select-review-marks s)]
+                                      (if-let [t (:tag-filter s)]
+                                        (filterv #(some #{t} (:tags %)) rev)
+                                        rev)))
+                          before-rev (get-rev app-state)
+                          after-rev (get-rev
+                                     (update app-state :marks
+                                             (fn [ms]
+                                               (mapv #(if (= (:id %)
+                                                             (:id mark))
+                                                        updated-mark
+                                                        %)
+                                                     ms))))]
+                      (mark-domain/next-review-mark before-rev
+                                                    after-rev
+                                                    (:id mark))))
+         opts (when adv-mark {:selected-mark adv-mark})
+         res (update-mark! app-state dispatch updated-mark mark deps opts)]
      (when res
        (notify! dispatch :success
                 (str (if (seq (:name mark))

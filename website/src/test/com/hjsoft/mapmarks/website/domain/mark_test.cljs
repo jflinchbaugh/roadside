@@ -250,3 +250,25 @@
                  {:marks [{:creator "alice"}]
                   :settings {:user "alice"}
                   :last-reviewed "2099-01-01"})))))
+
+(t/deftest next-review-mark-test
+  (let [m1 {:id "1" :name "M1" :expiration "2026-08-01"}
+        m2 {:id "2" :name "M2" :expiration "2026-08-15"}
+        m3 {:id "3" :name "M3" :expiration "2026-09-01"}]
+    (t/testing "returns next mark when mark moves in the list"
+      (let [before [m1 m2 m3]
+            after [m2 m3 (assoc m1 :expiration "2026-09-15")]]
+        (t/is (= m2 (sut/next-review-mark before after "1")))))
+
+    (t/testing "returns nil when mark does not move"
+      (let [before [m1 m2 m3]
+            after [(assoc m1 :expiration "2026-08-05") m2 m3]]
+        (t/is (nil? (sut/next-review-mark before after "1")))))
+
+    (t/testing "returns nil when mark is at the end and moves"
+      (let [before [m1 m2]
+            after [m1 (assoc m2 :expiration "2026-09-15")]]
+        (t/is (nil? (sut/next-review-mark before after "2")))))
+
+    (t/testing "returns nil when mark is not found"
+      (t/is (nil? (sut/next-review-mark [m1 m2] [m1 m2] "999"))))))
