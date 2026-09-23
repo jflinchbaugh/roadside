@@ -1,5 +1,5 @@
 (ns com.hjsoft.mapmarks.website.core-test
-  (:require [cljs.test :as t :refer [deftest is testing use-fixtures]]
+  (:require [cljs.test :as t]
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.mapmarks.website.leaflet-init]
@@ -9,7 +9,7 @@
             [com.hjsoft.mapmarks.website.controller :as controller]
             [com.hjsoft.mapmarks.website.ui.map :as ui-map]))
 
-(use-fixtures :each
+(t/use-fixtures :each
   {:after tlr/cleanup})
 
 (defn create-mock-leaflet []
@@ -30,8 +30,8 @@
        :circleMarker (fn [_ _] #js {:addTo (fn [& _] (this-as this this))})
        :layerGroup (fn [_] #js {:addTo (fn [& _] (this-as this this))})})
 
-(deftest app-render-test
-  (testing "app component renders basic layout"
+(t/deftest app-render-test
+  (t/testing "app component renders basic layout"
     (let [mock-l (create-mock-leaflet)
           _ (ui-map/set-leaflet! mock-l)]
       (with-redefs [controller/fetch-remote-marks! (fn
@@ -41,9 +41,9 @@
         (let [mock-geo #js {:getCurrentPosition (fn [success _ _])}
               res (tlr/render ($ sut/app {:geolocation mock-geo}))
               container (.-container res)]
-          (is (some? (tlr/queryByText container (:app-name config/config)))
+          (t/is (some? (tlr/queryByText container (:app-name config/config)))
             "Header title should be present")
-          (is (some? (tlr/queryByText
+          (t/is (some? (tlr/queryByText
                       container
                       (str "Add "
                            (:mark-name-article config/config)
@@ -51,8 +51,8 @@
                            (:mark-name-singular config/config))))
             "Add Mark button should be present"))))))
 
-(deftest app-url-action-add-test
-  (testing "app component opens add mark form when ?action=add is present"
+(t/deftest app-url-action-add-test
+  (t/testing "app component opens add mark form when ?action=add is present"
     (let [mock-l (create-mock-leaflet)
           _ (ui-map/set-leaflet! mock-l)]
       (with-redefs [controller/fetch-remote-marks! (fn
@@ -63,14 +63,14 @@
           (js/window.history.pushState #js {} "" "?action=add")
           (let [res (tlr/render ($ sut/app {:geolocation mock-geo}))
                 container (.-container res)]
-            (is (some? (tlr/queryByText
+            (t/is (some? (tlr/queryByText
                         container
                         (str "Add New " (:mark-name-singular config/config))))
               "Add New Mark form should be present"))
           (js/window.history.pushState #js {} "" "/"))))))
 
-(deftest app-select-mark-permalink-test
-  (testing "selecting a mark updates the URL hash, and URL hash selects mark on load"
+(t/deftest app-select-mark-permalink-test
+  (t/testing "selecting a mark updates the URL hash, and URL hash selects mark on load"
     (let [mock-l (create-mock-leaflet)
           _ (ui-map/set-leaflet! mock-l)]
       (with-redefs [controller/fetch-remote-marks! (fn
@@ -89,7 +89,7 @@
               (let [res (tlr/render ($ sut/app {:geolocation mock-geo}))
                     container (.-container res)]
                 (js/console.log "RENDERED HTML:" (.-innerHTML container))
-                (is (some? (.querySelector container ".selected-mark"))
+                (t/is (some? (.querySelector container ".selected-mark"))
                     "Mark should be selected when loaded with permalink hash"))))
           ;; 2. Selecting a mark updates URL hash
           (set! (.-hash js/window.location) "")
@@ -99,17 +99,17 @@
               (let [res (tlr/render ($ sut/app {:geolocation mock-geo}))
                     container (.-container res)
                     mark-item (.querySelector container ".mark-item")]
-                (is (nil? (.querySelector container ".selected-mark"))
+                (t/is (nil? (.querySelector container ".selected-mark"))
                     "Mark should not be selected initially")
                 (tlr/fireEvent.click mark-item)
-                (is (= "#mark=xyz-123" js/window.location.hash)
+                (t/is (= "#mark=xyz-123" js/window.location.hash)
                     "URL hash should be updated to permalink format when mark is clicked")
-                (is (some? (.querySelector container ".selected-mark"))
+                (t/is (some? (.querySelector container ".selected-mark"))
                     "Mark should be selected in UI"))))
           (set! (.-hash js/window.location) ""))))))
 
-(deftest app-permalink-missing-mark-test
-  (testing "fetches remote mark if not in local list"
+(t/deftest app-permalink-missing-mark-test
+  (t/testing "fetches remote mark if not in local list"
     (let [mock-l (create-mock-leaflet)
           _ (ui-map/set-leaflet! mock-l)
           fetch-called (atom nil)]
@@ -125,12 +125,12 @@
         (let [mock-geo #js {:getCurrentPosition (fn [success _ _])}]
           (set! (.-hash js/window.location) "#mark=missing-id")
           (tlr/render ($ sut/app {:geolocation mock-geo}))
-          (is (= "missing-id" @fetch-called)
+          (t/is (= "missing-id" @fetch-called)
               "Should fetch missing mark-id from URL hash")
           (set! (.-hash js/window.location) ""))))))
 
-(deftest app-no-gps-on-permalink-test
-  (testing "does not query user location if permalink hash is present"
+(t/deftest app-no-gps-on-permalink-test
+  (t/testing "does not query user location if permalink hash is present"
     (let [mock-l (create-mock-leaflet)
           _ (ui-map/set-leaflet! mock-l)
           gps-called (atom false)]
@@ -145,12 +145,12 @@
                                                   (reset! gps-called true))}]
           (set! (.-hash js/window.location) "#mark=xyz-123")
           (tlr/render ($ sut/app {:geolocation mock-geo}))
-          (is (false? @gps-called)
+          (t/is (false? @gps-called)
               "Should not query GPS when loaded with permalink")
           (set! (.-hash js/window.location) ""))))))
 
-(deftest app-location-tracking-and-recenter-test
-  (testing (str "tracks location, centers map initially, "
+(t/deftest app-location-tracking-and-recenter-test
+  (t/testing (str "tracks location, centers map initially, "
                 "stops on pan, resumes on btn")
     (let [set-view-calls (atom [])
           event-handlers (atom {})
@@ -160,8 +160,8 @@
                         :addTo (fn [& _] (this-as this this))
                         :on (fn [event-names handler]
                               (doseq [evt (.split event-names " ")]
-                                (swap! event-handlers update evt
-                                       (fnil conj []) handler))
+                                 (swap! event-handlers update evt
+                                        (fnil conj []) handler))
                               (this-as this this))
                         :getCenter (fn [] #js {:lat 0 :lng 0})
                         :getZoom (fn [] 10)
@@ -201,7 +201,7 @@
              (when @geo-cb
                (@geo-cb #js {:coords #js {:latitude 40.1
                                           :longitude -76.1}}))))
-          (is (some (fn [c] (and (= 40.1 (first c)) (= -76.1 (second c))))
+          (t/is (some (fn [c] (and (= 40.1 (first c)) (= -76.1 (second c))))
                     @set-view-calls)
               "Map should be centered on initial user location")
 
@@ -212,7 +212,7 @@
              (when @geo-cb
                (@geo-cb #js {:coords #js {:latitude 40.2
                                           :longitude -76.2}}))))
-          (is (some (fn [c] (and (= 40.2 (first c)) (= -76.2 (second c))))
+          (t/is (some (fn [c] (and (= 40.2 (first c)) (= -76.2 (second c))))
                     @set-view-calls)
               "Map should follow user location updates")
 
@@ -230,16 +230,16 @@
              (when @geo-cb
                (@geo-cb #js {:coords #js {:latitude 40.3
                                           :longitude -76.3}}))))
-          (is (empty? @set-view-calls)
+          (t/is (empty? @set-view-calls)
               "Map should not recenter after user manually moved the map")
 
           ;; 5. User clicks the location button
           (let [loc-btn (.querySelector container ".location-btn")]
-            (is (some? loc-btn) "Location button should exist")
+            (t/is (some? loc-btn) "Location button should exist")
             (tlr/act
              (fn []
                (tlr/fireEvent.click loc-btn)))
-            (is (some (fn [c] (and (= 40.3 (first c)) (= -76.3 (second c))))
+            (t/is (some (fn [c] (and (= 40.3 (first c)) (= -76.3 (second c))))
                       @set-view-calls)
                 (str "Map should recenter to current location on location "
                      "button click"))
@@ -251,12 +251,12 @@
                (when @geo-cb
                  (@geo-cb #js {:coords #js {:latitude 40.4
                                             :longitude -76.4}}))))
-            (is (some (fn [c] (and (= 40.4 (first c)) (= -76.4 (second c))))
+            (t/is (some (fn [c] (and (= 40.4 (first c)) (= -76.4 (second c))))
                       @set-view-calls)
                 (str "Map should follow location updates after location "
                      "button clicked"))))))))
 
-(deftest app-review-mode-toggle-test
+(t/deftest app-review-mode-toggle-test
   (let [mock-l (create-mock-leaflet)
         _ (ui-map/set-leaflet! mock-l)]
     (with-redefs [controller/fetch-remote-marks! (fn
@@ -268,20 +268,20 @@
             res (tlr/render ($ sut/app {:geolocation mock-geo}))
             container (.-container res)
             review-btn (.querySelector container ".review-marks-btn")]
-        (is (some? review-btn) "Review button should exist in action bar")
-        (is (nil? (.querySelector container ".review-banner"))
+        (t/is (some? review-btn) "Review button should exist in action bar")
+        (t/is (nil? (.querySelector container ".review-banner"))
             "Review banner should not be visible initially")
         ;; Click Review button to activate review mode
         (tlr/act
          (fn []
            (tlr/fireEvent.click review-btn)))
-        (is (some? (.querySelector container ".review-banner"))
+        (t/is (some? (.querySelector container ".review-banner"))
             "Review banner should be visible when review mode is active")
         ;; Click Done Reviewing button to exit review mode
         (let [done-btn (.querySelector container ".exit-review-btn")]
-          (is (some? done-btn) "Done Reviewing button should exist")
+          (t/is (some? done-btn) "Done Reviewing button should exist")
           (tlr/act
            (fn []
              (tlr/fireEvent.click done-btn)))
-          (is (nil? (.querySelector container ".review-banner"))
+          (t/is (nil? (.querySelector container ".review-banner"))
               "Review banner should be hidden after clicking Done Reviewing"))))))

@@ -1,5 +1,5 @@
 (ns com.hjsoft.mapmarks.website.ui.forms-test
-  (:require [cljs.test :refer [deftest is testing use-fixtures async]]
+  (:require [cljs.test :as t]
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.mapmarks.website.leaflet-init]
@@ -10,7 +10,7 @@
             [goog.object :as gobj]
             ["react" :as react]))
 
-(use-fixtures :each
+(t/use-fixtures :each
   {:after tlr/cleanup})
 
 (defn- mock-http-response [response]
@@ -25,9 +25,9 @@
                           #js {:value context-val}
                           component))))
 
-(deftest settings-dialog-registration-failure-test
-  (async done
-    (testing "settings-dialog displays registration errors"
+(t/deftest settings-dialog-registration-failure-test
+  (t/async done
+    (t/testing "settings-dialog displays registration errors"
       (let [dispatch (fn [_])
             context-val {:state {:settings {}}
                          :dispatch dispatch
@@ -55,12 +55,12 @@
                                   true
                                   (throw (js/Error. "Still waiting")))))
                  (fn []
-                   (is (some? (tlr/queryByText container "Username taken"))
-                       "Error message should be visible")
+                   (t/is (some? (tlr/queryByText container "Username taken"))
+                         "Error message should be visible")
                    (done))))))))
 
-(deftest mark-form-cancel-test
-  (testing "mark-form can be cancelled"
+(t/deftest mark-form-cancel-test
+  (t/testing "mark-form can be cancelled"
     (let [cancelled (atom false)
           context-val {:state {:settings {}
                                :map-center [0 0]
@@ -81,4 +81,4 @@
           container (.-container res)
           cancel-btn (tlr/getByTitle container "Cancel")]
       (tlr/fireEvent.click cancel-btn)
-      (is (true? @cancelled) "Form should be cancelled"))))
+      (t/is (true? @cancelled) "Form should be cancelled"))))

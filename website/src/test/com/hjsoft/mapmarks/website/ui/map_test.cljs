@@ -1,5 +1,5 @@
 (ns com.hjsoft.mapmarks.website.ui.map-test
-  (:require [cljs.test :refer [deftest is testing use-fixtures]]
+  (:require [cljs.test :as t]
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.mapmarks.website.ui.map :as sut]
@@ -8,7 +8,7 @@
             [goog.object :as gobj]
             ["react" :as react]))
 
-(use-fixtures :each
+(t/use-fixtures :each
   {:after tlr/cleanup})
 
 (defn render-with-context [component context-val]
@@ -36,8 +36,8 @@
        :circleMarker (fn [_ _] #js {:addTo (fn [& _] (this-as this this))})
        :layerGroup (fn [_] #js {:addTo (fn [& _] (this-as this this))})})
 
-(deftest leaflet-map-render-test
-  (testing "leaflet-map renders container div"
+(t/deftest leaflet-map-render-test
+  (t/testing "leaflet-map renders container div"
     (let [mock-l (create-mock-leaflet)
           _ (sut/set-leaflet! mock-l)
           context-val {:state {:marks [] :map-center [0 0] :selected-mark nil}
@@ -48,10 +48,10 @@
                context-val)
           container (.-container res)]
       (let [map-div (.querySelector container "#test-map")]
-        (is (some? map-div) "Map div with id test-map should be present")))))
+        (t/is (some? map-div) "Map div with id test-map should be present")))))
 
-(deftest leaflet-map-locating-test
-  (testing "leaflet-map shows locating overlay"
+(t/deftest leaflet-map-locating-test
+  (t/testing "leaflet-map shows locating overlay"
     (let [mock-l (create-mock-leaflet)
           _ (sut/set-leaflet! mock-l)
           context-val {:state {:marks [] :map-center [0 0] :selected-mark nil}
@@ -61,5 +61,5 @@
                ($ sut/leaflet-map {:div-id "test-map" :zoom-level 10})
                context-val)
           container (.-container res)]
-      (is (some? (tlr/queryByText container "Locating..."))
-          "Should show Locating... text"))))
+      (t/is (some? (tlr/queryByText container "Locating..."))
+            "Should show Locating... text"))))

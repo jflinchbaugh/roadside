@@ -1,5 +1,5 @@
 (ns com.hjsoft.mapmarks.website.controller-test
-  (:require [cljs.test :as t :refer [deftest is testing async]]
+  (:require [cljs.test :as t]
             [com.hjsoft.mapmarks.website.controller :as sut]
             [com.hjsoft.mapmarks.website.storage :as storage]
             [com.hjsoft.mapmarks.website.config :as config]
@@ -15,7 +15,7 @@
                   (do
                     (println "Wait-for timeout. Current state:"
                       (pr-str @atom-ref))
-                    (is (pred @atom-ref) "Timeout waiting for condition")
+                    (t/is (pred @atom-ref) "Timeout waiting for condition")
                     (done-fn))
                   (js/setTimeout check 10))))]
       (check))))
@@ -33,30 +33,30 @@
                                                     :city "York"
                                                     :state "PA"}}}))})
 
-(deftest save-local-data-test
-  (testing "save-local-data! persists all provided fields to storage"
+(t/deftest save-local-data-test
+  (t/testing "save-local-data! persists all provided fields to storage"
     (let [saved (atom {})
           site (:site config/config)]
       (with-redefs [storage/set-item! (fn [k v] (swap! saved assoc k v))]
         (sut/save-local-data! ["mark1"] {:user "alice"}
                               [10 20] 15 "2026-03-21T12:00:00Z")
-        (is (= ["mark1"] (get @saved (str site "-marks"))))
-        (is (= {:user "alice"} (get @saved (str site "-settings"))))
-        (is (= [10 20] (get @saved (str site "-map-center"))))
-        (is (= 15 (get @saved (str site "-map-zoom"))))
-        (is (= "2026-03-21T12:00:00Z"
+        (t/is (= ["mark1"] (get @saved (str site "-marks"))))
+        (t/is (= {:user "alice"} (get @saved (str site "-settings"))))
+        (t/is (= [10 20] (get @saved (str site "-map-center"))))
+        (t/is (= 15 (get @saved (str site "-map-zoom"))))
+        (t/is (= "2026-03-21T12:00:00Z"
                (get @saved (str site "-last-sync"))))))))
 
-(deftest create-mark-test
-  (async done
-    (testing "create-mark! updates state and triggers remote creation"
+(t/deftest create-mark-test
+  (t/async done
+    (t/testing "create-mark! updates state and triggers remote creation"
       (let [dispatched (atom [])
             dispatch (fn [action] (swap! dispatched conj action))
             app-state {:settings {:user "alice" :password "secret"} :config {:site "test"} :marks []}
             form-data {:name "New Mark" :lat 1.0 :lon 2.0}]
         (let [result (sut/create-mark! app-state dispatch form-data mock-deps)]
-          (is (true? result))
-          (is (some (fn [[type _]] (= type :set-marks)) @dispatched))
+          (t/is (true? result))
+          (t/is (some (fn [[type _]] (= type :set-marks)) @dispatched))
           (wait-for dispatched
                     (fn [actions] (some (fn [[type payload]]
                                           (and (= type :set-notification)
@@ -64,9 +64,9 @@
                                         actions))
                     done 1000))))))
 
-(deftest update-mark-test
-  (async done
-    (testing "update-mark! replaces mark in state and triggers remote update"
+(t/deftest update-mark-test
+  (t/async done
+    (t/testing "update-mark! replaces mark in state and triggers remote update"
       (let [dispatched (atom [])
             dispatch (fn [action] (swap! dispatched conj action))
             old-mark {:id "s1" :name "Old" :lat 1.0 :lon 2.0}
@@ -84,17 +84,17 @@
                        form-data
                        old-mark
                        mock-deps)]
-          (is (true? result))
+          (t/is (true? result))
           (wait-for dispatched
                     (fn [actions] (some (fn [[type payload]]
                                           (and (= type :set-notification)
                                                (= (:type payload) :success)))
-                                          actions))
+                                           actions))
                     done 1000))))))
 
-(deftest fetch-remote-marks-test
-  (async done
-    (testing "fetch-remote-marks! dispatches sync-marks and loading states"
+(t/deftest fetch-remote-marks-test
+  (t/async done
+    (t/testing "fetch-remote-marks! dispatches sync-marks and loading states"
       (let [dispatched (atom [])
             dispatch (fn [action] (swap! dispatched conj action))
             app-state {:settings {:user "alice" :password "secret"}
@@ -104,24 +104,24 @@
             deps (assoc
                    mock-deps
                    :fetch-marks (fn [site _ _ _ _ since]
-                                  (is (= "test" site))
-                                  (is (= "2026-03-21T10:00:00Z" since))
+                                  (t/is (= "test" site))
+                                  (t/is (= "2026-03-21T10:00:00Z" since))
                                   (go {:success true
                                        :data {:marks [{:id "m1" :name "Remote Mark"}]
                                               :deleted-ids []
                                               :new-sync "2026-03-21T11:00:00Z"}})))]
         (sut/fetch-remote-marks! app-state dispatch deps)
-        (is (some (fn [[type payload]] (and (= type :set-loading-marks) (true? payload))) @dispatched))
+        (t/is (some (fn [[type payload]] (and (= type :set-loading-marks) (true? payload))) @dispatched))
         (wait-for dispatched
                   (fn [actions] (some (fn [[type _]] (= type :sync-marks)) actions))
                   (fn []
-                    (is (some (fn [[type payload]] (and (= type :set-loading-marks) (false? payload))) @dispatched))
+                    (t/is (some (fn [[type payload]] (and (= type :set-loading-marks) (false? payload))) @dispatched))
                     (done))
                   1000)))))
 
-(deftest delete-mark-test
-  (async done
-    (testing "delete-mark! removes from state and triggers remote delete"
+(t/deftest delete-mark-test
+  (t/async done
+    (t/testing "delete-mark! removes from state and triggers remote delete"
       (let [dispatched (atom [])
             dispatch (fn [action] (swap! dispatched conj action))
             mark {:id "s1" :name "To Delete" :creator "alice"}
@@ -130,12 +130,12 @@
                        :marks [mark]}
             deps (assoc mock-deps
                         :delete-mark (fn [site user pass id]
-                                       (is (= "test" site))
-                                       (is (= "s1" id))
+                                       (t/is (= "test" site))
+                                       (t/is (= "s1" id))
                                        (go {:success true})))]
         (let [result (sut/delete-mark! app-state dispatch mark deps)]
-          (is (true? result))
-          (is (some (fn [[type payload]] (and (= type :remove-mark) (= (:id payload) "s1"))) @dispatched))
+          (t/is (true? result))
+          (t/is (some (fn [[type payload]] (and (= type :remove-mark) (= (:id payload) "s1"))) @dispatched))
           (wait-for dispatched
                     (fn [actions] (some (fn [[type payload]]
                                           (and (= type :set-notification)
@@ -143,9 +143,9 @@
                                         actions))
                     done 1000))))))
 
-(deftest vote-mark-test
-  (async done
-    (testing "vote-mark! updates state and triggers remote vote"
+(t/deftest vote-mark-test
+  (t/async done
+    (t/testing "vote-mark! updates state and triggers remote vote"
       (let [dispatched (atom [])
             dispatch (fn [action] (swap! dispatched conj action))
             mark {:id "m1" :name "Votable" :user-vote 0 :score 5}
@@ -154,12 +154,12 @@
                        :selected-mark mark}
             deps (assoc mock-deps
                         :vote-mark (fn [site user pass id value]
-                                     (is (= "test" site))
-                                     (is (= "m1" id))
-                                     (is (= 1 value))
+                                     (t/is (= "test" site))
+                                     (t/is (= "m1" id))
+                                     (t/is (= 1 value))
                                      (go {:success true})))]
         (sut/vote-mark! app-state dispatch mark 1 deps)
-        (is (some (fn [[type payload]] (and (= type :update-mark) (= (:user-vote payload) 1))) @dispatched))
+        (t/is (some (fn [[type payload]] (and (= type :update-mark) (= (:user-vote payload) 1))) @dispatched))
         (wait-for dispatched
                   (fn [actions] (some (fn [[type payload]]
                                         (and (= type :set-notification)
@@ -167,9 +167,9 @@
                                       actions))
                   done 1000)))))
 
-(deftest lookup-address-test
-  (async done
-    (testing "lookup-address! calls geocode and updates coordinate"
+(t/deftest lookup-address-test
+  (t/async done
+    (t/testing "lookup-address! calls geocode and updates coordinate"
       (let [dispatched (atom [])
             dispatch (fn [action] (swap! dispatched conj action))
             updated-fields (atom [])
@@ -179,20 +179,20 @@
             address-data {:address "123 Main St"}
             deps (assoc mock-deps
                         :geocode-address (fn [site user pass addr]
-                                           (is (= "test" site))
-                                           (is (= "123 Main St" addr))
+                                           (t/is (= "test" site))
+                                           (t/is (= "123 Main St" addr))
                                            (go {:success true :lat 10.0 :lng 20.0})))]
         (sut/lookup-address! app-state dispatch on-update address-data deps)
         (wait-for dispatched
                   (fn [actions] (some (fn [[type _]] (= type :set-map-center)) actions))
                   (fn []
-                    (is (= [[:update-field [:coordinate "10, 20"]]] @updated-fields))
+                    (t/is (= [[:update-field [:coordinate "10, 20"]]] @updated-fields))
                     (done))
                   1000)))))
 
-(deftest reverse-lookup-test
-  (async done
-    (testing "reverse-lookup! calls reverse-geocode and updates address fields"
+(t/deftest reverse-lookup-test
+  (t/async done
+    (t/testing "reverse-lookup! calls reverse-geocode and updates address fields"
       (let [dispatched (atom [])
             dispatch (fn [action] (swap! dispatched conj action))
             updated-fields (atom [])
@@ -201,9 +201,9 @@
                        :config {:site "test"}}
             deps (assoc mock-deps
                         :reverse-geocode (fn [site user pass lat lon]
-                                           (is (= "test" site))
-                                           (is (= 40.0 lat))
-                                           (is (= -76.0 lon))
+                                           (t/is (= "test" site))
+                                           (t/is (= 40.0 lat))
+                                           (t/is (= -76.0 lon))
                                            (go {:success true
                                                 :data {:address {:road "Main St"
                                                                  :house_number "123"
@@ -214,14 +214,14 @@
                   (fn [actions] (some (fn [[type _]] (= type :set-notification)) actions))
                   (fn []
                     (let [updates (set @updated-fields)]
-                      (is (contains? updates [:update-field [:address "123 Main St"]]))
-                      (is (contains? updates [:update-field [:town "Lancaster"]]))
-                      (is (contains? updates [:update-field [:state "PA"]]))
+                      (t/is (contains? updates [:update-field [:address "123 Main St"]]))
+                      (t/is (contains? updates [:update-field [:town "Lancaster"]]))
+                      (t/is (contains? updates [:update-field [:state "PA"]]))
                       (done)))
                   1000)))))
 
-(deftest save-local-data-namespaced-test
-  (testing "save-local-data! uses the configured site namespace"
+(t/deftest save-local-data-namespaced-test
+  (t/testing "save-local-data! uses the configured site namespace"
     (let [saved (atom {})]
       (with-redefs [config/config (assoc config/config :site "potholes")
                     storage/set-item! (fn [k v] (swap! saved assoc k v))]
@@ -231,11 +231,11 @@
          [10 20]
          15
          "2026-03-21T12:00:00Z")
-        (is (= ["mark1"] (get @saved "potholes-marks")))
-        (is (= {:user "alice"} (get @saved "potholes-settings")))
-        (is (= [10 20] (get @saved "potholes-map-center")))
-        (is (= 15 (get @saved "potholes-map-zoom")))
-        (is (= "2026-03-21T12:00:00Z"
+        (t/is (= ["mark1"] (get @saved "potholes-marks")))
+        (t/is (= {:user "alice"} (get @saved "potholes-settings")))
+        (t/is (= [10 20] (get @saved "potholes-map-center")))
+        (t/is (= 15 (get @saved "potholes-map-zoom")))
+        (t/is (= "2026-03-21T12:00:00Z"
                (get @saved "potholes-last-sync")))))))
 
 (defn- has-notif? [actions type pattern]
@@ -245,9 +245,9 @@
                (str/includes? (:message payload) pattern)))
         actions))
 
-(deftest notification-message-config-test
-  (async done
-    (testing "notifications use custom configured singular and plural names"
+(t/deftest notification-message-config-test
+  (t/async done
+    (t/testing "notifications use custom configured singular and plural names"
       (let [orig-config config/config
             cleanup (fn []
                       (set! config/config orig-config)
@@ -263,22 +263,22 @@
                               :mark-name-singular "Pothole"
                               :mark-name-plural "Potholes"))
         ;; Test ownership warning on update (synchronous check)
-        (is (false? (sut/update-mark!
-                      app-state
-                      dispatch
-                      form-data
-                      editing-mark
-                      mock-deps)))
-        (is (has-notif? @dispatched :error "pothole"))
+        (t/is (false? (sut/update-mark!
+                        app-state
+                        dispatch
+                        form-data
+                        editing-mark
+                        mock-deps)))
+        (t/is (has-notif? @dispatched :error "pothole"))
         (swap! dispatched empty)
 
         ;; Test ownership warning on delete (synchronous check)
-        (is (false? (sut/delete-mark!
-                      app-state
-                      dispatch
-                      editing-mark
-                      mock-deps)))
-        (is (has-notif? @dispatched :error "pothole"))
+        (t/is (false? (sut/delete-mark!
+                        app-state
+                        dispatch
+                        editing-mark
+                        mock-deps)))
+        (t/is (has-notif? @dispatched :error "pothole"))
         (swap! dispatched empty)
 
         ;; Test remote success message on create (async check)
@@ -305,9 +305,9 @@
                                 cleanup 1000)))
                   1000)))))
 
-(deftest upload-all-marks-expiration-test
-  (async done
-    (testing "upload-all-marks! skips expired marks when show-expired? is false"
+(t/deftest upload-all-marks-expiration-test
+  (t/async done
+    (t/testing "upload-all-marks! skips expired marks when show-expired? is false"
       (let [dispatched (atom [])
             dispatch (fn [action] (swap! dispatched conj action))
             uploaded (atom [])
@@ -327,7 +327,7 @@
         (wait-for uploaded
                   (fn [marks] (= 1 (count marks)))
                   (fn []
-                    (is (= ["m1"] (mapv :id @uploaded)))
+                    (t/is (= ["m1"] (mapv :id @uploaded)))
                     ;; Now test with show-expired? true
                     (reset! uploaded [])
                     (swap! dispatched empty)
@@ -338,13 +338,13 @@
                     (wait-for uploaded
                               (fn [marks] (= 2 (count marks)))
                               (fn []
-                                (is (= ["m1" "m2"] (mapv :id @uploaded)))
+                                (t/is (= ["m1" "m2"] (mapv :id @uploaded)))
                                 (done))
                               1000))
                   1000)))))
 
-(deftest extend-mark-test
-  (testing "extend-mark! updates mark expiration date and notifies"
+(t/deftest extend-mark-test
+  (t/testing "extend-mark! updates mark expiration date and notifies"
     (let [dispatched (atom [])
           dispatch (fn [action] (swap! dispatched conj action))
           mark {:id "m1" :name "Test Mark" :creator "alice"
@@ -352,8 +352,8 @@
           app-state {:settings {:user "alice" :password "secret"}
                      :config {:site "test" :default-expiration-days 30}
                      :marks [mark]}]
-      (is (true? (sut/extend-mark! app-state dispatch mark 30 mock-deps)))
-      (is (some (fn [[type payload]]
+      (t/is (true? (sut/extend-mark! app-state dispatch mark 30 mock-deps)))
+      (t/is (some (fn [[type payload]]
                   (and (= type :set-marks)
                        (some (fn [m]
                                (and (= (:id m) "m1")

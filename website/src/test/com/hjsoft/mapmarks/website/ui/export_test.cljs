@@ -1,5 +1,5 @@
 (ns com.hjsoft.mapmarks.website.ui.export-test
-  (:require [cljs.test :refer [deftest is testing use-fixtures]]
+  (:require [cljs.test :as t]
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.mapmarks.website.ui.forms.export :as export]
@@ -8,7 +8,7 @@
             ["react" :as react]
             [clojure.string :as str]))
 
-(use-fixtures :each
+(t/use-fixtures :each
   {:after tlr/cleanup})
 
 (defn render-with-context [component context-val]
@@ -18,8 +18,8 @@
                           #js {:value context-val}
                           component))))
 
-(deftest export-dialog-test
-  (testing "export-dialog displays correct links"
+(t/deftest export-dialog-test
+  (t/testing "export-dialog displays correct links"
     (let [closed (atom false)
           site "test-site"
           context-val {:state {:config {:site site}}
@@ -29,7 +29,7 @@
           res (render-with-context ($ export/export-dialog) context-val)
           container (.-container res)]
 
-      (testing "displays KML feed URL"
+      (t/testing "displays KML feed URL"
         (let [kml-label (tlr/getByText container "KML Feed (Live):")
               kml-input (tlr/getByDisplayValue
                           container
@@ -37,10 +37,10 @@
                             (str
                               (.. js/window -location -origin)
                               ".*/s/" site "/feed.kml")))]
-          (is (some? kml-label))
-          (is (some? kml-input))))
+          (t/is (some? kml-label))
+          (t/is (some? kml-input))))
 
-      (testing "displays RSS feed URL"
+      (t/testing "displays RSS feed URL"
         (let [rss-label (tlr/getByText container "RSS Feed (Live):")
               rss-input (tlr/getByDisplayValue
                           container
@@ -48,17 +48,17 @@
                             (str
                               (.. js/window -location -origin)
                               ".*/s/" site "/feed.rss")))]
-          (is (some? rss-label))
-          (is (some? rss-input))))
+          (t/is (some? rss-label))
+          (t/is (some? rss-input))))
 
-      (testing "displays KML download link"
+      (t/testing "displays KML download link"
         (let [kml-link (tlr/getByText container "Download KML")]
-          (is (some? kml-link))
-          (is (str/includes? (.-href kml-link)
+          (t/is (some? kml-link))
+          (t/is (str/includes? (.-href kml-link)
                              (str "/s/" site "/feed.kml")))))
 
-      (testing "displays CSV download link"
+      (t/testing "displays CSV download link"
         (let [csv-link (tlr/getByText container "Download CSV")]
-          (is (some? csv-link))
-          (is (str/includes? (.-href csv-link)
+          (t/is (some? csv-link))
+          (t/is (str/includes? (.-href csv-link)
                              (str "/s/" site "/feed.csv"))))))))

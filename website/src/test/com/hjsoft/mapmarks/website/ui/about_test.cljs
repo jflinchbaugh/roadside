@@ -1,5 +1,5 @@
 (ns com.hjsoft.mapmarks.website.ui.about-test
-  (:require [cljs.test :refer [deftest is testing use-fixtures]]
+  (:require [cljs.test :as t]
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.mapmarks.website.ui.forms.about :as about]
@@ -7,7 +7,7 @@
             [goog.object :as gobj]
             ["react" :as react]))
 
-(use-fixtures :each
+(t/use-fixtures :each
   {:after tlr/cleanup})
 
 (defn render-with-context [component context-val]
@@ -17,8 +17,8 @@
                           #js {:value context-val}
                           component))))
 
-(deftest about-dialog-test
-  (testing "about-dialog displays correct information"
+(t/deftest about-dialog-test
+  (t/testing "about-dialog displays correct information"
     (let [context-val {:state {:config {:app-name "MapMarks"
                                         :mark-name-singular "Mark"
                                         :mark-name-plural "Marks"
@@ -28,14 +28,14 @@
                        :ui {:set-show-about-dialog (fn [_])}}
           res (render-with-context ($ about/about-dialog) context-val)
           container (.-container res)]
-      (is (some? (tlr/queryByText container "About MapMarks"))
-          "Header should be visible")
-      (is (some? (tlr/queryByText container #"GitHub"))
-        "source link")
-      (is (some? (tlr/queryByText container #"suggestions"))
-          "Copy should be visible")))
+      (t/is (some? (tlr/queryByText container "About MapMarks"))
+            "Header should be visible")
+      (t/is (some? (tlr/queryByText container #"GitHub"))
+            "source link")
+      (t/is (some? (tlr/queryByText container #"suggestions"))
+            "Copy should be visible")))
 
-  (testing "about-dialog can be closed via X button"
+  (t/testing "about-dialog can be closed via X button"
     (let [closed (atom false)
           context-val {:state {:config {:app-name "MapMarks"
                                         :mark-name-singular "Mark"
@@ -46,4 +46,4 @@
           container (.-container res)
           x-btn (tlr/getByTitle container "Close")]
       (tlr/fireEvent.click x-btn)
-      (is (true? @closed) "Dialog should be closed"))))
+      (t/is (true? @closed) "Dialog should be closed"))))

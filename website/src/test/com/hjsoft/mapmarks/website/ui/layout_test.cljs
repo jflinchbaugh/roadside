@@ -1,5 +1,5 @@
 (ns com.hjsoft.mapmarks.website.ui.layout-test
-  (:require [cljs.test :as t :refer [deftest is testing use-fixtures]]
+  (:require [cljs.test :as t]
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.mapmarks.website.ui.layout :as layout]
@@ -8,12 +8,12 @@
             [goog.object :as gobj]))
 
 ;; Automatically unmount components after each test
-(use-fixtures :each
+(t/use-fixtures :each
   {:after tlr/cleanup})
 
-(deftest notification-toast-test
-  (is (some? js/document) "js/document should be defined")
-  (testing "no notification message when message is not present"
+(t/deftest notification-toast-test
+  (t/is (some? js/document) "js/document should be defined")
+  (t/testing "no notification message when message is not present"
     (let [ctx state/app-context
           res (tlr/render
                ($ (gobj/get ctx "Provider")
@@ -21,9 +21,9 @@
                            :dispatch (fn [_])}}
                   ($ layout/notification-toast)))
           container (.-container res)]
-      (is (= "" (.-textContent container)))))
+      (t/is (= "" (.-textContent container)))))
 
-  (testing "renders notification message when present"
+  (t/testing "renders notification message when present"
     (let [ctx state/app-context
           test-notification {:type :success :message "Test Success Message"}
           res (tlr/render
@@ -33,12 +33,12 @@
                   ($ layout/notification-toast)))
           container (.-container res)
           toast (.querySelector container ".notification-toast.success")]
-      (is (some? toast) "The toast element should exist")
-      (is (= (.-textContent toast) "Test Success Message")
+      (t/is (some? toast) "The toast element should exist")
+      (t/is (= (.-textContent toast) "Test Success Message")
         "success message should be seen"))))
 
-(deftest header-test
-  (testing "renders header with title"
+(t/deftest header-test
+  (t/testing "renders header with title"
     (let [ctx state/app-context
           res (tlr/render
                ($ (gobj/get ctx "Provider")
@@ -50,9 +50,9 @@
                   ($ layout/header)))
           container (.-container res)
           title (tlr/getByText container "MapMarks")]
-        (is (some? title) "Should render the main header title")))
+        (t/is (some? title) "Should render the main header title")))
 
-  (testing "clicking title or image logo clears selected mark"
+  (t/testing "clicking title or image logo clears selected mark"
     (let [ctx state/app-context
           dispatched (atom [])
           res (tlr/render
@@ -68,18 +68,18 @@
           title (tlr/getByText container "MapMarks")
           logo (.querySelector container ".logo")]
       (tlr/fireEvent.click title)
-      (is (= [[:set-selected-mark nil]] @dispatched))
+      (t/is (= [[:set-selected-mark nil]] @dispatched))
       (reset! dispatched [])
       (tlr/fireEvent.click logo)
-      (is (= [[:set-selected-mark nil]] @dispatched))))
+      (t/is (= [[:set-selected-mark nil]] @dispatched))))
 
-  (testing "clicking text logo clears selected mark"
+  (t/testing "clicking text logo clears selected mark"
     (let [ctx state/app-context
           dispatched (atom [])
           res (tlr/render
                ($ (gobj/get ctx "Provider")
                   {:value {:state {:config {:app-name "MapMarks"
-                                            :app-logo "📍"
+                                            :app-logo "\uD83D\uDCCD"
                                             :tags-name-article "a"
                                             :mark-name-article "a"}}
                            :dispatch #(swap! dispatched conj %)
@@ -88,18 +88,18 @@
           container (.-container res)
           logo (.querySelector container ".logo")]
       (tlr/fireEvent.click logo)
-      (is (= [[:set-selected-mark nil]] @dispatched)))))
+      (t/is (= [[:set-selected-mark nil]] @dispatched)))))
 
-(deftest config-icon-test
-  (testing "config has :app-icon configured"
-    (is (some? (:app-icon config/config))
+(t/deftest config-icon-test
+  (t/testing "config has :app-icon configured"
+    (t/is (some? (:app-icon config/config))
         "config map should contain :app-icon")
-    (is (= "favicon.ico" (:app-icon config/config))
+    (t/is (= "favicon.ico" (:app-icon config/config))
         "default :app-icon should be favicon.ico")))
 
-(deftest config-review-interval-test
-  (testing "config has :review-interval-days configured"
-    (is (some? (:review-interval-days config/config))
+(t/deftest config-review-interval-test
+  (t/testing "config has :review-interval-days configured"
+    (t/is (some? (:review-interval-days config/config))
         "config map should contain :review-interval-days")
-    (is (= 30 (:review-interval-days config/config))
+    (t/is (= 30 (:review-interval-days config/config))
         "default :review-interval-days should be 30")))

@@ -1,17 +1,17 @@
 (ns com.hjsoft.mapmarks.website.domain.mark-test
   (:require [com.hjsoft.mapmarks.website.domain.mark :as sut]
-            [cljs.test :as t :refer [deftest is testing]]))
+            [cljs.test :as t]))
 
-(deftest mark-key-test
-  (testing "nil or empty mark"
-    (is (nil? (sut/mark-key nil)))
-    (is (= "|,||||" (sut/mark-key {}))))
+(t/deftest mark-key-test
+  (t/testing "nil or empty mark"
+    (t/is (nil? (sut/mark-key nil)))
+    (t/is (= "|,||||" (sut/mark-key {}))))
 
-  (testing "id-based key"
-    (is (= "my-uuid" (sut/mark-key {:id "my-uuid"}))))
+  (t/testing "id-based key"
+    (t/is (= "my-uuid" (sut/mark-key {:id "my-uuid"}))))
 
-  (testing "content-based key"
-    (is (= "name|1,2|address|town|state|prod,thing"
+  (t/testing "content-based key"
+    (t/is (= "name|1,2|address|town|state|prod,thing"
            (sut/mark-key {:name "name"
                            :lat 1.0
                            :lon 2.0
@@ -20,122 +20,122 @@
                            :state "state"
                            :tags ["prod" "thing"]})))))
 
-(deftest infer-tags-test
+(t/deftest infer-tags-test
   (let [all-tags ["apples" "corn" "peaches"]]
-    (testing "detects tags from name"
-      (is (= ["apples"] (sut/infer-tags "Fresh Apples" [] all-tags)))
-      (is (= ["corn" "peaches"] (sut/infer-tags "Corn and Peaches" [] all-tags))))
+    (t/testing "detects tags from name"
+      (t/is (= ["apples"] (sut/infer-tags "Fresh Apples" [] all-tags)))
+      (t/is (= ["corn" "peaches"] (sut/infer-tags "Corn and Peaches" [] all-tags))))
 
-    (testing "doesn't duplicate existing tags"
-      (is (= ["apples"] (sut/infer-tags "Fresh Apples" ["Apples"] all-tags)))
-      (is (= ["apples"] (sut/infer-tags "Fresh Apples" ["apples"] all-tags))
+    (t/testing "doesn't duplicate existing tags"
+      (t/is (= ["apples"] (sut/infer-tags "Fresh Apples" ["Apples"] all-tags)))
+      (t/is (= ["apples"] (sut/infer-tags "Fresh Apples" ["apples"] all-tags))
           "should not add Apples if apples already exists"))
 
-    (testing "handles nil or empty names"
-      (is (= [] (sut/infer-tags nil [] all-tags)))
-      (is (= [] (sut/infer-tags "" [] all-tags))))))
+    (t/testing "handles nil or empty names"
+      (t/is (= [] (sut/infer-tags nil [] all-tags)))
+      (t/is (= [] (sut/infer-tags "" [] all-tags))))))
 
-(deftest init-form-state-test
-  (testing "initializes with defaults when no editing-mark"
+(t/deftest init-form-state-test
+  (t/testing "initializes with defaults when no editing-mark"
     (let [map-center [40.5 -76.5]
           state (sut/init-form-state {:map-center map-center})]
-      (is (= "40.5, -76.5" (:coordinate state)))
-      (is (= 40.5 (:lat state)))
-      (is (= -76.5 (:lon state)))
-      (is (= "" (:name state)))
-      (is (false? (:show-address? state)))
-      (is (= "" (:current-tag state)))))
+      (t/is (= "40.5, -76.5" (:coordinate state)))
+      (t/is (= 40.5 (:lat state)))
+      (t/is (= -76.5 (:lon state)))
+      (t/is (= "" (:name state)))
+      (t/is (false? (:show-address? state)))
+      (t/is (= "" (:current-tag state)))))
 
-  (testing "initializes from editing-mark and detects show-address?"
+  (t/testing "initializes from editing-mark and detects show-address?"
     (let [editing {:name "Existing" :address "123 Main St" :lat 1.0 :lon 2.0}
           state (sut/init-form-state {:editing-mark editing})]
-      (is (= "Existing" (:name state)))
-      (is (= "1, 2" (:coordinate state)))
-      (is (= 1.0 (:lat state)))
-      (is (= 2.0 (:lon state)))
-      (is (true? (:show-address? state)))
-      (is (= "" (:current-tag state))))))
+      (t/is (= "Existing" (:name state)))
+      (t/is (= "1, 2" (:coordinate state)))
+      (t/is (= 1.0 (:lat state)))
+      (t/is (= 2.0 (:lon state)))
+      (t/is (true? (:show-address? state)))
+      (t/is (= "" (:current-tag state))))))
 
-(deftest mark-form-reducer-test
-  (testing "update-field"
+(t/deftest mark-form-reducer-test
+  (t/testing "update-field"
     (let [state {:name ""}
           next-state (sut/mark-form-reducer
                        state
                        [:update-field [:name "New Name"]])]
-      (is (= "New Name" (:name next-state)))))
+      (t/is (= "New Name" (:name next-state)))))
 
-  (testing "update-current-tag"
+  (t/testing "update-current-tag"
     (let [state {:current-tag ""}
           next-state (sut/mark-form-reducer
                        state
                        [:update-current-tag "new tag"])]
-      (is (= "new tag" (:current-tag next-state)))))
+      (t/is (= "new tag" (:current-tag next-state)))))
 
-  (testing "add-tag"
+  (t/testing "add-tag"
     (let [state {:tags [] :current-tag "  Apples  "}
           state1 (sut/mark-form-reducer state [:add-tag])]
-      (is (= ["apples"] (:tags state1)))
-      (is (= "" (:current-tag state1)))))
+      (t/is (= ["apples"] (:tags state1)))
+      (t/is (= "" (:current-tag state1)))))
 
-  (testing "prevent duplicate tags"
+  (t/testing "prevent duplicate tags"
     (let [state {:tags ["apples"] :current-tag "Apples"}
           next-state (sut/mark-form-reducer state [:add-tag])]
-      (is (= ["apples"] (:tags next-state)))
-      (is (= "" (:current-tag next-state))))
+      (t/is (= ["apples"] (:tags next-state)))
+      (t/is (= "" (:current-tag next-state))))
     (let [state {:tags ["apples"] :current-tag "apples"}
           next-state (sut/mark-form-reducer state [:add-tag])]
-      (is (= ["apples"] (:tags next-state)))
-      (is (= "" (:current-tag next-state)))))
+      (t/is (= ["apples"] (:tags next-state)))
+      (t/is (= "" (:current-tag next-state)))))
 
-  (testing "toggle-address"
+  (t/testing "toggle-address"
     (let [state {:show-address? false}
           state1 (sut/mark-form-reducer state [:toggle-address])
           state2 (sut/mark-form-reducer state1 [:toggle-address])]
-      (is (true? (:show-address? state1)))
-      (is (false? (:show-address? state2)))))
+      (t/is (true? (:show-address? state1)))
+      (t/is (false? (:show-address? state2)))))
 
-  (testing "sync-coordinate and user-modified-coordinate?"
+  (t/testing "sync-coordinate and user-modified-coordinate?"
     (let [map-center [40.0 -76.0]
           state (sut/init-form-state {:map-center map-center})
-          _ (is (false? (:user-modified-coordinate? state)) "Initially not modified")
+          _ (t/is (false? (:user-modified-coordinate? state)) "Initially not modified")
           state1 (sut/mark-form-reducer state [:sync-coordinate "41.0, -77.0"])]
-      (is (= "41.0, -77.0" (:coordinate state1)) "Coordinate synced when not modified")
-      (is (false? (:user-modified-coordinate? state1)) "Still not modified after sync")
+      (t/is (= "41.0, -77.0" (:coordinate state1)) "Coordinate synced when not modified")
+      (t/is (false? (:user-modified-coordinate? state1)) "Still not modified after sync")
       (let [state2 (sut/mark-form-reducer state1 [:update-field [:coordinate "42.0, -78.0"]])]
-        (is (true? (:user-modified-coordinate? state2)) "Marked as modified after update-field")
+        (t/is (true? (:user-modified-coordinate? state2)) "Marked as modified after update-field")
         (let [state3 (sut/mark-form-reducer state2 [:sync-coordinate "43.0, -79.0"])]
-          (is (= "42.0, -78.0" (:coordinate state3)) "Coordinate NOT synced when modified"))))))
+          (t/is (= "42.0, -78.0" (:coordinate state3)) "Coordinate NOT synced when modified"))))))
 
-(deftest prepare-submit-data-test
-  (testing "adds pending current tag"
+(t/deftest prepare-submit-data-test
+  (t/testing "adds pending current tag"
     (let [state {:tags ["corn"]
                  :current-tag "Apples"}
           final (sut/prepare-submit-data state)]
-      (is (= ["apples" "corn"] (:tags final)))
-      (is (nil? (:current-tag final)))))
+      (t/is (= ["apples" "corn"] (:tags final)))
+      (t/is (nil? (:current-tag final)))))
 
-  (testing "empty current-tag adds nothing to tags"
+  (t/testing "empty current-tag adds nothing to tags"
     (let [state {:tags ["corn"]
                  :current-tag ""}
           final (sut/prepare-submit-data state)]
-      (is (= ["corn"] (:tags final)))
-      (is (nil? (:current-tag final)))))
+      (t/is (= ["corn"] (:tags final)))
+      (t/is (nil? (:current-tag final)))))
 
-  (testing "coordinates are parsed correctly"
+  (t/testing "coordinates are parsed correctly"
     (let [state {:coordinate "40, -76"}
           final (sut/prepare-submit-data state)]
-      (is (= 40 (:lat final)))
-      (is (= -76 (:lon final)))
-      (is (not (contains? final :coordinate))))))
+      (t/is (= 40 (:lat final)))
+      (t/is (= -76 (:lon final)))
+      (t/is (not (contains? final :coordinate))))))
 
-(deftest add-and-edit-mark-test
+(t/deftest add-and-edit-mark-test
   (let [marks [{:id "1"
                  :name "Apple Farm"
                  :tags ["apples"]
                  :lat 1.0
                  :lon 2.0
                  :site "test"}]]
-    (testing "adding a new mark with auto-tag detection"
+    (t/testing "adding a new mark with auto-tag detection"
       (let [result (sut/add-mark
                     {:name "Better Apples"
                      :lat 3.0
@@ -144,14 +144,14 @@
                      :site "test"}
                     marks
                     "test-user")]
-        (is (:success result))
-        (is (some #(= "apples" %) (:tags (:processed-data result)))
+        (t/is (:success result))
+        (t/is (some #(= "apples" %) (:tags (:processed-data result)))
             "Automatically added apples
                because it was in the name and exists
                in other marks")
-        (is (= "test-user" (:creator (:processed-data result))))))
+        (t/is (= "test-user" (:creator (:processed-data result))))))
 
-    (testing "adding a mark with empty name"
+    (t/testing "adding a mark with empty name"
       (let [result (sut/add-mark
                     {:name ""
                      :lat 3.0
@@ -160,18 +160,18 @@
                      :site "test"}
                     marks
                     "test-user")]
-        (is (:success result))
-        (is (= "" (:name (:processed-data result))))))
+        (t/is (:success result))
+        (t/is (= "" (:name (:processed-data result))))))
 
-    (testing "preventing duplicates in add-mark"
+    (t/testing "preventing duplicates in add-mark"
       (let [result (sut/add-mark
                     {:id "1" :name "Apple Farm" :lat 1.0 :lon 2.0 :tags ["apples"] :site "test"}
                     marks
                     "test-user")]
-        (is (not (:success result)))
-        (is (= "This mark already exists!" (:error result)))))
+        (t/is (not (:success result)))
+        (t/is (= "This mark already exists!" (:error result)))))
 
-    (testing "editing mark replaces the old one and DOES NOT auto-detect tags"
+    (t/testing "editing mark replaces the old one and DOES NOT auto-detect tags"
       (let [marks [{:id "1" :name "Original" :tags ["apples"] :lat 1.0 :lon 2.0 :site "test"}
                     {:id "2" :name "Corn Mark" :tags ["corn"] :lat 3.0 :lon 4.0 :site "test"}]
             result (sut/edit-mark
@@ -185,18 +185,18 @@
                     (first marks)
                     "test-user")
             {:keys [success processed-data marks]} result]
-        (is success)
-        (is (:updated processed-data))
-        (is (= {:id "1"
+        (t/is success)
+        (t/is (:updated processed-data))
+        (t/is (= {:id "1"
                 :name "Original and corn"
                 :lat 1.0
                 :lon 2.0
                 :tags ["apples"]
                 :site "test"}
                (dissoc processed-data :updated :creator)))
-        (is (not (some #(= "corn" %) (:tags processed-data)))
+        (t/is (not (some #(= "corn" %) (:tags processed-data)))
             "Should NOT have added corn even though it is in the name and exists elsewhere")
-        (is (= [{:id "1"
+        (t/is (= [{:id "1"
                  :name "Original and corn"
                  :lat 1.0
                  :lon 2.0
@@ -210,15 +210,15 @@
                  :site "test"}]
                (map (fn [s] (dissoc s :updated :creator)) marks)))))))
  
-(deftest review-marks-test
-  (testing "mark-owner?"
-    (is (true? (sut/mark-owner? {:creator "alice"} "alice")))
-    (is (false? (sut/mark-owner? {:creator "alice"} "bob")))
-    (is (true? (sut/mark-owner? {:creator ""} "alice")))
-    (is (true? (sut/mark-owner? {:creator nil} "alice")))
-    (is (true? (sut/mark-owner? {:creator nil} nil))))
+(t/deftest review-marks-test
+  (t/testing "mark-owner?"
+    (t/is (true? (sut/mark-owner? {:creator "alice"} "alice")))
+    (t/is (false? (sut/mark-owner? {:creator "alice"} "bob")))
+    (t/is (true? (sut/mark-owner? {:creator ""} "alice")))
+    (t/is (true? (sut/mark-owner? {:creator nil} "alice")))
+    (t/is (true? (sut/mark-owner? {:creator nil} nil))))
 
-  (testing "sort-marks-by-expiration sorts chronologically"
+  (t/testing "sort-marks-by-expiration sorts chronologically"
     (let [marks [{:id "1" :expiration "2026-10-15"}
                  {:id "2" :expiration "2026-08-01"}
                  {:id "3" :expiration nil}
@@ -226,27 +226,27 @@
                  {:id "5" :expiration ""}
                  {:id "6" :expiration "2026-09-23"}]
           sorted (sut/sort-marks-by-expiration marks)]
-      (is (= ["2" "4" "6" "1" "3" "5"]
+      (t/is (= ["2" "4" "6" "1" "3" "5"]
              (mapv :id sorted)))))
 
-  (testing "extend-expiration"
+  (t/testing "extend-expiration"
     (let [extended (sut/extend-expiration "2026-08-01" 30)]
-      (is (string? extended))
-      (is (not= "2026-08-01" extended))))
+      (t/is (string? extended))
+      (t/is (not= "2026-08-01" extended))))
 
-  (testing "review-due?"
-    (is (true? (sut/review-due? nil 30)))
-    (is (true? (sut/review-due? "" 30)))
-    (is (true? (sut/review-due? "2026-01-01" 30)))
-    (is (false? (sut/review-due? "2099-01-01" 30))))
+  (t/testing "review-due?"
+    (t/is (true? (sut/review-due? nil 30)))
+    (t/is (true? (sut/review-due? "" 30)))
+    (t/is (true? (sut/review-due? "2026-01-01" 30)))
+    (t/is (false? (sut/review-due? "2099-01-01" 30))))
 
-  (testing "review-recommended?"
-    (is (false? (sut/review-recommended? {:marks [] :settings {:user "alice"}})))
-    (is (true? (sut/review-recommended?
+  (t/testing "review-recommended?"
+    (t/is (false? (sut/review-recommended? {:marks [] :settings {:user "alice"}})))
+    (t/is (true? (sut/review-recommended?
                 {:marks [{:creator "alice"}]
                  :settings {:user "alice"}
                  :last-reviewed nil})))
-    (is (false? (sut/review-recommended?
+    (t/is (false? (sut/review-recommended?
                  {:marks [{:creator "alice"}]
                   :settings {:user "alice"}
                   :last-reviewed "2099-01-01"})))))

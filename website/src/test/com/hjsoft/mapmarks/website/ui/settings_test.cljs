@@ -1,5 +1,5 @@
 (ns com.hjsoft.mapmarks.website.ui.settings-test
-  (:require [cljs.test :refer [deftest is testing use-fixtures async]]
+  (:require [cljs.test :as t]
             [helix.core :refer [$]]
             ["@testing-library/react" :as tlr]
             [com.hjsoft.mapmarks.website.ui.forms.settings :as settings]
@@ -8,7 +8,7 @@
             ["react" :as react]
             [cljs.core.async :refer [chan put!]]))
 
-(use-fixtures :each
+(t/use-fixtures :each
   {:after tlr/cleanup})
 
 (defn render-with-context [component context-val]
@@ -18,9 +18,9 @@
                           #js {:value context-val}
                           component))))
 
-(deftest settings-register-arity-test
-  (async done
-    (testing "registration calls register-fn with 4 arguments (site, user, pass, email)"
+(t/deftest settings-register-arity-test
+  (t/async done
+    (t/testing "registration calls register-fn with 4 arguments (site, user, pass, email)"
       (let [site "test-site"
             user "alice"
             pass "secret"
@@ -48,7 +48,7 @@
           ;; Since it's inside a 'go' block, we need to wait a bit or use a timeout
           (js/setTimeout
            (fn []
-             (is (= [site user pass email] @called-with)
-                 "register-fn should be called with site, user, pass, and email")
+             (t/is (= [site user pass email] @called-with)
+                   "register-fn should be called with site, user, pass, and email")
              (done))
            100))))))
