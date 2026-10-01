@@ -3,13 +3,13 @@
                 "src/dev"
                 "src/test"]
  :dependencies [[lilactown/helix "0.2.2"]
-                [com.taoensso/telemere "1.2.1"]
-                [cider/cider-nrepl "0.59.0"]
+                [com.taoensso/telemere "1.4.0"]
+                [cider/cider-nrepl "0.62.2"]
                 [binaryage/devtools "1.0.7"]
-                [refactor-nrepl "3.13.0"]
+                [refactor-nrepl "3.14.0"]
                 [cljs-http "0.1.49"]
                 [http-kit "2.8.1"]
-                [metosin/malli "0.20.1"]
+                [metosin/malli "0.20.2"]
                 [tick/tick "1.0.1"]]
  :dev-http {3000 {:root "public"
                   :handler com.hjsoft.mapmarks.website.dev-server/handler}}
