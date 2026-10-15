@@ -263,7 +263,9 @@
                                                    ([_ _] nil)
                                                    ([_ _ _] nil))
                   controller/save-local-data! (fn [_ _ _ _] nil)
-                  controller/save-last-reviewed! (fn [_] nil)]
+                  controller/save-last-reviewed! (fn
+                                                   ([_] nil)
+                                                   ([_ _] nil))]
       (let [mock-geo #js {:getCurrentPosition (fn [success _ _])}
             res (tlr/render ($ sut/app {:geolocation mock-geo}))
             container (.-container res)

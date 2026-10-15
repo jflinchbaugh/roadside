@@ -125,9 +125,9 @@
      (controller/save-local-data! marks settings map-center map-zoom last-sync))
 
     (hooks/use-effect
-     [last-reviewed]
+     [last-reviewed (:config app-state)]
      (when last-reviewed
-       (controller/save-last-reviewed! last-reviewed)))
+       (controller/save-last-reviewed! last-reviewed (:config app-state))))
 
     ;; Browser notification when review is recommended
     (let [notified-ref (hooks/use-ref false)

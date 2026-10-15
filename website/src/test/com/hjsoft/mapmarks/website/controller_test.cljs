@@ -485,7 +485,8 @@
         app-state {:marks [{:id "m1" :creator "alice"
                             :expiration "2026-08-01"}]
                    :settings {:user "alice"}
-                   :config {:app-name "Roadside"
+                   :config {:site "test-site"
+                            :app-name "Roadside"
                             :mark-name-plural "Potholes"
                             :review-interval-days 30}
                    :last-reviewed "2026-01-01"}]
@@ -498,4 +499,5 @@
         (t/is (= 30 (:intervalDays msg)))
         (t/is (= true (:hasOwnedMarks msg)))
         (t/is (= "Roadside" (:appName msg)))
-        (t/is (= "Potholes" (:markNamePlural msg)))))))
+        (t/is (= "Potholes" (:markNamePlural msg)))
+        (t/is (= "test-site" (:site msg)))))))

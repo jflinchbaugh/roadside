@@ -27,10 +27,12 @@
     (storage/set-item! (str site-name "-map-zoom") map-zoom)
     (storage/set-item! (str site-name "-last-sync") last-sync)))
 
-(defn save-last-reviewed! [last-reviewed]
-  (let [site-name (:site config/config)]
-    (when last-reviewed
-      (storage/set-item! (str site-name "-last-reviewed") last-reviewed))))
+(defn save-last-reviewed!
+  ([last-reviewed] (save-last-reviewed! last-reviewed config/config))
+  ([last-reviewed config]
+   (let [site-name (or (:site config) (:site config/config))]
+     (when last-reviewed
+       (storage/set-item! (str site-name "-last-reviewed") last-reviewed)))))
 
 (defn send-browser-notification!
   "Displays a Web Notification if permission is granted, or requests
@@ -120,6 +122,7 @@
            has-owned? (boolean (seq (filter #(mark-domain/mark-owner? % user)
                                             (:marks app-state))))
            payload #js {:type "SYNC_REVIEW_CONFIG"
+                        :site (or (:site config) (:site config/config) "mapmarks")
                         :lastReviewed last-reviewed
                         :intervalDays interval-days
                         :hasOwnedMarks has-owned?
