@@ -1,8 +1,10 @@
 {
+  "id": "{site}",
   "name": "{app-name}",
   "short_name": "{app-name}",
   "description": "{app-description}",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4a7c44",
